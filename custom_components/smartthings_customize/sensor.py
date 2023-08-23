@@ -624,7 +624,7 @@ async def async_setup_entry(
                         ]
                     )
 
-    if broker._settings != None:
+    try:
         for cap in broker._settings.get("sensors"):
             for device in broker.devices.values():
                 if broker.is_allow_device(device.device_id) == False:
@@ -644,6 +644,8 @@ async def async_setup_entry(
                                                 entity_category=attribute.get("entity_category")
                                                 )
                             )
+    except:
+        _LOGGER.debug("check setting file")
 
     async_add_entities(entities)
 

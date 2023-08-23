@@ -51,6 +51,7 @@ from .smartapp import (
     unload_smartapp_endpoint,
     validate_installed_app,
     validate_webhook_requirements,
+    check_setting_file,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -274,7 +275,6 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     if len(all_entries) == 1:
         await unload_smartapp_endpoint(hass)
 
-
 class DeviceBroker:
     """Manages an individual SmartThings config entry."""
 
@@ -299,6 +299,7 @@ class DeviceBroker:
         self.devices = {device.device_id: device for device in devices}
         self.scenes = {scene.scene_id: scene for scene in scenes}
 
+        check_setting_file()
         with open(DOMAIN + "/settings.yaml") as f:
             yaml_data = yaml.load(f, Loader=yaml.FullLoader)
             self._settings = yaml_data

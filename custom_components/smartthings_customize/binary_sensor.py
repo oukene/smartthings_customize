@@ -18,6 +18,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import SmartThingsEntity
 from .const import DATA_BROKERS, DOMAIN
+import logging
 
 CAPABILITY_TO_ATTRIB = {
     Capability.acceleration_sensor: Attribute.acceleration,
@@ -45,6 +46,7 @@ ATTRIB_TO_ENTTIY_CATEGORY = {
     Attribute.tamper: EntityCategory.DIAGNOSTIC,
 }
 
+_LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -62,7 +64,7 @@ async def async_setup_entry(
                 attrib = CAPABILITY_TO_ATTRIB[capability]
                 sensors.append(SmartThingsBinarySensor(device, attrib))
 
-    if broker._settings != None:
+    try:
         for cap in broker._settings.get("binary_sensors"):
             for device in broker.devices.values():
                 if broker.is_allow_device(device.device_id) == False:
@@ -77,7 +79,8 @@ async def async_setup_entry(
                                                 attribute=attribute.get("attribute")
                                                 )
                             )
-
+    except:
+        _LOGGER.debug("check setting file")
     async_add_entities(sensors)
 
 

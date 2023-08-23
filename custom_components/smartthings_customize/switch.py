@@ -33,7 +33,7 @@ async def async_setup_entry(
             if broker.any_assigned(device.device_id, "switch"):
                 entities.append(SmartThingsSwitch(device))
 
-    if broker._settings != None:
+    try:
         for cap in broker._settings.get("switches"):
             for device in broker.devices.values():
                 if broker.is_allow_device(device.device_id) == False:
@@ -52,7 +52,8 @@ async def async_setup_entry(
                                                 command.get("on_state")
                                                 )
                             )
-
+    except:
+        _LOGGER.debug("check setting file")
     async_add_entities(entities)
 
 

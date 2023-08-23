@@ -54,32 +54,35 @@ from .const import (
     SUBSCRIPTION_WARNING_LIMIT,
 )
 
-import os
+_LOGGER = logging.getLogger(__name__)
+
 import yaml
+import os
 
-if os.path.isdir(DOMAIN) == False:
-            os.makedirs(DOMAIN)
+def check_setting_file():
+    if os.path.isdir(DOMAIN) == False:
+        os.makedirs(DOMAIN)
 
-if os.path.isfile(DOMAIN + "/settings.yaml") == False:
-    with open(DOMAIN + "/settings.yaml", "w") as f:
-        f.write("enable_official_component: false\n\n")
-        f.write("binary_sensors:\n\n\n")
-        f.write("sensors:\n\n\n")
-        f.write("switches:\n\n\n")
-        f.write("numbers:\n\n\n")
-        f.close()
+    if os.path.isfile(DOMAIN + "/settings.yaml") == False:
+        with open(DOMAIN + "/settings.yaml", "w") as f:
+            f.write("enable_official_component: false\n\n")
+            f.write("binary_sensors:\n\n\n")
+            f.write("sensors:\n\n\n")
+            f.write("switches:\n\n\n")
+            f.write("numbers:\n\n\n")
+            f.close()
+
+check_setting_file()
 
 with open(DOMAIN + "/settings.yaml") as f:
     yaml_data = yaml.load(f, Loader=yaml.FullLoader)
-    if yaml_data != None:
+    try:
         for cap in yaml_data.get("sensors"):
             CAPABILITIES.extend(cap["capability"])
         for cap in yaml_data.get("switches"):
             CAPABILITIES.extend(cap["capability"])
-
-
-_LOGGER = logging.getLogger(__name__)
-
+    except:
+        _LOGGER.warning("check setting file")
 
 def format_unique_id(app_id: str, location_id: str) -> str:
     """Format the unique id for a config entry."""
