@@ -95,6 +95,26 @@ numbers:
         command: setCoolingSetpoint
         attribute: coolingSetpoint
 
+# Enter the information of the select item to be added. You must enter the command entry for your SmartThings device and specify the properties that are changed by the command.
+selects:
+  - capability: airConditionerFanMode
+    component: main
+    options:
+      attribute: supportedAcFanModes
+    commands:
+      - name: "set fan mode"
+        command: setFanMode
+        attribute: fanMode
+  - capability: airConditionerMode
+    component: main
+    options:
+      attribute: supportedAcModes
+    commands:
+      - name: "set ac mode"
+        command: setAirConditionerMode
+        attribute: airConditionerMode
+    
+
 # Device id of SmartThings to add. If not added here, it will not be added as a device
 allow_devices:
   - b065a858-1927-fd98-a374-7fc1498e8c76
@@ -107,3 +127,4 @@ allow_devices:
 - switch
 - sensor
 - binary_sensor
+- select
