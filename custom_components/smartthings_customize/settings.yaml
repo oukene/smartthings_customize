@@ -1,0 +1,35 @@
+sensors:
+  - capability : refrigeration
+    attributes:
+      - attribute: rapidCooling
+        name: power cool activate
+        default_unit:
+        device_class:
+        state_class:
+        entity_category: 
+      - attribute: rapidFreezing
+        name: power freeze activate
+        default_unit:
+        device_class:
+        state_class:
+        entity_category:
+
+switches:
+  - capability : refrigeration
+    commands:
+      - name: "power cool"
+        component: main
+        command: setRapidCooling
+        argument:
+          "on": ["on"]
+          "off": ["off"]
+        attribute: rapidCooling
+        on_state: "on"
+      - name: "power freeze"
+        component: main
+        command: setRapidFreezing
+        argument:
+          "on": ["on"]
+          "off": ["off"]
+        attribute: rapidFreezing
+        on_state: "on"
