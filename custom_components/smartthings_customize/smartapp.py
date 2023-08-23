@@ -10,7 +10,7 @@ from uuid import uuid4
 from aiohttp import web
 from pysmartapp import Dispatcher, SmartAppManager
 from pysmartapp.const import SETTINGS_APP_ID
-from .pysmartthings import (
+from pysmartthings import (
     APP_TYPE_WEBHOOK,
     CAPABILITIES,
     CLASSIFICATION_AUTOMATION,
@@ -139,7 +139,7 @@ def _get_app_template(hass: HomeAssistant):
 
     return {
         "app_name": APP_NAME_PREFIX + str(uuid4()),
-        "display_name": "Home Assistant",
+        "display_name": "HA Customize",
         "description": description,
         "webhook_target_url": get_webhook_url(hass),
         "app_type": APP_TYPE_WEBHOOK,

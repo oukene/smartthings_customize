@@ -3,8 +3,8 @@ from http import HTTPStatus
 import logging
 
 from aiohttp import ClientResponseError
-from .pysmartthings import APIResponseError, AppOAuth, SmartThings
-from .pysmartthings.installedapp import format_install_url
+from pysmartthings import APIResponseError, AppOAuth, SmartThings
+from pysmartthings.installedapp import format_install_url
 import voluptuous as vol
 
 from homeassistant import config_entries

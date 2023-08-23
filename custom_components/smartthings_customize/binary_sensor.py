@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from .pysmartthings import Attribute, Capability
+from pysmartthings import Attribute, Capability
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,

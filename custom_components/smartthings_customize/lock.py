@@ -4,7 +4,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
-from .pysmartthings import Attribute, Capability
+from pysmartthings import Attribute, Capability
 
 from homeassistant.components.lock import LockEntity
 from homeassistant.config_entries import ConfigEntry

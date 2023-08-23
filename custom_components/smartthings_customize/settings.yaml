@@ -1,5 +1,6 @@
 sensors:
   - capability : refrigeration
+    component: main
     attributes:
       - attribute: rapidCooling
         name: power cool activate
@@ -16,9 +17,9 @@ sensors:
 
 switches:
   - capability : refrigeration
+    component: main
     commands:
       - name: "power cool"
-        component: main
         command: setRapidCooling
         argument:
           "on": ["on"]
@@ -26,7 +27,6 @@ switches:
         attribute: rapidCooling
         on_state: "on"
       - name: "power freeze"
-        component: main
         command: setRapidFreezing
         argument:
           "on": ["on"]

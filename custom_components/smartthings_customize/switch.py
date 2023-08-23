@@ -4,7 +4,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
-from .pysmartthings import Capability
+from pysmartthings import Capability
 
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
@@ -42,14 +42,13 @@ async def async_setup_entry(
                         _LOGGER.debug("add switch : " + str(command))
                         entities.append(
                             SmartThingsSwitch_ext(device,
-                                                command["component"],
+                                                cap["component"],
                                                 command["name"],
                                                 cap["capability"],
                                                 command["attribute"],
                                                 command["command"],
                                                 command["argument"],
                                                 command["on_state"])
-
                             )
 
     async_add_entities(entities)
