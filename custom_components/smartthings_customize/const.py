@@ -44,6 +44,7 @@ PLATFORMS = [
     Platform.SENSOR,
     Platform.SCENE,
     Platform.NUMBER,
+    Platform.SELECT,
 ]
 
 IGNORED_CAPABILITIES = [
