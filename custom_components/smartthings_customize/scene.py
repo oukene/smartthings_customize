@@ -16,7 +16,8 @@ async def async_setup_entry(
 ) -> None:
     """Add switches for a config entry."""
     broker = hass.data[DOMAIN][DATA_BROKERS][config_entry.entry_id]
-    async_add_entities([SmartThingsScene(scene) for scene in broker.scenes.values()])
+    if broker.enable_official_component():
+        async_add_entities([SmartThingsScene(scene) for scene in broker.scenes.values()])
 
 
 class SmartThingsScene(Scene):

@@ -42,14 +42,15 @@ async def async_setup_entry(
 ) -> None:
     """Add covers for a config entry."""
     broker = hass.data[DOMAIN][DATA_BROKERS][config_entry.entry_id]
-    async_add_entities(
-        [
-            SmartThingsCover(device)
-            for device in broker.devices.values()
-            if broker.any_assigned(device.device_id, COVER_DOMAIN)
-        ],
-        True,
-    )
+    if broker.enable_official_component():
+        async_add_entities(
+            [
+                SmartThingsCover(device)
+                for device in broker.devices.values()
+                if broker.any_assigned(device.device_id, COVER_DOMAIN) and broker.is_allow_device(device.device_id)
+            ],
+            True,
+        )
 
 
 def get_capabilities(capabilities: Sequence[str]) -> Sequence[str] | None:

@@ -92,13 +92,16 @@ async def async_setup_entry(
 
     broker = hass.data[DOMAIN][DATA_BROKERS][config_entry.entry_id]
     entities: list[ClimateEntity] = []
-    for device in broker.devices.values():
-        if not broker.any_assigned(device.device_id, CLIMATE_DOMAIN):
-            continue
-        if all(capability in device.capabilities for capability in ac_capabilities):
-            entities.append(SmartThingsAirConditioner(device))
-        else:
-            entities.append(SmartThingsThermostat(device))
+    if broker.enable_official_component():
+        for device in broker.devices.values():
+            if broker.is_allow_device(device.device_id) == False:
+                continue
+            if not broker.any_assigned(device.device_id, CLIMATE_DOMAIN):
+                continue
+            if all(capability in device.capabilities for capability in ac_capabilities):
+                entities.append(SmartThingsAirConditioner(device))
+            else:
+                entities.append(SmartThingsThermostat(device))
     async_add_entities(entities, True)
 
 

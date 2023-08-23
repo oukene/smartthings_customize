@@ -43,6 +43,7 @@ PLATFORMS = [
     Platform.BINARY_SENSOR,
     Platform.SENSOR,
     Platform.SCENE,
+    Platform.NUMBER,
 ]
 
 IGNORED_CAPABILITIES = [

@@ -57,14 +57,25 @@ from .const import (
 import os
 import yaml
 
-CAPABILITIES.extend(["refrigeration"])
+if os.path.isdir(DOMAIN) == False:
+            os.makedirs(DOMAIN)
 
-with open(os.path.dirname(os.path.realpath(__file__)) + "/settings.yaml") as f:
+if os.path.isfile(DOMAIN + "/settings.yaml") == False:
+    with open(DOMAIN + "/settings.yaml", "w") as f:
+        f.write("enable_official_component: false\n\n")
+        f.write("binary_sensors:\n\n\n")
+        f.write("sensors:\n\n\n")
+        f.write("switches:\n\n\n")
+        f.write("numbers:\n\n\n")
+        f.close()
+
+with open(DOMAIN + "/settings.yaml") as f:
     yaml_data = yaml.load(f, Loader=yaml.FullLoader)
-    for cap in yaml_data["sensors"]:
-        CAPABILITIES.extend(cap["capability"])
-    for cap in yaml_data["switches"]:
-        CAPABILITIES.extend(cap["capability"])
+    if yaml_data != None:
+        for cap in yaml_data.get("sensors"):
+            CAPABILITIES.extend(cap["capability"])
+        for cap in yaml_data.get("switches"):
+            CAPABILITIES.extend(cap["capability"])
 
 
 _LOGGER = logging.getLogger(__name__)

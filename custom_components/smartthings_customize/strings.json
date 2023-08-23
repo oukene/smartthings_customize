@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "Confirm Callback URL 111111",
+        "title": "Confirm Callback URL",
         "description": "SmartThings will be configured to send push updates to Home Assistant at:\n> {webhook_url}\n\nIf this is not correct, please update your configuration, restart Home Assistant, and try again."
       },
       "pat": {

@@ -33,14 +33,15 @@ async def async_setup_entry(
 ) -> None:
     """Add lights for a config entry."""
     broker = hass.data[DOMAIN][DATA_BROKERS][config_entry.entry_id]
-    async_add_entities(
-        [
-            SmartThingsLight(device)
-            for device in broker.devices.values()
-            if broker.any_assigned(device.device_id, "light")
-        ],
-        True,
-    )
+    if broker.enable_official_component():
+        async_add_entities(
+            [
+                SmartThingsLight(device)
+                for device in broker.devices.values()
+                if broker.any_assigned(device.device_id, "light") and broker.is_allow_device(device.device_id)
+            ],
+            True,
+        )
 
 
 def get_capabilities(capabilities: Sequence[str]) -> Sequence[str] | None:

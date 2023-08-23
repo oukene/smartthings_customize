@@ -26,6 +26,9 @@ from homeassistant.helpers.entity import DeviceInfo, Entity
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.typing import ConfigType
 
+import yaml
+import os
+
 from .config_flow import SmartThingsFlowHandler  # noqa: F401
 from .const import (
     CONF_APP_ID,
@@ -165,6 +168,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         broker.connect()
         hass.data[DOMAIN][DATA_BROKERS][entry.entry_id] = broker
 
+        
+
     except ClientResponseError as ex:
         if ex.status in (HTTPStatus.UNAUTHORIZED, HTTPStatus.FORBIDDEN):
             _LOGGER.exception(
@@ -195,7 +200,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
-
 
 async def async_get_entry_scenes(entry: ConfigEntry, api):
     """Get the scenes within an integration."""
@@ -294,6 +298,16 @@ class DeviceBroker:
         self._assignments = self._assign_capabilities(devices)
         self.devices = {device.device_id: device for device in devices}
         self.scenes = {scene.scene_id: scene for scene in scenes}
+
+        with open(DOMAIN + "/settings.yaml") as f:
+            yaml_data = yaml.load(f, Loader=yaml.FullLoader)
+            self._settings = yaml_data
+
+    def enable_official_component(self) -> bool:
+        return self._settings.get("enable_official_component") if self._settings.get("enable_official_component") != None else False
+
+    def is_allow_device(self, device_id) -> bool:
+        return device_id in self._settings.get("allow_devices")
 
     def _assign_capabilities(self, devices: Iterable):
         """Assign platforms to capabilities."""

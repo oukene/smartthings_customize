@@ -4,6 +4,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from pysmartthings import Attribute, Capability
+from pysmartthings.device import DeviceEntity
+from pysmartthings.capability import ATTRIBUTE_ON_VALUES
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
@@ -52,10 +54,30 @@ async def async_setup_entry(
     """Add binary sensors for a config entry."""
     broker = hass.data[DOMAIN][DATA_BROKERS][config_entry.entry_id]
     sensors = []
-    for device in broker.devices.values():
-        for capability in broker.get_assigned(device.device_id, "binary_sensor"):
-            attrib = CAPABILITY_TO_ATTRIB[capability]
-            sensors.append(SmartThingsBinarySensor(device, attrib))
+    if broker.enable_official_component():
+        for device in broker.devices.values():
+            if broker.is_allow_device(device.device_id) == False:
+                continue
+            for capability in broker.get_assigned(device.device_id, "binary_sensor"):
+                attrib = CAPABILITY_TO_ATTRIB[capability]
+                sensors.append(SmartThingsBinarySensor(device, attrib))
+
+    if broker._settings != None:
+        for cap in broker._settings.get("binary_sensors"):
+            for device in broker.devices.values():
+                if broker.is_allow_device(device.device_id) == False:
+                    continue
+                if cap.get("capability") in device.capabilities:
+                    for attribute in cap["attributes"]:
+                        sensors.append(
+                            SmartThingsBinarySensor_custom(device,
+                                                component=cap.get("component"),
+                                                capability=cap.get("capability"),
+                                                name=attribute.get("name"),
+                                                attribute=attribute.get("attribute")
+                                                )
+                            )
+
     async_add_entities(sensors)
 
 
@@ -98,3 +120,37 @@ class SmartThingsBinarySensor(SmartThingsEntity, BinarySensorEntity):
     def entity_category(self):
         """Return the entity category of this device."""
         return ATTRIB_TO_ENTTIY_CATEGORY.get(self._attribute)
+
+
+class SmartThingsBinarySensor_custom(SmartThingsBinarySensor):
+    def __init__(
+        self,
+        device: DeviceEntity,
+        component: str,
+        capability: str,
+        name: str,
+        attribute: str
+    ) -> None:
+        """Init the class."""
+        super().__init__(device, attribute)
+        self._component = component
+        self._name = name
+        self._capability = capability
+
+    @property
+    def name(self) -> str:
+        return f"{self._device.label} {self._name}"
+
+    @property
+    def unique_id(self) -> str:
+        return f"{self._device.device_id}.{self._component}.{self._attribute}"
+
+    @property
+    def is_on(self):
+        if self._component == "main":
+            return self._device.status.is_on(self._attribute)
+        else:
+            value = self._device.status._components[self._component].attributes.get(self._attribute).value
+            if self._attribute not in ATTRIBUTE_ON_VALUES:
+                return bool(value)
+            return value == ATTRIBUTE_ON_VALUES[self._attribute]

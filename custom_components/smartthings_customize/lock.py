@@ -32,13 +32,14 @@ async def async_setup_entry(
 ) -> None:
     """Add locks for a config entry."""
     broker = hass.data[DOMAIN][DATA_BROKERS][config_entry.entry_id]
-    async_add_entities(
-        [
-            SmartThingsLock(device)
-            for device in broker.devices.values()
-            if broker.any_assigned(device.device_id, "lock")
-        ]
-    )
+    if broker.enable_official_component():
+        async_add_entities(
+            [
+                SmartThingsLock(device)
+                for device in broker.devices.values()
+                if broker.any_assigned(device.device_id, "lock") and broker.is_allow_device(device.device_id)
+            ]
+        )
 
 
 def get_capabilities(capabilities: Sequence[str]) -> Sequence[str] | None:

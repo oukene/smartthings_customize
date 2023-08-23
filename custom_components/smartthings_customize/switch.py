@@ -14,8 +14,6 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from . import SmartThingsEntity
 from .const import DATA_BROKERS, DOMAIN
 
-import yaml
-import os
 import logging
 _LOGGER = logging.getLogger(__name__)
 
@@ -28,27 +26,31 @@ async def async_setup_entry(
     broker = hass.data[DOMAIN][DATA_BROKERS][config_entry.entry_id]
 
     entities = []
+    if broker.enable_official_component():
+        for device in broker.devices.values():
+            if broker.is_allow_device(device.device_id) == False:
+                continue
+            if broker.any_assigned(device.device_id, "switch"):
+                entities.append(SmartThingsSwitch(device))
 
-    for device in broker.devices.values():
-        if broker.any_assigned(device.device_id, "switch"):
-            entities.append(SmartThingsSwitch(device))
-
-    with open(os.path.dirname(os.path.realpath(__file__)) + "/settings.yaml") as f:
-        yaml_data = yaml.load(f, Loader=yaml.FullLoader)
-        for cap in yaml_data["switches"]:
+    if broker._settings != None:
+        for cap in broker._settings.get("switches"):
             for device in broker.devices.values():
-                if cap["capability"] in device.capabilities:
-                    for command in cap["commands"]:
+                if broker.is_allow_device(device.device_id) == False:
+                    continue
+                if cap.get("capability") in device.capabilities:
+                    for command in cap.get("commands"):
                         _LOGGER.debug("add switch : " + str(command))
                         entities.append(
-                            SmartThingsSwitch_ext(device,
-                                                cap["component"],
-                                                command["name"],
-                                                cap["capability"],
-                                                command["attribute"],
-                                                command["command"],
-                                                command["argument"],
-                                                command["on_state"])
+                            SmartThingsSwitch_custom(device,
+                                                cap.get("component"),
+                                                command.get("name"),
+                                                cap.get("capability"),
+                                                command.get("attribute"),
+                                                command.get("command"),
+                                                command.get("argument"),
+                                                command.get("on_state")
+                                                )
                             )
 
     async_add_entities(entities)
@@ -76,7 +78,7 @@ class SmartThingsSwitch(SmartThingsEntity, SwitchEntity):
     def is_on(self) -> bool:
         return self._device.status.switch
 
-class SmartThingsSwitch_ext(SmartThingsEntity, SwitchEntity):
+class SmartThingsSwitch_custom(SmartThingsEntity, SwitchEntity):
     def __init__(self, device, component, name:str, capability: str, attribute: str, command:str, arguments:dict, on_state: str) -> None:
         super().__init__(device)
         self._component = component
@@ -97,18 +99,23 @@ class SmartThingsSwitch_ext(SmartThingsEntity, SwitchEntity):
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         if await self._device.command(
-            "main", self._capability, self._command, self._arguments["off"]
+            self._component, self._capability, self._command, self._arguments["off"]
         ):
             self.async_write_ha_state()
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the switch on."""
         if await self._device.command(
-            "main", self._capability, self._command, self._arguments["on"]
+            self._component, self._capability, self._command, self._arguments["on"]
         ):
             self.async_write_ha_state()
 
     @property
     def is_on(self) -> bool:
         """Return true if light is on."""
-        return self._device.status.attributes[self._attribute].value == self._on_state
+        if self._component == "main":
+            return self._device.status.attributes[self._attribute].value in self._on_state
+        else:
+            return self._device.status._components[self._component].attributes.get(self._attribute).value in self._on_state
+
+                
