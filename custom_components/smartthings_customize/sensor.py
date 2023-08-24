@@ -625,6 +625,7 @@ async def async_setup_entry(
                     )
 
     try:
+        _LOGGER.debug("start customize sensor entity start size : %d", len(broker._settings.get("sensors")))
         for cap in broker._settings.get("sensors"):
             for device in broker.devices.values():
                 if broker.is_allow_device(device.device_id) == False:
@@ -645,7 +646,7 @@ async def async_setup_entry(
                                                 )
                             )
     except:
-        _LOGGER.debug("check setting file")
+        pass
 
     async_add_entities(entities)
 
@@ -740,7 +741,7 @@ class SmartThingsSensor_custom(SmartThingsSensor):
         if self._component == "main":
             value = self._device.status.attributes[self._attribute].value
         else:
-            value = self._device.status._components[self._component].attributes[self._attribute].value
+            value = self._device.status._components[self._component].attributes[self._attribute].value if self._device.status._components.get(self._component) != None else None
 
         if self._device_class != SensorDeviceClass.TIMESTAMP:
             return value
@@ -753,7 +754,7 @@ class SmartThingsSensor_custom(SmartThingsSensor):
         if self._component == "main":
             unit = self._device.status.attributes[self._attribute].unit
         else:
-            unit = self._device.status._components[self._component].attributes.get(self._attribute).unit
+            unit = self._device.status._components[self._component].attributes.get(self._attribute).unit if self._device.status._components.get(self._component) != None else None
             
 
         return UNITS.get(unit, unit) if unit else self._default_unit

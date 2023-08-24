@@ -6,7 +6,7 @@ from typing import Any
 
 from pysmartthings import Capability
 
-from homeassistant.components.number import NumberEntity, NumberMode
+from homeassistant.components.number import NumberEntity, NumberMode, DEFAULT_MAX_VALUE, DEFAULT_MIN_VALUE, DEFAULT_STEP
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -28,6 +28,7 @@ async def async_setup_entry(
     entities = []
 
     try:
+        _LOGGER.debug("start customize number entity start size : %d", len(broker._settings.get("numbers")))
         for cap in broker._settings.get("numbers"):
             for device in broker.devices.values():
                 if broker.is_allow_device(device.device_id) == False:
@@ -49,7 +50,7 @@ async def async_setup_entry(
                                                 )
                             )
     except:
-        _LOGGER.debug("check setting file")
+        pass
     async_add_entities(entities)
 
 class SmartThingsNumber_custom(SmartThingsEntity, NumberEntity):
@@ -83,7 +84,7 @@ class SmartThingsNumber_custom(SmartThingsEntity, NumberEntity):
             if self._component == "main":
                 min = self._device.status.attributes[self._min["attribute"]].value
             else:
-                min = self._device.status._components[self._component].attributes.get(self._min["attribute"]).value
+                min = self._device.status._components[self._component].attributes.get(self._min["attribute"]).value if self._device.status._components.get(self._component) != None else DEFAULT_MIN_VALUE
         else:
             min = self._min
         return min
@@ -94,7 +95,7 @@ class SmartThingsNumber_custom(SmartThingsEntity, NumberEntity):
             if self._component == "main":
                 max = self._device.status.attributes[self._max["attribute"]].value
             else:
-                max = self._device.status._components[self._component].attributes.get(self._max["attribute"]).value
+                max = self._device.status._components[self._component].attributes.get(self._max["attribute"]).value if self._device.status._components.get(self._component) != None else DEFAULT_MAX_VALUE
         else:
             max = self._max
         return max
@@ -117,5 +118,5 @@ class SmartThingsNumber_custom(SmartThingsEntity, NumberEntity):
         if self._component == "main":
             return self._device.status.attributes[self._attribute].value
         else:
-            return self._device.status._components[self._component].attributes.get(self._attribute).value
+            return self._device.status._components[self._component].attributes.get(self._attribute).value if self._device.status._components.get(self._component) != None else DEFAULT_MIN_VALUE
 

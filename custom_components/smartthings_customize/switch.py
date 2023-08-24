@@ -34,6 +34,7 @@ async def async_setup_entry(
                 entities.append(SmartThingsSwitch(device))
 
     try:
+        _LOGGER.debug("start customize switch entity start size : %d", len(broker._settings.get("switches")))
         for cap in broker._settings.get("switches"):
             for device in broker.devices.values():
                 if broker.is_allow_device(device.device_id) == False:
@@ -54,7 +55,7 @@ async def async_setup_entry(
                                                 )
                             )
     except:
-        _LOGGER.debug("check setting file")
+        pass
     async_add_entities(entities)
 
 
@@ -116,7 +117,7 @@ class SmartThingsSwitch_custom(SmartThingsSwitch):
             self.async_write_ha_state()
         else:
             if await self._device.command(
-                self._component, self._capability, self._off_command, self._arguments.get("on")
+                self._component, self._capability, self._on_command, self._arguments.get("on")
             ):
                 self.async_write_ha_state()
 
@@ -126,6 +127,7 @@ class SmartThingsSwitch_custom(SmartThingsSwitch):
         if self._component == "main":
             return self._device.status.attributes[self._attribute].value in self._on_state
         else:
-            return self._device.status._components[self._component].attributes.get(self._attribute).value in self._on_state
+            value = self._device.status._components[self._component].attributes.get(self._attribute).value if self._device.status._components.get(self._component) else None
+            return value in self._on_state
 
                 

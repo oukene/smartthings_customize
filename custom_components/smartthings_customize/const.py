@@ -47,6 +47,15 @@ PLATFORMS = [
     Platform.SELECT,
 ]
 
+
+CUSTOM_PLATFORMS = [
+    "sensors",
+    "switches",
+    "numbers",
+    "binary_sensors",
+    "selects",
+]
+
 IGNORED_CAPABILITIES = [
     "execute",
     "healthCheck",

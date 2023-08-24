@@ -6,7 +6,7 @@ from typing import Any
 
 from pysmartthings import Capability
 
-from homeassistant.components.select import SelectEntity 
+from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -28,6 +28,7 @@ async def async_setup_entry(
     entities = []
 
     try:
+        _LOGGER.debug("start customize select entity start size : %d", len(broker._settings.get("selects")))
         for cap in broker._settings.get("selects"):
             for device in broker.devices.values():
                 if broker.is_allow_device(device.device_id) == False:
@@ -73,7 +74,7 @@ class SmartThingsSelect_custom(SmartThingsEntity, SelectEntity):
             if self._component == "main":
                 opt = self._device.status.attributes[self._options["attribute"]].value
             else:
-                opt = self._device.status._components[self._component].attributes.get(self.options["attribute"]).value
+                opt = self._device.status._components[self._component].attributes.get(self.options["attribute"]).value if self._device.status._components.get(self._component) else []
         else:
             opt = self._options
         return opt
@@ -83,7 +84,7 @@ class SmartThingsSelect_custom(SmartThingsEntity, SelectEntity):
         if self._component == "main":
             return self._device.status.attributes[self._attribute].value
         else:
-            return self._device.status._components[self._component].attributes.get(self._attribute).value
+            return self._device.status._components[self._component].attributes.get(self._attribute).value if self._device.status._components.get(self._component) else ""
 
     async def async_select_option(self, option: str) -> None:
         arg = []

@@ -65,6 +65,7 @@ async def async_setup_entry(
                 sensors.append(SmartThingsBinarySensor(device, attrib))
 
     try:
+        _LOGGER.debug("start customize binary sensor entity start size : %d", len(broker._settings.get("binary_sensors")))
         for cap in broker._settings.get("binary_sensors"):
             for device in broker.devices.values():
                 if broker.is_allow_device(device.device_id) == False:
@@ -80,7 +81,7 @@ async def async_setup_entry(
                                                 )
                             )
     except:
-        _LOGGER.debug("check setting file")
+        pass
     async_add_entities(sensors)
 
 
@@ -153,7 +154,7 @@ class SmartThingsBinarySensor_custom(SmartThingsBinarySensor):
         if self._component == "main":
             return self._device.status.is_on(self._attribute)
         else:
-            value = self._device.status._components[self._component].attributes.get(self._attribute).value
+            value = self._device.status._components[self._component].attributes.get(self._attribute).value if self._device.status._components.get(self._component) else None
             if self._attribute not in ATTRIBUTE_ON_VALUES:
                 return bool(value)
             return value == ATTRIBUTE_ON_VALUES[self._attribute]

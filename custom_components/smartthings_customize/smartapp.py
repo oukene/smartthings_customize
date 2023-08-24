@@ -52,6 +52,7 @@ from .const import (
     STORAGE_KEY,
     STORAGE_VERSION,
     SUBSCRIPTION_WARNING_LIMIT,
+    CUSTOM_PLATFORMS,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -76,13 +77,15 @@ check_setting_file()
 
 with open(DOMAIN + "/settings.yaml") as f:
     yaml_data = yaml.load(f, Loader=yaml.FullLoader)
-    try:
-        for cap in yaml_data.get("sensors"):
-            CAPABILITIES.extend(cap["capability"])
-        for cap in yaml_data.get("switches"):
-            CAPABILITIES.extend(cap["capability"])
-    except:
-        _LOGGER.debug("check setting file")
+    for platform in CUSTOM_PLATFORMS:
+        try:
+            for cap in yaml_data.get(platform):
+                if cap["capability"] not in CAPABILITIES:
+                    CAPABILITIES.append(cap["capability"])
+                    _LOGGER.debug("append capability : %s", cap["capability"])
+        except:
+            pass
+
 
 def format_unique_id(app_id: str, location_id: str) -> str:
     """Format the unique id for a config entry."""
