@@ -47,7 +47,8 @@ async def async_setup_entry(
                                                 command.get("name"),
                                                 cap.get("capability"),
                                                 command.get("attribute"),
-                                                command.get("command"),
+                                                command.get("on_command"),
+                                                command.get("off_command"),
                                                 command.get("argument"),
                                                 command.get("on_state")
                                                 )
@@ -79,13 +80,14 @@ class SmartThingsSwitch(SmartThingsEntity, SwitchEntity):
     def is_on(self) -> bool:
         return self._device.status.switch
 
-class SmartThingsSwitch_custom(SmartThingsEntity, SwitchEntity):
-    def __init__(self, device, component, name:str, capability: str, attribute: str, command:str, arguments:dict, on_state: str) -> None:
+class SmartThingsSwitch_custom(SmartThingsSwitch):
+    def __init__(self, device, component, name:str, capability: str, attribute: str, on_command:str, off_command:str, arguments:dict, on_state: str) -> None:
         super().__init__(device)
         self._component = component
         self._capability = capability
         self._name = name
-        self._command = command
+        self._on_command = on_command
+        self._off_command = off_command
         self._attribute = attribute
         self._arguments = arguments
         self._on_state = on_state
@@ -96,18 +98,18 @@ class SmartThingsSwitch_custom(SmartThingsEntity, SwitchEntity):
 
     @property
     def unique_id(self) -> str:
-        return f"{self._device.device_id}.{self._component}.{self._command}"
+        return f"{self._device.device_id}.{self._component}.{self._on_command}"
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         if await self._device.command(
-            self._component, self._capability, self._command, self._arguments["off"]
+            self._component, self._capability, self._off_command, self._arguments["off"]
         ):
             self.async_write_ha_state()
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the switch on."""
         if await self._device.command(
-            self._component, self._capability, self._command, self._arguments["on"]
+            self._component, self._capability, self._on_command, self._arguments["on"]
         ):
             self.async_write_ha_state()
 

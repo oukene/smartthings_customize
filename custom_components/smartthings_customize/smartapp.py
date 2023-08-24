@@ -82,7 +82,7 @@ with open(DOMAIN + "/settings.yaml") as f:
         for cap in yaml_data.get("switches"):
             CAPABILITIES.extend(cap["capability"])
     except:
-        _LOGGER.warning("check setting file")
+        _LOGGER.debug("check setting file")
 
 def format_unique_id(app_id: str, location_id: str) -> str:
     """Format the unique id for a config entry."""
