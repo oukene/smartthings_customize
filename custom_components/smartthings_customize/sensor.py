@@ -569,7 +569,6 @@ async def async_setup_entry(
     if broker.enable_official_component():
         for device in broker.devices.values():
             #_LOGGER.error("capability : " + str(broker.get_assigned(device.device_id, "sensor")))
-            _LOGGER.error("devices : "+ str(device._device_id))
             if broker.is_allow_device(device.device_id) == False:
                 continue
             for capability in broker.get_assigned(device.device_id, "sensor"):
