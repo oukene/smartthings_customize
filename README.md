@@ -115,6 +115,31 @@ selects:
       - name: "set ac mode"
         command: setAirConditionerMode
         attribute: airConditionerMode
+
+# Enter the information of the button entity to be added. You must enter the command entry for your SmartThings device and specify the properties that are changed by the
+# Galaxy home mini ir fan example
+buttons:
+  - capability: statelessPowerToggleButton
+    component: main
+    commands:
+      - name: "fan power"
+        command: setButton
+        argument: [powerToggle]
+
+  - capability: statelessFanspeedButton
+    component: main
+    commands:
+      - name: "fan power"
+        command: setButton
+        argument: [fanspeedUp]
+
+# An example of changing the quick freezing of the refrigerator to a button
+  - capability: refrigeration
+    component: main
+    commands:
+      - name: "power cool button"
+        command: setRapidCooling
+        argument: ["on"]
     
 
 # Device id of SmartThings to add. If not added here, it will not be added as a device
