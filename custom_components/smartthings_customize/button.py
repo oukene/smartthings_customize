@@ -59,10 +59,14 @@ class SmartThingsButton_custom(SmartThingsEntity, ButtonEntity):
         self._name = name
         self._command = command
         self._argument = argument
-        self._attr_extra_state_attributes["component"] = component
-        self._attr_extra_state_attributes["component"] = component
-        self._attr_extra_state_attributes["component"] = component
-        self._attr_extra_state_attributes["component"] = component
+    #     self._extra_state_attributes["component"] = component
+    #     self._extra_state_attributes["capability"] = capability
+    #     self._extra_state_attributes["command"] = command
+    #     self._extra_state_attributes["argument"] = argument
+
+    # @property
+    # def extra_state_attributes(self):
+    #     return self._extra_state_attributes
 
     @property
     def name(self) -> str:
@@ -70,7 +74,7 @@ class SmartThingsButton_custom(SmartThingsEntity, ButtonEntity):
 
     @property
     def unique_id(self) -> str:
-        return f"{self._device.device_id}.{self._component}.{self._command}"
+        return f"{self._device.device_id}.{self._component}.{self._capability}.{self._command}"
 
     async def async_press(self) -> None:
         await self._device.command(
