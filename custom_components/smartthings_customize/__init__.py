@@ -310,6 +310,13 @@ class DeviceBroker:
     def is_allow_device(self, device_id) -> bool:
         return device_id in self._settings.get("allow_devices")
 
+    def build_capability(self, device) -> dict:
+        capabilities = {}
+        capabilities["main"] = device.capabilities
+        for key, value in device.components.items():
+            capabilities[key] = value
+        return capabilities
+
     def _assign_capabilities(self, devices: Iterable):
         """Assign platforms to capabilities."""
         assignments = {}

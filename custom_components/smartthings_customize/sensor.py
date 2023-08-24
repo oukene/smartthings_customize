@@ -630,24 +630,23 @@ async def async_setup_entry(
             for device in broker.devices.values():
                 if broker.is_allow_device(device.device_id) == False:
                     continue
-                capabilities = device.capabilities
-                for component in device.components.values():
-                    capabilities.extend(component)
-                if cap.get("capability") in capabilities:
-                    for attribute in cap["attributes"]:
-                        _LOGGER.debug("add switch : " + str(attribute))
-                        entities.append(
-                            SmartThingsSensor_custom(device,
-                                                component=cap.get("component"),
-                                                capability=cap.get("capability"),
-                                                name=attribute.get("name"),
-                                                attribute=attribute.get("attribute"),
-                                                default_unit=attribute.get("default_unit"),
-                                                device_class=attribute.get("device_class"),
-                                                state_class=attribute.get("state_class"),
-                                                entity_category=attribute.get("entity_category")
-                                                )
-                            )
+                capabilities = broker.build_capability(device)
+                for key, value in capabilities.items():
+                    if cap.get("component") == key and cap.get("capability") in value:
+                        for attribute in cap["attributes"]:
+                            _LOGGER.debug("add switch : " + str(attribute))
+                            entities.append(
+                                SmartThingsSensor_custom(device,
+                                                    component=cap.get("component"),
+                                                    capability=cap.get("capability"),
+                                                    name=attribute.get("name"),
+                                                    attribute=attribute.get("attribute"),
+                                                    default_unit=attribute.get("default_unit"),
+                                                    device_class=attribute.get("device_class"),
+                                                    state_class=attribute.get("state_class"),
+                                                    entity_category=attribute.get("entity_category")
+                                                    )
+                                )
     except:
         pass
 

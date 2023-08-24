@@ -39,24 +39,24 @@ async def async_setup_entry(
             for device in broker.devices.values():
                 if broker.is_allow_device(device.device_id) == False:
                     continue
-                capabilities = device.capabilities
-                for component in device.components.values():
-                    capabilities.extend(component)
-                if cap.get("capability") in capabilities:
-                    for command in cap.get("commands"):
-                        _LOGGER.debug("add switch : " + str(command))
-                        entities.append(
-                            SmartThingsSwitch_custom(device,
-                                                cap.get("component"),
-                                                command.get("name"),
-                                                cap.get("capability"),
-                                                command.get("attribute"),
-                                                command.get("on_command"),
-                                                command.get("off_command"),
-                                                command.get("argument"),
-                                                command.get("on_state")
-                                                )
-                            )
+                capabilities = broker.build_capability(device)
+                for key, value in capabilities.items():
+                    _LOGGER.debug("key : %s, value : %s, component : %s, cap : %s", key, value, cap.get("component"), cap.get("capability"))
+                    if cap.get("component") == key and cap.get("capability") in value:
+                        for command in cap.get("commands"):
+                            _LOGGER.debug("add switch : " + str(command))
+                            entities.append(
+                                SmartThingsSwitch_custom(device,
+                                                    cap.get("component"),
+                                                    command.get("name"),
+                                                    cap.get("capability"),
+                                                    command.get("attribute"),
+                                                    command.get("on_command"),
+                                                    command.get("off_command"),
+                                                    command.get("argument"),
+                                                    command.get("on_state")
+                                                    )
+                                )
     except:
         pass
     async_add_entities(entities)

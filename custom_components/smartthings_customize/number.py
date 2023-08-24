@@ -33,25 +33,24 @@ async def async_setup_entry(
             for device in broker.devices.values():
                 if broker.is_allow_device(device.device_id) == False:
                     continue
-                capabilities = device.capabilities
-                for component in device.components.values():
-                    capabilities.extend(component)
-                if cap.get("capability") in capabilities:
-                    for command in cap.get("commands"):
-                        _LOGGER.debug("add numbers : " + str(command))
-                        entities.append(
-                            SmartThingsNumber_custom(device,
-                                                cap.get("component"),
-                                                cap.get("capability"),
-                                                command.get("name"),
-                                                command.get("command"),
-                                                command.get("attribute"),
-                                                cap.get("min"),
-                                                cap.get("max"),
-                                                cap.get("step"),
-                                                cap.get("mode"),
-                                                )
-                            )
+                capabilities = broker.build_capability(device)
+                for key, value in capabilities.items():
+                    if cap.get("component") == key and cap.get("capability") in value:
+                        for command in cap.get("commands"):
+                            _LOGGER.debug("add numbers : " + str(command))
+                            entities.append(
+                                SmartThingsNumber_custom(device,
+                                                    cap.get("component"),
+                                                    cap.get("capability"),
+                                                    command.get("name"),
+                                                    command.get("command"),
+                                                    command.get("attribute"),
+                                                    cap.get("min"),
+                                                    cap.get("max"),
+                                                    cap.get("step"),
+                                                    cap.get("mode"),
+                                                    )
+                                )
     except:
         pass
     async_add_entities(entities)
