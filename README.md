@@ -66,14 +66,16 @@ switches:
     component: main
     commands:
       - name: "power cool"
-        command: setRapidCooling
+        on_command: setRapidCooling
+        off_command: setRapidCooling
         argument:
           "on": ["on"]
           "off": ["off"]
         attribute: rapidCooling
         on_state: ["on"]
       - name: "power freeze"
-        command: setRapidFreezing
+        on_command: setRapidCooling
+        off_command: setRapidCooling
         argument:
           "on": ["on"]
           "off": ["off"]
