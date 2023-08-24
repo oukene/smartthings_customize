@@ -630,7 +630,10 @@ async def async_setup_entry(
             for device in broker.devices.values():
                 if broker.is_allow_device(device.device_id) == False:
                     continue
-                if cap.get("capability") in device.capabilities:
+                capabilities = device.capabilities
+                for component in device.components.values():
+                    capabilities.extend(component)
+                if cap.get("capability") in capabilities:
                     for attribute in cap["attributes"]:
                         _LOGGER.debug("add switch : " + str(attribute))
                         entities.append(
