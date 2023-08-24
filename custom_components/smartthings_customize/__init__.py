@@ -13,7 +13,7 @@ from pysmartthings import Attribute, Capability, SmartThings
 from pysmartthings.device import DeviceEntity
 
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
-from homeassistant.const import CONF_ACCESS_TOKEN, CONF_CLIENT_ID, CONF_CLIENT_SECRET
+from homeassistant.const import CONF_ACCESS_TOKEN, CONF_CLIENT_ID, CONF_CLIENT_SECRET, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
@@ -27,7 +27,6 @@ from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.typing import ConfigType
 
 import yaml
-import os
 
 from .config_flow import SmartThingsFlowHandler  # noqa: F401
 from .const import (
@@ -169,8 +168,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         broker.connect()
         hass.data[DOMAIN][DATA_BROKERS][entry.entry_id] = broker
 
-        
-
     except ClientResponseError as ex:
         if ex.status in (HTTPStatus.UNAUTHORIZED, HTTPStatus.FORBIDDEN):
             _LOGGER.exception(
@@ -199,6 +196,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
         return False
 
+    platform = broker.build_platform()
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
@@ -309,6 +307,16 @@ class DeviceBroker:
 
     def is_allow_device(self, device_id) -> bool:
         return device_id in self._settings.get("allow_devices")
+
+    def is_allow_platform(self, platform) -> bool:
+        return platform not in self._settings.get("ignore_platforms")
+
+    def build_platform(self) -> Iterable[Platform | str]:
+        platforms = []
+        for platform in PLATFORMS:
+            if self.is_allow_platform(platform):
+                platforms.append(platforms)
+        return platforms
 
     def build_capability(self, device) -> dict:
         capabilities = {}

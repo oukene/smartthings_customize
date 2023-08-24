@@ -109,20 +109,17 @@ class SmartThingsSwitch_custom(SmartThingsSwitch):
             await self._device.switch_off(set_status=True)
             self.async_write_ha_state()
         else:
-            if await self._device.command(
-                self._component, self._capability, self._off_command, self._arguments.get("off")
-            ):
-                self.async_write_ha_state()
+            await self._device.command(
+                self._component, self._capability, self._off_command, self._arguments.get("off"))
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         if self._capability == "switch":
             await self._device.switch_on(set_status=True)
             self.async_write_ha_state()
         else:
-            if await self._device.command(
-                self._component, self._capability, self._on_command, self._arguments.get("on")
-            ):
-                self.async_write_ha_state()
+            await self._device.command(
+                self._component, self._capability, self._on_command, self._arguments.get("on"))
+
 
     @property
     def is_on(self) -> bool:

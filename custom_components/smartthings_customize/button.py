@@ -6,7 +6,7 @@ from typing import Any
 
 from pysmartthings import Capability
 
-from homeassistant.components.select import SelectEntity
+from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -28,8 +28,8 @@ async def async_setup_entry(
     entities = []
 
     try:
-        _LOGGER.debug("start customize select entity start size : %d", len(broker._settings.get("selects")))
-        for cap in broker._settings.get("selects"):
+        _LOGGER.debug("start customize button entity start size : %d", len(broker._settings.get("buttons")))
+        for cap in broker._settings.get("buttons"):
             for device in broker.devices.values():
                 if broker.is_allow_device(device.device_id) == False:
                     continue
@@ -37,31 +37,32 @@ async def async_setup_entry(
                 for key, value in capabilities.items():
                     if cap.get("component") == key and cap.get("capability") in value:
                         for command in cap.get("commands"):
-                            _LOGGER.debug("add select : " + str(command))
+                            _LOGGER.debug("add button : " + str(command))
                             entities.append(
-                                SmartThingsSelect_custom(device,
+                                SmartThingsButton_custom(device,
                                                     cap.get("component"),
                                                     cap.get("capability"),
                                                     command.get("name"),
                                                     command.get("command"),
-                                                    command.get("attribute"),
-                                                    cap.get("options")
+                                                    command.get("argument"),
                                                     )
                                 )
     except:
         pass
-
     async_add_entities(entities)
 
-class SmartThingsSelect_custom(SmartThingsEntity, SelectEntity):
-    def __init__(self, device, component, capability: str, name:str, command:str, attribute: str, options) -> None:
+class SmartThingsButton_custom(SmartThingsEntity, ButtonEntity):
+    def __init__(self, device, component, capability: str, name:str, command:str, argument:str) -> None:
         super().__init__(device)
         self._component = component
         self._capability = capability
         self._name = name
         self._command = command
-        self._attribute = attribute
-        self._options = options
+        self._argument = argument
+        self._attr_extra_state_attributes["component"] = component
+        self._attr_extra_state_attributes["component"] = component
+        self._attr_extra_state_attributes["component"] = component
+        self._attr_extra_state_attributes["component"] = component
 
     @property
     def name(self) -> str:
@@ -71,31 +72,8 @@ class SmartThingsSelect_custom(SmartThingsEntity, SelectEntity):
     def unique_id(self) -> str:
         return f"{self._device.device_id}.{self._component}.{self._command}"
 
-    @property
-    def options(self) -> list[str]:
-        if str(type(self._options)) == "<class 'dict'>":
-            if self._component == "main":
-                opt = self._device.status.attributes[self._options["attribute"]].value
-            else:
-                opt = self._device.status._components[self._component].attributes.get(self.options["attribute"]).value if self._device.status._components.get(self._component) else []
-        else:
-            opt = self._options
-        return opt
-
-    @property
-    def current_option(self) -> str | None:
-        if self._component == "main":
-            return self._device.status.attributes[self._attribute].value
-        else:
-            return self._device.status._components[self._component].attributes.get(self._attribute).value if self._device.status._components.get(self._component) else ""
-
-    async def async_select_option(self, option: str) -> None:
-        arg = []
-        arg.append(option)
+    async def async_press(self) -> None:
         await self._device.command(
-            self._component, self._capability, self._command, arg)
-        # if await self._device.command(
-        #     self._component, self._capability, self._command, arg
-        # ):
-        #     self.async_write_ha_state()
+            self._component, self._capability, self._command, self._argument)
 
+    

@@ -45,6 +45,7 @@ PLATFORMS = [
     Platform.SCENE,
     Platform.NUMBER,
     Platform.SELECT,
+    Platform.BUTTON,
 ]
 
 
@@ -54,6 +55,7 @@ CUSTOM_PLATFORMS = [
     "numbers",
     "binary_sensors",
     "selects",
+    "buttons",
 ]
 
 IGNORED_CAPABILITIES = [

@@ -108,12 +108,10 @@ class SmartThingsNumber_custom(SmartThingsEntity, NumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         arg = []
-        arg.append(value)
-        if await self._device.command(
-            self._component, self._capability, self._command, arg
-        ):
-            self.async_write_ha_state()
-
+        v = int(value) if value.is_integer() else value
+        arg.append(v)
+        await self._device.command(
+            self._component, self._capability, self._command, arg)
 
     @property
     def native_value(self) -> float | None:
