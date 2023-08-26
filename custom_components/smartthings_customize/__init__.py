@@ -309,7 +309,10 @@ class DeviceBroker:
         return device_id in self._settings.get("allow_devices")
 
     def is_allow_platform(self, platform) -> bool:
-        return platform not in self._settings.get("ignore_platforms")
+        try:
+            return platform not in self._settings.get("ignore_platforms")
+        except:
+            return False
 
     def build_platform(self) -> Iterable[Platform | str]:
         platforms = []
