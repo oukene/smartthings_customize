@@ -385,7 +385,7 @@ async def smartapp_sync_subscriptions(
     # merge capabilities
     extend_capa = []
     extend_capa = SettingManager().get_capabilities()
-    _LOGGER.error("assign capa : " + str(extend_capa))
+    _LOGGER.debug("extend capa : " + str(extend_capa))
     extend_capa = list(set(extend_capa))
     CAPABILITIES.extend(extend_capa)
     for device in devices:

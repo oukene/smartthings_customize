@@ -1,6 +1,6 @@
 import os
 import yaml
-from .const import DOMAIN, CUSTOM_PLATFORMS, GLOBAL_SETTING, DEVICE_SETTING, CAPABILITY
+from .const import DOMAIN, CUSTOM_PLATFORMS, GLOBAL_SETTING, DEVICE_SETTING, CAPABILITY, PLATFORMS
 import logging
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,6 +23,7 @@ class SettingManager(object):
         if not hasattr(cls, "_init"):
             self._location = location
             self._settings = None
+            self._platforms = set()
             self._default_settings = None
             #self.load_setting()
 
@@ -42,23 +43,17 @@ class SettingManager(object):
         
         with open(filepath) as f:
             self._settings = yaml.load(f, Loader=yaml.FullLoader)
-            _LOGGER.error("full settings : " + str(self._settings))
+            _LOGGER.debug("full settings : " + str(self._settings))
 
-        # filepath = DOMAIN + "/" + "default" + ".yaml"
-        # if os.path.isfile(filepath) == False:
-        #     with open(filepath, "w") as f:
-        #         pass
-
-        # with open(filepath) as f:
-        #     self._default_settings = yaml.load(f, Loader=yaml.FullLoader)
-        #     _LOGGER.error("full settings : " + str(self._default_settings))
+        self.build_platform()
 
     @staticmethod
     def get_default_setting():
         try:
             mgr = SettingManager()
             return mgr._settings.get(GLOBAL_SETTING)
-        except:
+        except Exception as e:
+            _LOGGER.debug("get_default_setting : " + str(e))
             return None
 
     @staticmethod
@@ -66,7 +61,8 @@ class SettingManager(object):
         try:
             mgr = SettingManager()
             return mgr._settings.get(DEVICE_SETTING)
-        except:
+        except Exception as e:
+            _LOGGER.debug("get_device_setting : " + str(e))
             return None
 
     @staticmethod
@@ -91,17 +87,14 @@ class SettingManager(object):
                             capabilities.append(cap.get("capability"))
                 #_LOGGER.error("get_capa capabilities1 : " + str(capabilities))
             settings = mgr._settings.get(DEVICE_SETTING)
-            _LOGGER.error("capa1 setting : " + str(settings))
             if settings != None:
                 for setting in settings:
-                    _LOGGER.error("capa2 setting : " + str(setting))
                     for platform in CUSTOM_PLATFORMS:
                         if setting.get(platform):
                             for cap in setting[platform]:
                                 capabilities.append(cap.get("capability"))
-                _LOGGER.error("get_capa capabilities2 : " + str(capabilities))
-        except Exception as error:
-            #capabilities.clear()
+        except Exception as e:
+            _LOGGER.debug("get_capabilities : " + str(e))
             pass
         finally:
             return capabilities
@@ -124,7 +117,8 @@ class SettingManager(object):
                                     for setting in cap.get(capa_type):
                                         _LOGGER.debug("add setting : " + str(setting))
                                         settings.append([device, cap, setting])
-        except:
+        except Exception as e:
+            _LOGGER.debug("get_capa_settings_1 : " + str(e))
             pass
         
         try:
@@ -139,7 +133,7 @@ class SettingManager(object):
                                 _LOGGER.debug("add setting : " + str(setting))
                                 settings.append([broker.devices[device_setting["device_id"]], cap, setting])
         except Exception as e:
-            #_LOGGER.error("get_capa_settings error" + str(e))
+            _LOGGER.debug("get_capa_settings_2 : " + str(e))
             pass
 
         return settings
@@ -150,7 +144,8 @@ class SettingManager(object):
         try:
             mgr = SettingManager()
             return mgr._settings.get("enable_default_entities")
-        except:
+        except Exception as e:
+            _LOGGER.debug("enable_default_entities : " + str(e))
             return False
 
     @staticmethod
@@ -159,6 +154,7 @@ class SettingManager(object):
             mgr = SettingManager()
             return device_id not in mgr._settings.get(GLOBAL_SETTING).get("ignore_devices")
         except Exception as e:
+            _LOGGER.debug("is_allow_device : " + str(e))
             return True
 
     @staticmethod
@@ -171,20 +167,31 @@ class SettingManager(object):
                     if device_id == d.get("device_id"): return False
             return device_id not in mgr._settings.get(GLOBAL_SETTING).get("ignore_devices")
         except Exception as e:
+            _LOGGER.debug("is_allow_device_custom : " + str(e))
             return True
 
-    @staticmethod
-    def is_allow_platform(platform) -> bool:
+    def build_platform(self):
+        self._platforms.clear()
+        for platform in PLATFORMS:
+            if self.is_allow_platform(platform):
+                self._platforms.add(platform)
+
+    def get_enable_platforms(self) -> set:
+        return self._platforms
+
+    def is_allow_platform(self, platform) -> bool:
         try:
             mgr = SettingManager()
             return platform not in mgr._settings.get("ignore_platforms")
-        except:
-            return False
+        except Exception as e:
+            _LOGGER.debug("is_allow_platform : " + str(e))
+            return True 
 
     @staticmethod
     def ignore_platforms():
         try:
             mgr = SettingManager()
             return mgr._settings.get("ignore_platforms")
-        except:
+        except Exception as e:
+            _LOGGER.debug("ignore_platforms : " + str(e))
             return []

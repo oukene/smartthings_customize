@@ -68,6 +68,11 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 ENTITY_ID_FORMAT = DOMAIN + ".{}"
 
+import string
+
+class temp(string.Template):
+    delimiter="%" 
+
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Initialize the SmartThings platform."""
     await setup_smartapp_endpoint(hass)
@@ -222,9 +227,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     for d in devices:
         device_registry.async_remove_device(d.id)
 
-    SettingManager.get
-    PLATFORMS.different_update()
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    #PLATFORMS.different_update(SettingManager.ignore_platforms())
+    await hass.config_entries.async_forward_entry_setups(entry, SettingManager().get_enable_platforms())
 
     return True
 
@@ -252,7 +256,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if broker:
         broker.disconnect()
 
-    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    return await hass.config_entries.async_unload_platforms(entry, SettingManager().get_enable_platforms())
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
@@ -534,7 +538,7 @@ class SmartThingsEntity_custom(Entity):
         self.entity_id = async_generate_entity_id(
             platform + ".st_custom_{}", "{}_{}_{}_{}_{}_{}".format(self._device.device_id, self._component, self._capability, self._attribute if self._attribute != None else "", self._command if self._command != None else "", self._name), hass=hass)
         
-        _LOGGER.error("entity_id : %s", self.entity_id)
+        _LOGGER.debug("create entity id : %s", self.entity_id)
         self._unique_id = self.entity_id
         
         registry = er.async_get(hass)
@@ -610,7 +614,9 @@ class SmartThingsEntity_custom(Entity):
 
     @property
     def name(self) -> str:
-        return f"{self._name}"
+        t = temp(self._name)
+        name = t.substitute(label=self._device.label, component=self._component, capability=self._capability, attribute=self._attribute, command=self._command)
+        return f"{name}"
 
     @property
     def unique_id(self) -> str | None:
