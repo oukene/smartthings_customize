@@ -38,10 +38,10 @@ async def async_setup_entry(
                                                     s[2].get("command"),
                                                     s[2].get("argument"),
                                                     s[2].get("parent_entity_id"),
-                                                    s[2].get("min"),
-                                                    s[2].get("max"),
-                                                    s[2].get("step"),
-                                                    s[2].get("mode"),
+                                                    s[1].get("min"),
+                                                    s[1].get("max"),
+                                                    s[1].get("step"),
+                                                    s[1].get("mode"),
         ))
 
     async_add_entities(entities)
