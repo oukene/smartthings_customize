@@ -6,7 +6,7 @@ from homeassistant.const import Platform
 
 DOMAIN = "smartthings_customize"
 
-APP_OAUTH_CLIENT_NAME = "Home Assistant"
+APP_OAUTH_CLIENT_NAME = "HA Customize"
 APP_OAUTH_SCOPES = ["r:devices:*"]
 APP_NAME_PREFIX = "homeassistant."
 

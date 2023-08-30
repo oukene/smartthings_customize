@@ -157,7 +157,7 @@ def _get_app_template(hass: HomeAssistant):
 
     return {
         "app_name": APP_NAME_PREFIX + str(uuid4()),
-        "display_name": "HA Customize",
+        "display_name": APP_OAUTH_CLIENT_NAME,
         "description": description,
         "webhook_target_url": get_webhook_url(hass),
         "app_type": APP_TYPE_WEBHOOK,
