@@ -70,7 +70,7 @@ STATE_TO_AC_MODE = {
     HVACMode.COOL: "cool",
     HVACMode.DRY: "dry",
     HVACMode.HEAT: "heat",
-    HVACMode.FAN_ONLY: "fanOnly",
+    HVACMode.FAN_ONLY: "wind",
 }
 
 UNIT_MAP = {"C": UnitOfTemperature.CELSIUS, "F": UnitOfTemperature.FAHRENHEIT}
