@@ -605,22 +605,23 @@ async def async_setup_entry(
             
             #_LOGGER.error("ca to sensor : " + str(CAPABILITY_TO_SENSORS))
             if broker.any_assigned(device.device_id, "switch"):
-                for capability in (Capability.energy_meter, Capability.power_meter):
-                    maps = CAPABILITY_TO_SENSORS[capability]
-                    entities.extend(
-                        [
-                            SmartThingsSensor(
-                                device,
-                                m.attribute,
-                                m.name,
-                                m.default_unit,
-                                m.device_class,
-                                m.state_class,
-                                m.entity_category,
-                            )
-                            for m in maps
-                        ]
-                    )
+                for capability in broker.get_assigned(device.device_id, "switch"):
+                    if capability in (Capability.energy_meter, Capability.power_meter):
+                        maps = CAPABILITY_TO_SENSORS[capability]
+                        entities.extend(
+                            [
+                                SmartThingsSensor(
+                                    device,
+                                    m.attribute,
+                                    m.name,
+                                    m.default_unit,
+                                    m.device_class,
+                                    m.state_class,
+                                    m.entity_category,
+                                )
+                                for m in maps
+                            ]
+                        )
 
     settings = SettingManager.get_capa_settings(broker, "sensors")
     for s in settings:
