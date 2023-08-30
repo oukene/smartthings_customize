@@ -43,7 +43,7 @@ class SettingManager(object):
         
         with open(filepath) as f:
             self._settings = yaml.load(f, Loader=yaml.FullLoader)
-            _LOGGER.debug("full settings : " + str(self._settings))
+            _LOGGER.debug("full settings error : " + str(self._settings))
 
         self.build_platform()
 
@@ -53,7 +53,7 @@ class SettingManager(object):
             mgr = SettingManager()
             return mgr._settings.get(GLOBAL_SETTING)
         except Exception as e:
-            _LOGGER.debug("get_default_setting : " + str(e))
+            _LOGGER.debug("get_default_setting error : " + str(e))
             return None
 
     @staticmethod
@@ -62,7 +62,7 @@ class SettingManager(object):
             mgr = SettingManager()
             return mgr._settings.get(DEVICE_SETTING)
         except Exception as e:
-            _LOGGER.debug("get_device_setting : " + str(e))
+            _LOGGER.debug("get_device_setting error : " + str(e))
             return None
 
     @staticmethod
@@ -94,7 +94,7 @@ class SettingManager(object):
                             for cap in setting[platform]:
                                 capabilities.append(cap.get("capability"))
         except Exception as e:
-            _LOGGER.debug("get_capabilities : " + str(e))
+            _LOGGER.debug("get_capabilities error : " + str(e))
             pass
         finally:
             return capabilities
@@ -102,8 +102,10 @@ class SettingManager(object):
     @staticmethod
     def get_capa_settings(broker, custom_platform):
         capa_type = "commands"
-        if custom_platform in ('sensors', 'binary_sensors'):
+        if custom_platform in ('sensors', 'binary_sensors', 'climates'):
             capa_type = "attributes"
+        elif custom_platform in ("climates"):
+            capa_type = "climate_options"
         settings = []
         try:
             default_setting = SettingManager.get_default_setting().get(custom_platform)
@@ -118,7 +120,7 @@ class SettingManager(object):
                                         _LOGGER.debug("add setting : " + str(setting))
                                         settings.append([device, cap, setting])
         except Exception as e:
-            _LOGGER.debug("get_capa_settings_1 : " + str(e))
+            _LOGGER.debug("get_capa_settings_1 error : " + str(e))
             pass
         
         try:
@@ -133,7 +135,7 @@ class SettingManager(object):
                                 _LOGGER.debug("add setting : " + str(setting))
                                 settings.append([broker.devices[device_setting["device_id"]], cap, setting])
         except Exception as e:
-            _LOGGER.debug("get_capa_settings_2 : " + str(e))
+            _LOGGER.debug("get_capa_settings_2 error : " + str(e))
             pass
 
         return settings
@@ -154,7 +156,7 @@ class SettingManager(object):
             mgr = SettingManager()
             return device_id not in mgr._settings.get(GLOBAL_SETTING).get("ignore_devices")
         except Exception as e:
-            _LOGGER.debug("is_allow_device : " + str(e))
+            _LOGGER.debug("is_allow_device error : " + str(e))
             return True
 
     @staticmethod
@@ -167,7 +169,7 @@ class SettingManager(object):
                     if device_id == d.get("device_id"): return False
             return device_id not in mgr._settings.get(GLOBAL_SETTING).get("ignore_devices")
         except Exception as e:
-            _LOGGER.debug("is_allow_device_custom : " + str(e))
+            _LOGGER.debug("is_allow_device_custom error : " + str(e))
             return True
 
     def build_platform(self):
@@ -184,7 +186,7 @@ class SettingManager(object):
             mgr = SettingManager()
             return platform not in mgr._settings.get("ignore_platforms")
         except Exception as e:
-            _LOGGER.debug("is_allow_platform : " + str(e))
+            _LOGGER.debug("is_allow_platform error : " + str(e))
             return True 
 
     @staticmethod
@@ -193,5 +195,5 @@ class SettingManager(object):
             mgr = SettingManager()
             return mgr._settings.get("ignore_platforms")
         except Exception as e:
-            _LOGGER.debug("ignore_platforms : " + str(e))
+            _LOGGER.debug("ignore_platforms error : " + str(e))
             return []
