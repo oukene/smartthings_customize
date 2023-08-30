@@ -38,7 +38,7 @@ async def async_setup_entry(
                                                     s[2].get("command"),
                                                     s[2].get("argument"),
                                                     s[2].get("parent_entity_id"),
-                                                    s[2].get("options"),
+                                                    s[1].get("options"),
         ))
 
     async_add_entities(entities)
@@ -48,7 +48,7 @@ class SmartThingsSelect_custom(SmartThingsEntity_custom, SelectEntity):
         super().__init__(hass, "select", device, name, component, capability, attribute, command, argument, parent_entity_id)
         self._options = options
 
-        self._extra_state_attributes["options"] = options
+        # self._extra_state_attributes["options"] = options
 
     @property
     def options(self) -> list[str]:
