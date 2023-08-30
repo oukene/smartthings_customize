@@ -17,6 +17,10 @@ step4. Please write the generated yaml file by referring to the example below.
 
 # example
 
+- Name creation rules, You can use label, component, capability, attribute, and command items.
+Please refer to the button example in example.<br><br>
+  "%{label}%{component}%{capability}%{attribute}%{command} fan power"
+
 ```
 # https://my.smartthings.com/advanced/
 # After identifying the information of the device from the above site, modify the setting file
@@ -84,8 +88,9 @@ globals:
           attribute: rapidFreezing
           on_state: ["on"]
   
-  # Enter the information of the number item to be added. You must enter the command entry for your SmartThings device and specify the properties that are changed by the command.
-  For min and max, integers can be specified, or attribute items can be specified.
+  # Enter the information of the number item to be added.
+  # You must enter the command entry for your SmartThings device and specify the properties that are changed by the command.
+  # For min and max, integers can be specified, or attribute items can be specified.
   numbers:
     - capability: thermostatCoolingSetpoint
       component: freezer
@@ -125,14 +130,14 @@ globals:
     - capability: statelessPowerToggleButton
       component: main
       commands:
-        - name: "fan power"
+        - name: "%{label}%{component}%{capability}%{attribute}%{command} fan power"
           command: setButton
           argument: [powerToggle]
   
     - capability: statelessFanspeedButton
       component: main
       commands:
-        - name: "fan power"
+        - name: "fan speed"
           command: setButton
           argument: [fanspeedUp]
   
