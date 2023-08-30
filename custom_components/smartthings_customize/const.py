@@ -31,6 +31,10 @@ SUBSCRIPTION_WARNING_LIMIT = 40
 STORAGE_KEY = DOMAIN
 STORAGE_VERSION = 1
 
+GLOBAL_SETTING = "globals"
+DEVICE_SETTING = "devices"
+CAPABILITY = "capability"
+
 # Ordered 'specific to least-specific platform' in order for capabilities
 # to be drawn-down and represented by the most appropriate platform.
 PLATFORMS = [
@@ -48,12 +52,11 @@ PLATFORMS = [
     Platform.BUTTON,
 ]
 
-
 CUSTOM_PLATFORMS = [
-    "sensors",
-    "switches",
-    "numbers",
     "binary_sensors",
+    "switches",
+    "sensors",
+    "numbers",
     "selects",
     "buttons",
 ]

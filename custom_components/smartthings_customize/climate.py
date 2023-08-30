@@ -25,6 +25,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import SmartThingsEntity
 from .const import DATA_BROKERS, DOMAIN
+from .common import SettingManager
 
 ATTR_OPERATION_STATE = "operation_state"
 MODE_TO_STATE = {
@@ -92,9 +93,9 @@ async def async_setup_entry(
 
     broker = hass.data[DOMAIN][DATA_BROKERS][config_entry.entry_id]
     entities: list[ClimateEntity] = []
-    if broker.enable_official_component():
+    if SettingManager.enable_default_entities():
         for device in broker.devices.values():
-            if broker.is_allow_device(device.device_id) == False:
+            if SettingManager.is_allow_device(device.device_id) == False:
                 continue
             if not broker.any_assigned(device.device_id, CLIMATE_DOMAIN):
                 continue

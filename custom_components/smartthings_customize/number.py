@@ -11,8 +11,9 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import SmartThingsEntity
+from . import SmartThingsEntity_custom
 from .const import DATA_BROKERS, DOMAIN
+from .common import SettingManager, get_attribute
 
 import logging
 _LOGGER = logging.getLogger(__name__)
@@ -26,55 +27,37 @@ async def async_setup_entry(
     broker = hass.data[DOMAIN][DATA_BROKERS][config_entry.entry_id]
 
     entities = []
+    settings = SettingManager.get_capa_settings(broker, "numbers")
+    for s in settings:
+        entities.append(SmartThingsNumber_custom(hass,
+                                                    s[0],
+                                                    s[2].get("name"),
+                                                    s[1].get("component"),
+                                                    s[1].get("capability"),
+                                                    s[2].get("attribute"),
+                                                    s[2].get("command"),
+                                                    s[2].get("argument"),
+                                                    s[2].get("parent_entity_id"),
+                                                    s[2].get("min"),
+                                                    s[2].get("max"),
+                                                    s[2].get("step"),
+                                                    s[2].get("mode"),
+        ))
 
-    try:
-        _LOGGER.debug("start customize number entity start size : %d", len(broker._settings.get("numbers")))
-        for cap in broker._settings.get("numbers"):
-            for device in broker.devices.values():
-                if broker.is_allow_device(device.device_id) == False:
-                    continue
-                capabilities = broker.build_capability(device)
-                for key, value in capabilities.items():
-                    if cap.get("component") == key and cap.get("capability") in value:
-                        for command in cap.get("commands"):
-                            _LOGGER.debug("add numbers : " + str(command))
-                            entities.append(
-                                SmartThingsNumber_custom(device,
-                                                    cap.get("component"),
-                                                    cap.get("capability"),
-                                                    command.get("name"),
-                                                    command.get("command"),
-                                                    command.get("attribute"),
-                                                    cap.get("min"),
-                                                    cap.get("max"),
-                                                    cap.get("step"),
-                                                    cap.get("mode"),
-                                                    )
-                                )
-    except:
-        pass
     async_add_entities(entities)
 
-class SmartThingsNumber_custom(SmartThingsEntity, NumberEntity):
-    def __init__(self, device, component, capability: str, name:str, command:str, attribute: str, min, max, step, mode: str) -> None:
-        super().__init__(device)
-        self._component = component
-        self._capability = capability
-        self._name = name
-        self._command = command
-        self._attribute = attribute
+class SmartThingsNumber_custom(SmartThingsEntity_custom, NumberEntity):
+    def __init__(self, hass, device, name:str, component:str, capability: str, attribute: str, command:str, argument:str, parent_entity_id:str, min:float, max:float, step:float, mode: str) -> None:
+        super().__init__(hass, "number", device, name, component, capability, attribute, command, argument, parent_entity_id)
         self._min = min
         self._max = max
         self._step = step
         self._mode = mode
-
-    @property
-    def name(self) -> str:
-        return f"{self._device.label} {self._name}"
-
-    @property
-    def unique_id(self) -> str:
-        return f"{self._device.device_id}.{self._component}.{self._command}"
+        
+        self._extra_state_attributes["min"] = min
+        self._extra_state_attributes["max"] = max
+        self._extra_state_attributes["step"] = step
+        self._extra_state_attributes["mode"] = mode
 
     @property
     def mode(self) -> NumberMode:
@@ -83,10 +66,8 @@ class SmartThingsNumber_custom(SmartThingsEntity, NumberEntity):
     @property
     def native_min_value(self) -> float:
         if str(type(self._min)) == "<class 'dict'>":
-            if self._component == "main":
-                min = self._device.status.attributes[self._min["attribute"]].value
-            else:
-                min = self._device.status._components[self._component].attributes.get(self._min["attribute"]).value if self._device.status._components.get(self._component) != None else DEFAULT_MIN_VALUE
+            min = get_attribute(self._device, self._component, self._min["attribute"]).value
+            min = min if min != None else DEFAULT_MIN_VALUE
         else:
             min = self._min
         return min
@@ -94,10 +75,8 @@ class SmartThingsNumber_custom(SmartThingsEntity, NumberEntity):
     @property
     def native_max_value(self) -> float:
         if str(type(self._max)) == "<class 'dict'>":
-            if self._component == "main":
-                max = self._device.status.attributes[self._max["attribute"]].value
-            else:
-                max = self._device.status._components[self._component].attributes.get(self._max["attribute"]).value if self._device.status._components.get(self._component) != None else DEFAULT_MAX_VALUE
+            max = get_attribute(self._device, self._component, self._max["attribute"]).value
+            max = max if max != None else DEFAULT_MIN_VALUE
         else:
             max = self._max
         return max
@@ -106,6 +85,10 @@ class SmartThingsNumber_custom(SmartThingsEntity, NumberEntity):
     def native_step(self) -> float | None:
         return self._step
 
+    @property
+    def native_value(self) -> float | None:
+        return get_attribute(self._device, self._component, self._attribute).value
+
     async def async_set_native_value(self, value: float) -> None:
         arg = []
         v = int(value) if value.is_integer() else value
@@ -113,10 +96,4 @@ class SmartThingsNumber_custom(SmartThingsEntity, NumberEntity):
         await self._device.command(
             self._component, self._capability, self._command, arg)
 
-    @property
-    def native_value(self) -> float | None:
-        if self._component == "main":
-            return self._device.status.attributes[self._attribute].value
-        else:
-            return self._device.status._components[self._component].attributes.get(self._attribute).value if self._device.status._components.get(self._component) != None else DEFAULT_MIN_VALUE
 

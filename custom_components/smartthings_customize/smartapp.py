@@ -59,32 +59,33 @@ _LOGGER = logging.getLogger(__name__)
 
 import yaml
 import os
+from .common import SettingManager
 
-def check_setting_file():
-    if os.path.isdir(DOMAIN) == False:
-        os.makedirs(DOMAIN)
+# def check_setting_file():
+#     if os.path.isdir(DOMAIN) == False:
+#         os.makedirs(DOMAIN)
 
-    if os.path.isfile(DOMAIN + "/settings.yaml") == False:
-        with open(DOMAIN + "/settings.yaml", "w") as f:
-            f.write("enable_official_component: false\n\n")
-            f.write("binary_sensors:\n\n\n")
-            f.write("sensors:\n\n\n")
-            f.write("switches:\n\n\n")
-            f.write("numbers:\n\n\n")
-            f.close()
+#     if os.path.isfile(DOMAIN + "/settings.yaml") == False:
+#         with open(DOMAIN + "/settings.yaml", "w") as f:
+#             f.write("enable_official_component: false\n\n")
+#             f.write("binary_sensors:\n\n\n")
+#             f.write("sensors:\n\n\n")
+#             f.write("switches:\n\n\n")
+#             f.write("numbers:\n\n\n")
+#             f.close()
 
-check_setting_file()
+# check_setting_file()
 
-with open(DOMAIN + "/settings.yaml") as f:
-    yaml_data = yaml.load(f, Loader=yaml.FullLoader)
-    for platform in CUSTOM_PLATFORMS:
-        try:
-            for cap in yaml_data.get(platform):
-                if cap["capability"] not in CAPABILITIES:
-                    CAPABILITIES.append(cap["capability"])
-                    _LOGGER.debug("append capability : %s", cap["capability"])
-        except:
-            pass
+# try:
+#     with open(DOMAIN + "/settings.yaml") as f:
+#         yaml_data = yaml.load(f, Loader=yaml.FullLoader)
+#         for platform in CUSTOM_PLATFORMS:
+#             for cap in yaml_data.get(platform):
+#                 if cap["capability"] not in CAPABILITIES:
+#                     CAPABILITIES.append(cap["capability"])
+#                     _LOGGER.debug("append capability : %s", cap["capability"])
+# except:
+#     pass
 
 
 def format_unique_id(app_id: str, location_id: str) -> str:
@@ -381,6 +382,12 @@ async def smartapp_sync_subscriptions(
 
     # Build set of capabilities and prune unsupported ones
     capabilities = set()
+    # merge capabilities
+    extend_capa = []
+    extend_capa = SettingManager().get_capabilities()
+    _LOGGER.error("assign capa : " + str(extend_capa))
+    extend_capa = list(set(extend_capa))
+    CAPABILITIES.extend(extend_capa)
     for device in devices:
         capabilities.update(device.capabilities)
     # Remove items not defined in the library

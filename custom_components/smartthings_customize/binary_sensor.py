@@ -16,9 +16,10 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import SmartThingsEntity
+from . import SmartThingsEntity, SmartThingsEntity_custom
 from .const import DATA_BROKERS, DOMAIN
 import logging
+from .common import SettingManager, get_attribute
 
 CAPABILITY_TO_ATTRIB = {
     Capability.acceleration_sensor: Attribute.acceleration,
@@ -56,34 +57,25 @@ async def async_setup_entry(
     """Add binary sensors for a config entry."""
     broker = hass.data[DOMAIN][DATA_BROKERS][config_entry.entry_id]
     sensors = []
-    if broker.enable_official_component():
+    if SettingManager.enable_default_entities():
         for device in broker.devices.values():
-            if broker.is_allow_device(device.device_id) == False:
+            if SettingManager.is_allow_device(device.device_id) == False:
                 continue
             for capability in broker.get_assigned(device.device_id, "binary_sensor"):
                 attrib = CAPABILITY_TO_ATTRIB[capability]
                 sensors.append(SmartThingsBinarySensor(device, attrib))
 
-    try:
-        _LOGGER.debug("start customize binary sensor entity start size : %d", len(broker._settings.get("binary_sensors")))
-        for cap in broker._settings.get("binary_sensors"):
-            for device in broker.devices.values():
-                if broker.is_allow_device(device.device_id) == False:
-                    continue
-                capabilities = broker.build_capability(device)
-                for key, value in capabilities.items():
-                    if cap.get("component") == key and cap.get("capability") in value:
-                        for attribute in cap["attributes"]:
-                            sensors.append(
-                                SmartThingsBinarySensor_custom(device,
-                                                    component=cap.get("component"),
-                                                    capability=cap.get("capability"),
-                                                    name=attribute.get("name"),
-                                                    attribute=attribute.get("attribute")
-                                                    )
-                                )
-    except:
-        pass
+    settings = SettingManager.get_capa_settings(broker, "binary_sensors")
+    for s in settings:
+        sensors.append(SmartThingsBinarySensor_custom(hass,
+                                                    s[0],
+                                                    s[2].get("name"),
+                                                    s[1].get("component"),
+                                                    s[1].get("capability"),
+                                                    s[2].get("attribute"),
+                                                    s[2].get("parent_entity_id"),
+        ))
+
     async_add_entities(sensors)
 
 
@@ -128,35 +120,34 @@ class SmartThingsBinarySensor(SmartThingsEntity, BinarySensorEntity):
         return ATTRIB_TO_ENTTIY_CATEGORY.get(self._attribute)
 
 
-class SmartThingsBinarySensor_custom(SmartThingsBinarySensor):
+class SmartThingsBinarySensor_custom(SmartThingsEntity_custom, BinarySensorEntity):
     def __init__(
         self,
+        hass,
         device: DeviceEntity,
+        name: str,
         component: str,
         capability: str,
-        name: str,
-        attribute: str
+        attribute: str,
+        parent_entity_id: str
     ) -> None:
         """Init the class."""
-        super().__init__(device, attribute)
-        self._component = component
-        self._name = name
-        self._capability = capability
+        super().__init__(hass, "binary_sensor", device, name, component, capability, attribute, None, None, parent_entity_id)
 
     @property
-    def name(self) -> str:
-        return f"{self._device.label} {self._name}"
+    def device_class(self):
+        """Return the class of this device."""
+        return ATTRIB_TO_CLASS[self._attribute]
 
     @property
-    def unique_id(self) -> str:
-        return f"{self._device.device_id}.{self._component}.{self._attribute}"
+    def entity_category(self):
+        """Return the entity category of this device."""
+        return ATTRIB_TO_ENTTIY_CATEGORY.get(self._attribute)
 
     @property
     def is_on(self):
-        if self._component == "main":
-            return self._device.status.is_on(self._attribute)
-        else:
-            value = self._device.status._components[self._component].attributes.get(self._attribute).value if self._device.status._components.get(self._component) else None
-            if self._attribute not in ATTRIBUTE_ON_VALUES:
-                return bool(value)
-            return value == ATTRIBUTE_ON_VALUES[self._attribute]
+        value = get_attribute(self._device, self._component, self._attribute).value
+
+        if self._attribute not in ATTRIBUTE_ON_VALUES:
+            return bool(value)
+        return value == ATTRIBUTE_ON_VALUES[self._attribute]
