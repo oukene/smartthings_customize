@@ -167,7 +167,7 @@ devices:
         attributes:
           - attribute: contact
             name: cooler contact
-        parent_entity_id: parent_entity_id
+            parent_entity_id: parent_entity_id
 
 ignore_platforms:
   - scene
