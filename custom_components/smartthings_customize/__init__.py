@@ -570,7 +570,7 @@ class SmartThingsEntity_custom(Entity):
         self._extra_state_attributes["component"] = self._component
         self._extra_state_attributes["capability"] = self._capability
         self._extra_state_attributes["command"] = self._command
-        self._extra_state_attributes["command"] = self._attribute
+        self._extra_state_attributes["attribute"] = self._attribute
         self._extra_state_attributes["argument"] = self._argument
 
     async def async_added_to_hass(self):
