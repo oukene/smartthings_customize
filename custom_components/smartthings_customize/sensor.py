@@ -32,10 +32,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
-from . import SmartThingsEntity
+from . import SmartThingsEntity, SmartThingsEntity_custom
 from .const import DATA_BROKERS, DOMAIN
-import yaml
-import os
+from .common import SettingManager, get_attribute
 
 Map = namedtuple(
     "Map", "attribute name default_unit device_class state_class entity_category"
@@ -566,10 +565,10 @@ async def async_setup_entry(
     broker = hass.data[DOMAIN][DATA_BROKERS][config_entry.entry_id]
     entities: list[SensorEntity] = []
     #_LOGGER.error("devices : "+ str(broker.devices.values()))
-    if broker.enable_official_component():
+    if SettingManager.enable_default_entities():
         for device in broker.devices.values():
             #_LOGGER.error("capability : " + str(broker.get_assigned(device.device_id, "sensor")))
-            if broker.is_allow_device(device.device_id) == False:
+            if SettingManager.is_allow_device(device.device_id) == False:
                 continue
             for capability in broker.get_assigned(device.device_id, "sensor"):
                 if capability == Capability.three_axis:
@@ -623,31 +622,21 @@ async def async_setup_entry(
                         ]
                     )
 
-    try:
-        _LOGGER.debug("start customize sensor entity start size : %d", len(broker._settings.get("sensors")))
-        for cap in broker._settings.get("sensors"):
-            for device in broker.devices.values():
-                if broker.is_allow_device(device.device_id) == False:
-                    continue
-                capabilities = broker.build_capability(device)
-                for key, value in capabilities.items():
-                    if cap.get("component") == key and cap.get("capability") in value:
-                        for attribute in cap["attributes"]:
-                            _LOGGER.debug("add switch : " + str(attribute))
-                            entities.append(
-                                SmartThingsSensor_custom(device,
-                                                    component=cap.get("component"),
-                                                    capability=cap.get("capability"),
-                                                    name=attribute.get("name"),
-                                                    attribute=attribute.get("attribute"),
-                                                    default_unit=attribute.get("default_unit"),
-                                                    device_class=attribute.get("device_class"),
-                                                    state_class=attribute.get("state_class"),
-                                                    entity_category=attribute.get("entity_category")
-                                                    )
-                                )
-    except:
-        pass
+    settings = SettingManager.get_capa_settings(broker, "sensors")
+    for s in settings:
+        entities.append(SmartThingsSensor_custom(hass,
+                                                    s[0],
+                                                    s[2].get("name"),
+                                                    s[1].get("component"),
+                                                    s[1].get("capability"),
+                                                    s[2].get("attribute"),
+                                                    s[2].get("parent_entity_id"),
+                                                    s[2].get("default_unit"),
+                                                    s[2].get("device_class"),
+                                                    s[2].get("state_class"),
+                                                    s[2].get("entity_category"),
+        ))
+
 
     async_add_entities(entities)
 
@@ -711,53 +700,60 @@ class SmartThingsSensor(SmartThingsEntity, SensorEntity):
         unit = self._device.status.attributes[self._attribute].unit
         return UNITS.get(unit, unit) if unit else self._default_unit
 
-class SmartThingsSensor_custom(SmartThingsSensor):
+
+class SmartThingsSensor_custom(SmartThingsEntity_custom, SensorEntity):
     def __init__(
         self,
+        hass,
         device: DeviceEntity,
+        name: str,
         component: str,
         capability: str,
-        name: str,
         attribute: str,
+        parent_entity_id: str,
         default_unit: str,
         device_class: str,
-        state_class: str | None,
-        entity_category: EntityCategory | None,
+        state_class: str,
+        entity_category: str
     ) -> None:
         """Init the class."""
-        super().__init__(device, attribute, name, default_unit, device_class, state_class, entity_category)
-        self._component = component
+
+        super().__init__(hass, "sensor", device, name, component, capability, attribute, None, None, parent_entity_id)
+        self._default_unit = default_unit
+        self._device_class = device_class
+        self._state_class = state_class
+        self._entity_category = entity_category
+
+        self._extra_state_attributes["default unit"] = default_unit
+        self._extra_state_attributes["device class"] = device_class
+        self._extra_state_attributes["state class"] = state_class
+        self._extra_state_attributes["entity category"] = entity_category
 
     @property
-    def name(self) -> str:
-        return f"{self._device.label} {self._name}"
+    def device_class(self):
+        """Return the device class of the sensor."""
+        return self._device_class
 
     @property
-    def unique_id(self) -> str:
-        return f"{self._device.device_id}.{self._component}.{self._attribute}"
-    
+    def state_class(self):
+        return self._state_class
+
+    @property
+    def entity_category(self):
+        return self._entity_category
+
     @property
     def native_value(self):
         """Return the state of the sensor."""
-        if self._component == "main":
-            value = self._device.status.attributes[self._attribute].value
-        else:
-            value = self._device.status._components[self._component].attributes[self._attribute].value if self._device.status._components.get(self._component) != None else None
-
-        if self._device_class != SensorDeviceClass.TIMESTAMP:
-            return value
-
-        return dt_util.parse_datetime(value)
+        value = get_attribute(self._device, self._component, self._attribute).value
+        if self._device_class == SensorDeviceClass.TIMESTAMP:
+            return dt_util.parse_datetime(value)
+        return value
 
     @property
     def native_unit_of_measurement(self):
         """Return the unit this state is expressed in."""
-        if self._component == "main":
-            unit = self._device.status.attributes[self._attribute].unit
-        else:
-            unit = self._device.status._components[self._component].attributes.get(self._attribute).unit if self._device.status._components.get(self._component) != None else None
-            
-
+        unit = get_attribute(self._device, self._component, self._attribute).unit
         return UNITS.get(unit, unit) if unit else self._default_unit
 
 

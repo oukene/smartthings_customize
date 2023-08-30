@@ -7,7 +7,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DATA_BROKERS, DOMAIN
-
+from .common import SettingManager
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -16,7 +16,7 @@ async def async_setup_entry(
 ) -> None:
     """Add switches for a config entry."""
     broker = hass.data[DOMAIN][DATA_BROKERS][config_entry.entry_id]
-    if broker.enable_official_component():
+    if SettingManager.enable_default_entities():
         async_add_entities([SmartThingsScene(scene) for scene in broker.scenes.values()])
 
 

@@ -23,8 +23,9 @@ from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import SmartThingsEntity
+from . import SmartThingsEntity, SmartThingsEntity_custom
 from .const import DATA_BROKERS, DOMAIN
+from .common import SettingManager
 
 ATTR_OPERATION_STATE = "operation_state"
 MODE_TO_STATE = {
@@ -62,6 +63,7 @@ AC_MODE_TO_STATE = {
     "heat": HVACMode.HEAT,
     "heatClean": HVACMode.HEAT,
     "fanOnly": HVACMode.FAN_ONLY,
+    "wind": HVACMode.FAN_ONLY,
 }
 STATE_TO_AC_MODE = {
     HVACMode.HEAT_COOL: "auto",
@@ -92,9 +94,9 @@ async def async_setup_entry(
 
     broker = hass.data[DOMAIN][DATA_BROKERS][config_entry.entry_id]
     entities: list[ClimateEntity] = []
-    if broker.enable_official_component():
+    if SettingManager.enable_default_entities():
         for device in broker.devices.values():
-            if broker.is_allow_device(device.device_id) == False:
+            if SettingManager.is_allow_device(device.device_id) == False:
                 continue
             if not broker.any_assigned(device.device_id, CLIMATE_DOMAIN):
                 continue
@@ -102,7 +104,33 @@ async def async_setup_entry(
                 entities.append(SmartThingsAirConditioner(device))
             else:
                 entities.append(SmartThingsThermostat(device))
+
+
+    # broker = hass.data[DOMAIN][DATA_BROKERS][config_entry.entry_id]
+    # entities = []
+    # settings = SettingManager.get_capa_settings(broker, "climates")
+    # _LOGGER.debug("climate settings : " + str(settings))
+    # # Climate 중에 device 가 같고, component 가 같은것들 끼리 모은다
+    # #for s in settings:
+    
+    #     # entities.append(SmartThingsClimate_custom(hass,
+    #     #                                             s[0],
+    #     #                                             s[2].get("name"),
+    #     #                                             s[1].get("component"),
+    #     #                                             s[2].get("parent_entity_id"),
+    #     #                                             s[2].get("air_conditioner_mode"),
+
+    #     # ))
+
     async_add_entities(entities, True)
+
+class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
+    def __init__(self, hass, device, name:str, component, capability: str, command:str, argument:str, parent_entity_id) -> None:
+        super().__init__(hass, "button", device, name, component, capability, None, command, argument, parent_entity_id )
+    
+    @property
+    def temperature_unit(self) -> str:
+        return super().temperature_unit
 
 
 def get_capabilities(capabilities: Sequence[str]) -> Sequence[str] | None:

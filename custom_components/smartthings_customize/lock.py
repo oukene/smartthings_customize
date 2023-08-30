@@ -13,6 +13,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import SmartThingsEntity
 from .const import DATA_BROKERS, DOMAIN
+from .common import SettingManager
 
 ST_STATE_LOCKED = "locked"
 ST_LOCK_ATTR_MAP = {
@@ -32,12 +33,12 @@ async def async_setup_entry(
 ) -> None:
     """Add locks for a config entry."""
     broker = hass.data[DOMAIN][DATA_BROKERS][config_entry.entry_id]
-    if broker.enable_official_component():
+    if SettingManager.enable_default_entities():
         async_add_entities(
             [
                 SmartThingsLock(device)
                 for device in broker.devices.values()
-                if broker.any_assigned(device.device_id, "lock") and broker.is_allow_device(device.device_id)
+                if broker.any_assigned(device.device_id, "lock") and SettingManager.is_allow_device(device.device_id)
             ]
         )
 

@@ -19,6 +19,7 @@ from homeassistant.util.percentage import (
 
 from . import SmartThingsEntity
 from .const import DATA_BROKERS, DOMAIN
+from .common import SettingManager
 
 SPEED_RANGE = (1, 3)  # off is not included
 
@@ -30,12 +31,12 @@ async def async_setup_entry(
 ) -> None:
     """Add fans for a config entry."""
     broker = hass.data[DOMAIN][DATA_BROKERS][config_entry.entry_id]
-    if broker.enable_official_component():
+    if SettingManager.enable_default_entities():
         async_add_entities(
             [
                 SmartThingsFan(device)
                 for device in broker.devices.values()
-                if broker.any_assigned(device.device_id, "fan") and broker.is_allow_device(device.device_id)
+                if broker.any_assigned(device.device_id, "fan") and SettingManager.is_allow_device(device.device_id)
             ]
         )
 

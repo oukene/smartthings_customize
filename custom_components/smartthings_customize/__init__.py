@@ -6,6 +6,7 @@ from collections.abc import Iterable
 from http import HTTPStatus
 import importlib
 import logging
+import homeassistant
 
 from aiohttp.client_exceptions import ClientConnectionError, ClientResponseError
 from pysmartapp.event import EVENT_TYPE_DEVICE
@@ -25,6 +26,9 @@ from homeassistant.helpers.dispatcher import (
 from homeassistant.helpers.entity import DeviceInfo, Entity
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.typing import ConfigType
+from homeassistant.helpers.entity import async_generate_entity_id
+
+from .common import SettingManager
 
 import yaml
 
@@ -50,13 +54,24 @@ from .smartapp import (
     unload_smartapp_endpoint,
     validate_installed_app,
     validate_webhook_requirements,
-    check_setting_file,
+)
+
+from homeassistant.helpers import (
+    device_registry as dr,
+    entity_platform,
+    entity_registry as er,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
+ENTITY_ID_FORMAT = DOMAIN + ".{}"
+
+import string
+
+class temp(string.Template):
+    delimiter="%" 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Initialize the SmartThings platform."""
@@ -104,6 +119,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         return False
 
     api = SmartThings(async_get_clientsession(hass), entry.data[CONF_ACCESS_TOKEN])
+
+    settings = SettingManager(await api.location(entry.data[CONF_LOCATION_ID]))
+    settings.load_setting()
 
     remove_entry = False
     try:
@@ -196,8 +214,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
         return False
 
-    platform = broker.build_platform()
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    entity_registry = homeassistant.helpers.entity_registry.async_get(
+            hass)
+    entities = homeassistant.helpers.entity_registry.async_entries_for_config_entry(
+        entity_registry, entry.entry_id)
+    for e in entities:
+        entity_registry.async_remove(e.entity_id)
+
+    device_registry = homeassistant.helpers.device_registry.async_get(hass)
+    devices = homeassistant.helpers.device_registry.async_entries_for_config_entry(
+    device_registry, entry.entry_id)
+    for d in devices:
+        device_registry.async_remove_device(d.id)
+
+    #PLATFORMS.different_update(SettingManager.ignore_platforms())
+    await hass.config_entries.async_forward_entry_setups(entry, SettingManager().get_enable_platforms())
+
     return True
 
 async def async_get_entry_scenes(entry: ConfigEntry, api):
@@ -224,7 +256,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if broker:
         broker.disconnect()
 
-    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    return await hass.config_entries.async_unload_platforms(entry, SettingManager().get_enable_platforms())
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
@@ -296,30 +328,13 @@ class DeviceBroker:
         self._assignments = self._assign_capabilities(devices)
         self.devices = {device.device_id: device for device in devices}
         self.scenes = {scene.scene_id: scene for scene in scenes}
+        self._created_entities = []
 
-        check_setting_file()
-        with open(DOMAIN + "/settings.yaml") as f:
-            yaml_data = yaml.load(f, Loader=yaml.FullLoader)
-            self._settings = yaml_data
+    def add_valid_entity(self, entity_id):
+        self._created_entities.append(entity_id)
 
-    def enable_official_component(self) -> bool:
-        return self._settings.get("enable_official_component") if self._settings.get("enable_official_component") != None else False
-
-    def is_allow_device(self, device_id) -> bool:
-        return device_id in self._settings.get("allow_devices")
-
-    def is_allow_platform(self, platform) -> bool:
-        try:
-            return platform not in self._settings.get("ignore_platforms")
-        except:
-            return False
-
-    def build_platform(self) -> Iterable[Platform | str]:
-        platforms = []
-        for platform in PLATFORMS:
-            if self.is_allow_platform(platform):
-                platforms.append(platforms)
-        return platforms
+    def is_valid_entity(self, entity_id):
+        return entity_id in self._created_entities
 
     def build_capability(self, device) -> dict:
         capabilities = {}
@@ -451,7 +466,6 @@ class DeviceBroker:
 
         async_dispatcher_send(self._hass, SIGNAL_SMARTTHINGS_UPDATE, updated_devices)
 
-
 class SmartThingsEntity(Entity):
     """Defines a SmartThings entity."""
 
@@ -501,3 +515,109 @@ class SmartThingsEntity(Entity):
     def unique_id(self) -> str:
         """Return a unique ID."""
         return self._device.device_id
+
+class SmartThingsEntity_custom(Entity):
+    """Defines a SmartThings entity."""
+
+    _attr_should_poll = False
+
+    def __init__(self, hass, platform, device: DeviceEntity, name, component, capability, attribute, command, argument, parent_entity_id) -> None:
+        """Initialize the instance."""
+        self._hass = hass
+        self._device = device
+        self._component = component
+        self._capability = capability
+        self._name = name
+        self._attribute = attribute
+        self._command = command
+        self._argument = argument
+        self._dispatcher_remove = None
+        self._device_info = []
+        self._platform = platform
+
+        self.entity_id = async_generate_entity_id(
+            platform + ".st_custom_{}", "{}_{}_{}_{}_{}_{}".format(self._device.device_id, self._component, self._capability, self._attribute if self._attribute != None else "", self._command if self._command != None else "", self._name), hass=hass)
+        
+        _LOGGER.debug("create entity id : %s", self.entity_id)
+        self._unique_id = self.entity_id
+        
+        registry = er.async_get(hass)
+        
+        source_entity = registry.async_get(parent_entity_id)
+        dev_reg = dr.async_get(hass)
+        # Resolve source entity device
+        if (
+            (source_entity is not None)
+            and (source_entity.device_id is not None)
+            and (
+                (
+                    device := dev_reg.async_get(
+                        device_id=source_entity.device_id,
+                    )
+                )
+                is not None
+            )
+        ):
+            self._device_info = DeviceInfo(
+                identifiers=device.identifiers,
+                connections=device.connections,
+            )
+        else:
+            self._device_info = DeviceInfo(identifiers={(DOMAIN, self._device.device_id)})
+
+        self._extra_state_attributes = {}
+        self._extra_state_attributes["device_id"] = self._device.device_id
+        self._extra_state_attributes["component"] = self._component
+        self._extra_state_attributes["capability"] = self._capability
+        self._extra_state_attributes["command"] = self._command
+        self._extra_state_attributes["command"] = self._attribute
+        self._extra_state_attributes["argument"] = self._argument
+
+    async def async_added_to_hass(self):
+        """Device added to hass."""
+
+        async def async_update_state(devices):
+            """Update device state."""
+            if self._device.device_id in devices:
+                await self.async_update_ha_state(True)
+
+        self._dispatcher_remove = async_dispatcher_connect(
+            self.hass, SIGNAL_SMARTTHINGS_UPDATE, async_update_state
+        )
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Disconnect the device when removed."""
+        if self._dispatcher_remove:
+            self._dispatcher_remove()
+
+    @property
+    def has_entity_name(self) -> bool:
+        return True
+
+    @property
+    def extra_state_attributes(self):
+        return self._extra_state_attributes
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Get attributes about the device."""
+        return DeviceInfo(
+            configuration_url="https://account.smartthings.com",
+            identifiers=self._device_info.get("identifiers"),
+            connections=self._device_info.get("connections"),
+            manufacturer=self._device.status.ocf_manufacturer_name,
+            model=self._device.status.ocf_model_number,
+            name=self._device.label,
+            hw_version=self._device.status.ocf_hardware_version,
+            sw_version=self._device.status.ocf_firmware_version,
+        )
+
+    @property
+    def name(self) -> str:
+        t = temp(self._name)
+        name = t.substitute(label=self._device.label, component=self._component, capability=self._capability, attribute=self._attribute, command=self._command)
+        return f"{name}"
+
+    @property
+    def unique_id(self) -> str | None:
+        return self._unique_id
