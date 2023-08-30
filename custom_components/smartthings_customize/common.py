@@ -39,6 +39,7 @@ class SettingManager(object):
                 f.write("enable_default_entities : true\n\n")
                 f.write("globals:\n\n")
                 f.write("devices:\n\n")
+                f.write("ignore_platforms: []\n\n")
                 pass
         
         with open(filepath) as f:
