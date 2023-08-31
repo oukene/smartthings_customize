@@ -12,8 +12,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import SmartThingsEntity_custom
-from .const import DATA_BROKERS, DOMAIN
-from .common import SettingManager
+from .const import *
+from .common import *
 
 import logging
 _LOGGER = logging.getLogger(__name__)
@@ -26,23 +26,16 @@ async def async_setup_entry(
     """Add switches for a config entry."""
     broker = hass.data[DOMAIN][DATA_BROKERS][config_entry.entry_id]
     entities = []
-    settings = SettingManager.get_capa_settings(broker, "buttons")
+    settings = SettingManager.get_capa_settings(broker, CUSTOM_PLATFORMS[Platform.BUTTON])
     for s in settings:
-        entities.append(SmartThingsButton_custom(hass,
-                                                    s[0],
-                                                    s[2].get("name"),
-                                                    s[1].get("component"),
-                                                    s[1].get("capability"),
-                                                    s[2].get("command"),
-                                                    s[2].get("argument"),
-                                                    s[2].get("parent_entity_id"),
-        ))
+        _LOGGER.debug("cap setting : " + str(s[1]))
+        entities.append(SmartThingsButton_custom(hass=hass, setting=s))
 
     async_add_entities(entities)
 
 class SmartThingsButton_custom(SmartThingsEntity_custom, ButtonEntity):
-    def __init__(self, hass, device, name:str, component, capability: str, command:str, argument:str, parent_entity_id) -> None:
-        super().__init__(hass, "button", device, name, component, capability, None, command, argument, parent_entity_id )
+    def __init__(self, hass, setting) -> None:
+        super().__init__(hass, platform=Platform.BUTTON, setting=setting)
     
     async def async_press(self) -> None:
         await self._device.command(

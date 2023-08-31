@@ -17,9 +17,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import SmartThingsEntity, SmartThingsEntity_custom
-from .const import DATA_BROKERS, DOMAIN
+from .const import *
+from .common import *
 import logging
-from .common import SettingManager, get_attribute
 
 CAPABILITY_TO_ATTRIB = {
     Capability.acceleration_sensor: Attribute.acceleration,
@@ -61,20 +61,14 @@ async def async_setup_entry(
         for device in broker.devices.values():
             if SettingManager.is_allow_device(device.device_id) == False:
                 continue
-            for capability in broker.get_assigned(device.device_id, "binary_sensor"):
+            for capability in broker.get_assigned(device.device_id, Platform.BINARY_SENSOR):
                 attrib = CAPABILITY_TO_ATTRIB[capability]
                 sensors.append(SmartThingsBinarySensor(device, attrib))
 
-    settings = SettingManager.get_capa_settings(broker, "binary_sensors")
+    settings = SettingManager.get_capa_settings(broker, CUSTOM_PLATFORMS[Platform.BINARY_SENSOR])
     for s in settings:
-        sensors.append(SmartThingsBinarySensor_custom(hass,
-                                                    s[0],
-                                                    s[2].get("name"),
-                                                    s[1].get("component"),
-                                                    s[1].get("capability"),
-                                                    s[2].get("attribute"),
-                                                    s[2].get("parent_entity_id"),
-        ))
+        _LOGGER.debug("cap setting : " + str(s[1]))
+        sensors.append(SmartThingsBinarySensor_custom(hass=hass, setting=s))
 
     async_add_entities(sensors)
 
@@ -121,18 +115,8 @@ class SmartThingsBinarySensor(SmartThingsEntity, BinarySensorEntity):
 
 
 class SmartThingsBinarySensor_custom(SmartThingsEntity_custom, BinarySensorEntity):
-    def __init__(
-        self,
-        hass,
-        device: DeviceEntity,
-        name: str,
-        component: str,
-        capability: str,
-        attribute: str,
-        parent_entity_id: str
-    ) -> None:
-        """Init the class."""
-        super().__init__(hass, "binary_sensor", device, name, component, capability, attribute, None, None, parent_entity_id)
+    def __init__(self, hass, setting) -> None:
+        super().__init__(hass, platform=Platform.BINARY_SENSOR, setting=setting)
 
     @property
     def device_class(self):

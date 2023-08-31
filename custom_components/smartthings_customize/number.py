@@ -6,14 +6,14 @@ from typing import Any
 
 from pysmartthings import Capability
 
-from homeassistant.components.number import NumberEntity, NumberMode, DEFAULT_MAX_VALUE, DEFAULT_MIN_VALUE, DEFAULT_STEP
+from homeassistant.components.number import NumberEntity, NumberMode, DEFAULT_MAX_VALUE, DEFAULT_MIN_VALUE, DEFAULT_STEP, ATTR_MIN, ATTR_MAX, ATTR_MODE, ATTR_STEP
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import SmartThingsEntity_custom
-from .const import DATA_BROKERS, DOMAIN
-from .common import SettingManager, get_attribute
+from .const import *
+from .common import *
 
 import logging
 _LOGGER = logging.getLogger(__name__)
@@ -27,37 +27,21 @@ async def async_setup_entry(
     broker = hass.data[DOMAIN][DATA_BROKERS][config_entry.entry_id]
 
     entities = []
-    settings = SettingManager.get_capa_settings(broker, "numbers")
+    settings = SettingManager.get_capa_settings(broker, CUSTOM_PLATFORMS[Platform.NUMBER])
     for s in settings:
-        entities.append(SmartThingsNumber_custom(hass,
-                                                    s[0],
-                                                    s[2].get("name"),
-                                                    s[1].get("component"),
-                                                    s[1].get("capability"),
-                                                    s[2].get("attribute"),
-                                                    s[2].get("command"),
-                                                    s[2].get("argument"),
-                                                    s[2].get("parent_entity_id"),
-                                                    s[1].get("min"),
-                                                    s[1].get("max"),
-                                                    s[1].get("step"),
-                                                    s[1].get("mode"),
-        ))
+        _LOGGER.debug("cap setting : " + str(s[1]))
+        entities.append(SmartThingsNumber_custom(hass=hass, setting=s))
 
     async_add_entities(entities)
 
 class SmartThingsNumber_custom(SmartThingsEntity_custom, NumberEntity):
-    def __init__(self, hass, device, name:str, component:str, capability: str, attribute: str, command:str, argument:str, parent_entity_id:str, min:float, max:float, step:float, mode: str) -> None:
-        super().__init__(hass, "number", device, name, component, capability, attribute, command, argument, parent_entity_id)
-        self._min = min
-        self._max = max
-        self._step = step
-        self._mode = mode
-        
-        self._extra_state_attributes["min"] = min
-        self._extra_state_attributes["max"] = max
-        self._extra_state_attributes["step"] = step
-        self._extra_state_attributes["mode"] = mode
+    def __init__(self, hass, setting) -> None:
+        super().__init__(hass, platform=Platform.NUMBER, setting=setting)
+
+        self._min = setting[1].get(ATTR_MIN) if setting[1].get(ATTR_MIN) != None else DEFAULT_MIN_VALUE
+        self._max = setting[1].get(ATTR_MAX) if setting[1].get(ATTR_MAX) != None else DEFAULT_MAX_VALUE
+        self._step = setting[1].get(ATTR_STEP) if setting[1].get(ATTR_STEP) != None else DEFAULT_STEP
+        self._mode = setting[1].get(ATTR_MODE) if setting[1].get(ATTR_MODE) != None else NumberMode.AUTO
 
     @property
     def mode(self) -> NumberMode:
@@ -76,7 +60,7 @@ class SmartThingsNumber_custom(SmartThingsEntity_custom, NumberEntity):
     def native_max_value(self) -> float:
         if str(type(self._max)) == "<class 'dict'>":
             max = get_attribute(self._device, self._component, self._max["attribute"]).value
-            max = max if max != None else DEFAULT_MIN_VALUE
+            max = max if max != None else DEFAULT_MAX_VALUE
         else:
             max = self._max
         return max

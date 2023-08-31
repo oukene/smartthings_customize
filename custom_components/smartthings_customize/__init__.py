@@ -33,19 +33,7 @@ from .common import SettingManager
 import yaml
 
 from .config_flow import SmartThingsFlowHandler  # noqa: F401
-from .const import (
-    CONF_APP_ID,
-    CONF_INSTALLED_APP_ID,
-    CONF_LOCATION_ID,
-    CONF_REFRESH_TOKEN,
-    DATA_BROKERS,
-    DATA_MANAGER,
-    DOMAIN,
-    EVENT_BUTTON,
-    PLATFORMS,
-    SIGNAL_SMARTTHINGS_UPDATE,
-    TOKEN_REFRESH_INTERVAL,
-)
+from .const import *
 from .smartapp import (
     format_unique_id,
     setup_smartapp,
@@ -521,29 +509,38 @@ class SmartThingsEntity_custom(Entity):
 
     _attr_should_poll = False
 
-    def __init__(self, hass, platform, device: DeviceEntity, name, component, capability, attribute, command, argument, parent_entity_id) -> None:
+    def __init__(self, hass, platform: Platform, setting) -> None:
         """Initialize the instance."""
         self._hass = hass
-        self._device = device
-        self._component = component
-        self._capability = capability
-        self._name = name
-        self._attribute = attribute
-        self._command = command
-        self._argument = argument
+        self._device = setting[0]
+        self._component = setting[1].get(CONF_COMPONENT)
+        self._capability = setting[1].get(CONF_CAPABILITY)
+        self._name = setting[2].get(CONF_NAME)
+        self._attribute = setting[2].get(CONF_ATTRIBUTE)
+        self._command = setting[2].get(CONF_COMMAND)
+        self._argument = setting[2].get(CONF_ARGUMENT)
+        self._parent_entity_id = setting[2].get(CONF_PARENT_ENTITY_ID)
+        self._syntax = setting[1]
+
         self._dispatcher_remove = None
         self._device_info = []
         self._platform = platform
 
-        self.entity_id = async_generate_entity_id(
-            platform + ".st_custom_{}", "{}_{}_{}_{}_{}_{}".format(self._device.device_id, self._component, self._capability, self._attribute if self._attribute != None else "", self._command if self._command != None else "", self._name), hass=hass)
+        entity_id_format = SettingManager.default_entity_id_format() if SettingManager.default_entity_id_format() != None else DEFAULT_ENTITY_ID_FORMAT
+        if setting[1].get(CONF_ENTITY_ID_FORMAT) != None:
+            entity_id_format = setting[1].get(CONF_ENTITY_ID_FORMAT)
+
+        t = temp(entity_id_format)
+        entity_id_format = t.substitute(device_id=self._device.device_id, label=self._device.label, component=self._component, capability=self._capability, attribute=self._attribute, command=self._command, name=self._name)
+
+        self.entity_id = async_generate_entity_id(platform + ".{}", entity_id_format, hass=hass)
         
         _LOGGER.debug("create entity id : %s", self.entity_id)
         self._unique_id = self.entity_id
         
         registry = er.async_get(hass)
         
-        source_entity = registry.async_get(parent_entity_id)
+        source_entity = registry.async_get(self._parent_entity_id)
         dev_reg = dr.async_get(hass)
         # Resolve source entity device
         if (
@@ -566,12 +563,8 @@ class SmartThingsEntity_custom(Entity):
             self._device_info = DeviceInfo(identifiers={(DOMAIN, self._device.device_id)})
 
         self._extra_state_attributes = {}
-        self._extra_state_attributes["device_id"] = self._device.device_id
-        self._extra_state_attributes["component"] = self._component
-        self._extra_state_attributes["capability"] = self._capability
-        self._extra_state_attributes["command"] = self._command
-        self._extra_state_attributes["attribute"] = self._attribute
-        self._extra_state_attributes["argument"] = self._argument
+        if SettingManager.enable_syntax_property():
+            self._extra_state_attributes[ATTR_SYNTAX] = self._syntax
 
     async def async_added_to_hass(self):
         """Device added to hass."""

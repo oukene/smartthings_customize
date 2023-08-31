@@ -11,6 +11,6 @@
   "codeowners": [
     "@oukene"
   ],
-  "iot_class": "",
+  "iot_class": "cloud_push",
   "version": "1.4.0"
 }

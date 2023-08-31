@@ -1,9 +1,9 @@
 import os
 import yaml
-from .const import DOMAIN, CUSTOM_PLATFORMS, GLOBAL_SETTING, DEVICE_SETTING, CAPABILITY, PLATFORMS
+from homeassistant.const import Platform
+from .const import DOMAIN, CUSTOM_PLATFORMS, GLOBAL_SETTING, DEVICE_SETTING, PLATFORMS
 import logging
 _LOGGER = logging.getLogger(__name__)
-
 
 def get_attribute(device, component, attribute):
     if component == "main":
@@ -72,16 +72,9 @@ class SettingManager(object):
         capabilities = []
         try:
             mgr = SettingManager()
-            # for platform in CUSTOM_PLATFORMS:
-            #     _LOGGER.error("get_capa capabilities0 : " + str(mgr._default_settings.get(platform)))
-            #     if mgr._default_settings.get(platform):
-            #         for cap in mgr._default_settings.get(platform):
-            #             capabilities.append(cap.get("capability"))
-            # _LOGGER.error("get_capa capabilities1 : " + str(capabilities))
-            
             setting = mgr._settings.get(GLOBAL_SETTING)
             if setting != None:
-                for platform in CUSTOM_PLATFORMS:
+                for platform in CUSTOM_PLATFORMS.values():
                     #_LOGGER.error("get_capa capabilities0 : " + str(setting.get(platform)))
                     if setting.get(platform):
                         for cap in setting.get(platform):
@@ -90,7 +83,7 @@ class SettingManager(object):
             settings = mgr._settings.get(DEVICE_SETTING)
             if settings != None:
                 for setting in settings:
-                    for platform in CUSTOM_PLATFORMS:
+                    for platform in CUSTOM_PLATFORMS.values():
                         if setting.get(platform):
                             for cap in setting[platform]:
                                 capabilities.append(cap.get("capability"))
@@ -103,10 +96,10 @@ class SettingManager(object):
     @staticmethod
     def get_capa_settings(broker, custom_platform):
         capa_type = "commands"
-        if custom_platform in ('sensors', 'binary_sensors', 'climates'):
+        if custom_platform in (CUSTOM_PLATFORMS[Platform.SENSOR], CUSTOM_PLATFORMS[Platform.BINARY_SENSOR]):
             capa_type = "attributes"
-        elif custom_platform in ("climates"):
-            capa_type = "climate_options"
+        # elif custom_platform in ("climates"):
+        #     capa_type = "climate_options"
         settings = []
         try:
             default_setting = SettingManager.get_default_setting().get(custom_platform)
@@ -140,6 +133,22 @@ class SettingManager(object):
             pass
 
         return settings
+
+    @staticmethod
+    def default_entity_id_format() -> str:
+        try:
+            return SettingManager()._settings.get("default_entity_id_format")
+        except Exception as e:
+            _LOGGER.debug("default_entity_id_format error : " + str(e))
+            return False 
+
+    @staticmethod
+    def enable_syntax_property() -> bool:
+        try:
+            return SettingManager()._settings.get("enable_syntax_property")
+        except Exception as e:
+            _LOGGER.debug("enable_syntax_property error : " + str(e))
+            return False
 
 
     @staticmethod

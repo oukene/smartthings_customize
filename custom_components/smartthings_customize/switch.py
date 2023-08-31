@@ -12,14 +12,16 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import SmartThingsEntity, SmartThingsEntity_custom
-from .const import DATA_BROKERS, DOMAIN
+from .const import *
 
 import logging
 _LOGGER = logging.getLogger(__name__)
 
-from .common import SettingManager, get_attribute
+from .common import *
 
-PLATFORM = "switch"
+CONF_ON_COMMAND = "on_command"
+CONF_OFF_COMMAND = "off_command"
+CONF_ON_STATE = "on_state"
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -34,24 +36,13 @@ async def async_setup_entry(
         for device in broker.devices.values():
             if SettingManager.is_allow_device(device.device_id) == False:
                 continue
-            if broker.any_assigned(device.device_id, "switch"):
+            if broker.any_assigned(device.device_id, Platform.SWITCH):
                 entities.append(SmartThingsSwitch(device))
 
-    settings = SettingManager.get_capa_settings(broker, "switches")
+    settings = SettingManager.get_capa_settings(broker, CUSTOM_PLATFORMS[Platform.SWITCH])
     for s in settings:
-        entities.append(SmartThingsSwitch_custom(hass,
-                                                    s[0],
-                                                    s[2].get("name"),
-                                                    s[1].get("component"),
-                                                    s[1].get("capability"),
-                                                    s[2].get("attribute"),
-                                                    s[2].get("on_command"),
-                                                    s[2].get("off_command"),
-                                                    s[2].get("argument"),
-                                                    s[2].get("on_state"),
-                                                    s[2].get("parent_entity_id"),
-        ))
-
+        _LOGGER.debug("cap setting : " + str(s[1]))
+        entities.append(SmartThingsSwitch_custom(hass=hass, setting=s))
 
     async_add_entities(entities)
 
@@ -83,21 +74,21 @@ class SmartThingsSwitch(SmartThingsEntity, SwitchEntity):
         return self._device.status.switch
 
 class SmartThingsSwitch_custom(SmartThingsEntity_custom, SwitchEntity):
-    def __init__(self, hass, device, name:str, component:str, capability: str, attribute: str, on_command:str, off_command:str, argument:dict, on_state: str, parent_entity_id:str) -> None:
-        super().__init__(hass, "switch", device, name, component, capability, attribute, on_command, argument, parent_entity_id)
-        self._off_command = off_command
-        self._on_state = on_state
-        self._extra_state_attributes["off command"] = off_command
-        self._extra_state_attributes["on state"] = on_state
+    def __init__(self, hass, setting) -> None:
+        super().__init__(hass, platform=Platform.SWITCH,setting=setting)
 
+        # overwrite on command
+        self._command = setting[2].get(CONF_ON_COMMAND)
+        self._off_command = setting[2].get(CONF_OFF_COMMAND)
+        self._on_state = setting[2].get(CONF_ON_STATE)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         await self._device.command(
-            self._component, self._capability, self._off_command, self._arguments.get("off") if self._capability != "switch" else [])
+            self._component, self._capability, self._off_command, self._argument.get("off") if self._capability != "switch" else [])
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         await self._device.command(
-            self._component, self._capability, self._command, self._arguments.get("on") if self._capability != "switch" else [])
+            self._component, self._capability, self._command, self._argument.get("on") if self._capability != "switch" else [])
 
     @property
     def is_on(self) -> bool:

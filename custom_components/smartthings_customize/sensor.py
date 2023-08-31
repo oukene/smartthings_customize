@@ -33,12 +33,17 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
 from . import SmartThingsEntity, SmartThingsEntity_custom
-from .const import DATA_BROKERS, DOMAIN
-from .common import SettingManager, get_attribute
+from .const import *
+from .common import *
 
 Map = namedtuple(
     "Map", "attribute name default_unit device_class state_class entity_category"
 )
+
+CONF_DEFAULT_UNIT = "default_unit"
+CONF_DEVICE_CLASS = "device_class"
+CONF_STATE_CLASS = "state_class"
+CONF_ENTITY_CATEGORY = "entity_category"
 
 CAPABILITY_TO_SENSORS: dict[str, list[Map]] = {
     Capability.activity_lighting_mode: [
@@ -570,7 +575,7 @@ async def async_setup_entry(
             #_LOGGER.error("capability : " + str(broker.get_assigned(device.device_id, "sensor")))
             if SettingManager.is_allow_device(device.device_id) == False:
                 continue
-            for capability in broker.get_assigned(device.device_id, "sensor"):
+            for capability in broker.get_assigned(device.device_id, Platform.SENSOR):
                 if capability == Capability.three_axis:
                     entities.extend(
                         [
@@ -604,8 +609,8 @@ async def async_setup_entry(
 
             
             #_LOGGER.error("ca to sensor : " + str(CAPABILITY_TO_SENSORS))
-            if broker.any_assigned(device.device_id, "switch"):
-                for capability in broker.get_assigned(device.device_id, "switch"):
+            if broker.any_assigned(device.device_id, Platform.SWITCH):
+                for capability in broker.get_assigned(device.device_id, Platform.SWITCH):
                     if capability in (Capability.energy_meter, Capability.power_meter):
                         maps = CAPABILITY_TO_SENSORS[capability]
                         entities.extend(
@@ -623,21 +628,10 @@ async def async_setup_entry(
                             ]
                         )
 
-    settings = SettingManager.get_capa_settings(broker, "sensors")
+    settings = SettingManager.get_capa_settings(broker, CUSTOM_PLATFORMS[Platform.SENSOR])
     for s in settings:
-        entities.append(SmartThingsSensor_custom(hass,
-                                                    s[0],
-                                                    s[2].get("name"),
-                                                    s[1].get("component"),
-                                                    s[1].get("capability"),
-                                                    s[2].get("attribute"),
-                                                    s[2].get("parent_entity_id"),
-                                                    s[2].get("default_unit"),
-                                                    s[2].get("device_class"),
-                                                    s[2].get("state_class"),
-                                                    s[2].get("entity_category"),
-        ))
-
+        _LOGGER.debug("cap setting : " + str(s[1]))
+        entities.append(SmartThingsSensor_custom(hass=hass, setting=s))
 
     async_add_entities(entities)
 
@@ -703,32 +697,14 @@ class SmartThingsSensor(SmartThingsEntity, SensorEntity):
 
 
 class SmartThingsSensor_custom(SmartThingsEntity_custom, SensorEntity):
-    def __init__(
-        self,
-        hass,
-        device: DeviceEntity,
-        name: str,
-        component: str,
-        capability: str,
-        attribute: str,
-        parent_entity_id: str,
-        default_unit: str,
-        device_class: str,
-        state_class: str,
-        entity_category: str
-    ) -> None:
-        """Init the class."""
 
-        super().__init__(hass, "sensor", device, name, component, capability, attribute, None, None, parent_entity_id)
-        self._default_unit = default_unit
-        self._device_class = device_class
-        self._state_class = state_class
-        self._entity_category = entity_category
+    def __init__(self, hass, setting) -> None:
+        super().__init__(hass, platform=Platform.SENSOR,setting=setting)
 
-        self._extra_state_attributes["default unit"] = default_unit
-        self._extra_state_attributes["device class"] = device_class
-        self._extra_state_attributes["state class"] = state_class
-        self._extra_state_attributes["entity category"] = entity_category
+        self._default_unit = setting[2].get(CONF_DEFAULT_UNIT)
+        self._device_class = setting[2].get(CONF_DEVICE_CLASS)
+        self._state_class = setting[2].get(CONF_STATE_CLASS)
+        self._entity_category = setting[2].get(CONF_ENTITY_CATEGORY)
 
     @property
     def device_class(self):

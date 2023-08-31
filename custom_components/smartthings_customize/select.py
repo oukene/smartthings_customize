@@ -12,11 +12,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import SmartThingsEntity_custom
-from .const import DATA_BROKERS, DOMAIN
-from .common import SettingManager, get_attribute
+from .const import *
+from .common import *
 
 import logging
 _LOGGER = logging.getLogger(__name__)
+
+CONF_OPTIONS = "options"
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -27,28 +29,19 @@ async def async_setup_entry(
     broker = hass.data[DOMAIN][DATA_BROKERS][config_entry.entry_id]
 
     entities = []
-    settings = SettingManager.get_capa_settings(broker, "selects")
+    settings = SettingManager.get_capa_settings(broker, CUSTOM_PLATFORMS[Platform.SELECT])
     for s in settings:
-        entities.append(SmartThingsSelect_custom(hass,
-                                                    s[0],
-                                                    s[2].get("name"),
-                                                    s[1].get("component"),
-                                                    s[1].get("capability"),
-                                                    s[2].get("attribute"),
-                                                    s[2].get("command"),
-                                                    s[2].get("argument"),
-                                                    s[2].get("parent_entity_id"),
-                                                    s[1].get("options"),
-        ))
+        _LOGGER.debug("cap setting : " + str(s[1]))
+        entities.append(SmartThingsSelect_custom(hass=hass, setting=s))
 
     async_add_entities(entities)
 
 class SmartThingsSelect_custom(SmartThingsEntity_custom, SelectEntity):
-    def __init__(self, hass, device, name:str, component:str, capability: str, attribute:str, command:str, argument:str, parent_entity_id:str, options) -> None:
-        super().__init__(hass, "select", device, name, component, capability, attribute, command, argument, parent_entity_id)
-        self._options = options
+    def __init__(self, hass, setting) -> None:
 
-        # self._extra_state_attributes["options"] = options
+        super().__init__(hass, platform=Platform.SELECT, setting=setting)
+        
+        self._options = setting[1].get(CONF_OPTIONS)
 
     @property
     def options(self) -> list[str]:
