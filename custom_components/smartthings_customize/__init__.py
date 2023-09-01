@@ -213,7 +213,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     devices = homeassistant.helpers.device_registry.async_entries_for_config_entry(
     device_registry, entry.entry_id)
     for d in devices:
-        device_registry.async_remove_device(d.id)
+        if DOMAIN in d.identifiers:
+            device_registry.async_remove_device(d.id)
 
     #PLATFORMS.different_update(SettingManager.ignore_platforms())
     await hass.config_entries.async_forward_entry_setups(entry, SettingManager().get_enable_platforms())
