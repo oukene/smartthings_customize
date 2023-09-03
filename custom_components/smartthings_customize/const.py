@@ -71,6 +71,7 @@ CUSTOM_PLATFORMS = {
     Platform.SELECT: "selects",
     Platform.BUTTON: "buttons",
     Platform.TEXT: "texts",
+    Platform.CLIMATE: "climates",
 }
 
 IGNORED_CAPABILITIES = [
