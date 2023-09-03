@@ -204,6 +204,48 @@ devices:
           - attribute: contact
             name: cooler contact
             parent_entity_id: parent_entity_id
+  - device_id: 00000000-0000-0000-0000-000000000000
+    climates:
+      - name: Bedroom Aircon
+        capabilities:
+          - capability: switch
+            component: "1"
+            commands:
+              - on_command: "on"
+                off_command: "off"
+                attribute: switch
+                on_state: ["on"]
+                argument:
+                  "on": []
+                  "off": []
+          - capability: airConditionerMode
+            component: "1"
+            options:
+              attribute: supportedAcModes
+            commands:
+              - command: setAirConditionerMode
+                attribute: airConditionerMode
+                argument: []
+          - capability: airConditionerFanMode
+            component: "1"
+            options:
+              attribute: supportedAcFanModes
+            commands:
+              - command: setFanMode
+                attribute: fanMode
+                argument: []
+          - capability: thermostatCoolingSetpoint
+            component: "1"
+            min: 22
+            max: 28
+            step: 1
+            commands:
+              - command: setCoolingSetpoint
+                attribute: coolingSetpoint
+          - capability: temperatureMeasurement
+            component: "1"
+            attributes:
+              - attribute: temperature
 
 ignore_platforms:
   - scene
@@ -227,3 +269,4 @@ default_entity_id_format: "st_custom_%{device_id}_%{label}_%{component}_%{capabi
 - select
 - button
 - text
+- climate
