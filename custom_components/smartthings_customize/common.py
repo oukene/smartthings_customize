@@ -207,3 +207,12 @@ class SettingManager(object):
         except Exception as e:
             _LOGGER.debug("ignore_platforms error : " + str(e))
             return []
+
+    @staticmethod
+    def ignore_capabilities():
+        try:
+            mgr = SettingManager()
+            return mgr._settings.get("ignore_capabilities")
+        except Exception as e:
+            _LOGGER.debug("ignore_capabilities error : " + str(e))
+            return []
