@@ -111,11 +111,8 @@ async def async_setup_entry(
             if custom_platform not in device_setting: 
                 continue
         for device in broker.devices.values():
-            # if SettingManager.is_allow_device(device.device_id) == False:
-            #     continue
             if device.device_id == device_setting["device_id"]:
                 for dev in device_setting[custom_platform]:
-                    # _LOGGER.warning("device_id : %s => %s", device_setting["device_id"], dev)
                     climate = {
                         cap.get("capability"): cap for cap in dev.get("capabilities")
                     }
@@ -139,7 +136,6 @@ class SmartThingsClimate_custom(SmartThingsEntity, ClimateEntity):
     def __init__(self, device, name:str, switch, airConditionerMode, airConditionerFanMode, thermostatCoolingSetpoint, temperatureMeasurement) -> None:
         super().__init__(device)
         self._hvac_modes = None
-        self._device = device
         self._name = name
         self._switch = switch
         self._airConditionerMode = airConditionerMode
