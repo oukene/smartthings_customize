@@ -575,7 +575,11 @@ async def async_setup_entry(
             #_LOGGER.error("capability : " + str(broker.get_assigned(device.device_id, "sensor")))
             if SettingManager.is_allow_device(device.device_id) == False:
                 continue
+            ignore_capa = SettingManager().ignore_capabilities()
             for capability in broker.get_assigned(device.device_id, Platform.SENSOR):
+                if ignore_capa != None:
+                    if capability in ignore_capa:
+                        continue
                 if capability == Capability.three_axis:
                     entities.extend(
                         [
