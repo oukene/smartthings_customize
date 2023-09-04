@@ -250,6 +250,15 @@ devices:
 ignore_platforms:
   - scene
 
+ignore_capabilities:
+  - alarm
+  - mediaInputSource
+  - mediaPlaybackRepeat
+  - mediaPlaybackShuffle
+  - thermostatHeatingSetpoint
+  - thermostatMode
+  - thermostatOperatingState
+
 enable_syntax_property: false
 
 default_entity_id_format: "st_custom_%{device_id}_%{label}_%{component}_%{capability}_%{attribute}_%{command}_%{name}"
