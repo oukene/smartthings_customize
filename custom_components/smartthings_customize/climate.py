@@ -359,7 +359,10 @@ class SmartThingsClimate_custom(SmartThingsEntity, ClimateEntity):
     @property
     def temperature_unit(self):
         """Return the unit of measurement."""
-        return UNIT_MAP.get(self._device.status._components[self._temperatureMeasurement.get("component")].attributes[Attribute.temperature].unit)
+        if self._thermostatCoolingSetpoint.get("component") == "main":
+            return UNIT_MAP.get(self._device.status.attributes[Attribute.temperature].unit)
+        else:
+            return UNIT_MAP.get(self._device.status._components[self._temperatureMeasurement.get("component")].attributes[Attribute.temperature].unit)
 
 
 def get_capabilities(capabilities: Sequence[str]) -> Sequence[str] | None:
