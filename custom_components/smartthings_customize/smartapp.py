@@ -390,6 +390,10 @@ async def smartapp_sync_subscriptions(
     CAPABILITIES.extend(extend_capa)
     for device in devices:
         capabilities.update(device.capabilities)
+    # Remove ignore capabilities
+    ignore_capa = SettingManager().ignore_capabilities()
+    if ignore_capa != None:
+        capabilities.difference_update(ignore_capa)
     # Remove items not defined in the library
     capabilities.intersection_update(CAPABILITIES)
     # Remove unused capabilities
