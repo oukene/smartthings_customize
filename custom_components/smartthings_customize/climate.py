@@ -111,8 +111,8 @@ async def async_setup_entry(
             if custom_platform not in device_setting: 
                 continue
         for device in broker.devices.values():
-            if SettingManager.is_allow_device(device.device_id) == False:
-                continue
+            # if SettingManager.is_allow_device(device.device_id) == False:
+            #     continue
             if device.device_id == device_setting["device_id"]:
                 for dev in device_setting[custom_platform]:
                     # _LOGGER.warning("device_id : %s => %s", device_setting["device_id"], dev)
