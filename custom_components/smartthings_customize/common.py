@@ -85,8 +85,13 @@ class SettingManager(object):
                 for setting in settings:
                     for platform in CUSTOM_PLATFORMS.values():
                         if setting.get(platform):
-                            for cap in setting[platform]:
-                                capabilities.append(cap.get("capability"))
+                            if platform == CUSTOM_PLATFORMS[Platform.CLIMATE]:
+                                for dev in setting[platform]:
+                                    for cap in dev["capabilities"]:
+                                        capabilities.append(cap.get("capability"))
+                            else:
+                                for cap in setting[platform]:
+                                    capabilities.append(cap.get("capability"))
         except Exception as e:
             _LOGGER.debug("get_capabilities error : " + str(e))
             pass
