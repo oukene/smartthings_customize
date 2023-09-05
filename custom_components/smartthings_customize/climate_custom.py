@@ -104,9 +104,9 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity, ExtraCa
 
     @property
     def hvac_modes(self) -> list[HVACMode]:
-        options = ["off"]
-        options.extend(self.get_extra_capa_attr_value(ATTR_MODE, "options"))
-        return options
+        hvac_modes = []
+        hvac_modes.extend(self.get_extra_capa_attr_value(ATTR_MODE, "hvac_modes"))
+        return hvac_modes
 
     @property
     def fan_mode(self) -> str | None:
