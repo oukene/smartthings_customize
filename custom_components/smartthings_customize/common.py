@@ -101,6 +101,8 @@ class SettingManager(object):
                 f.write("globals:\n\n")
                 f.write("devices:\n\n")
                 f.write("ignore_platforms: []\n\n")
+                f.write("enable_syntax_property: true\n\n")
+                f.write("default_entity_id_format: '"'st_custom_%{device_id}_%{label}_%{component}_%{capability}_%{attribute}_%{command}_%{name}'"'\n\n")
                 pass
         
         with open(filepath) as f:
@@ -274,4 +276,4 @@ class SettingManager(object):
             return mgr._settings.get(GLOBAL_SETTING).get("ignore_capabilities")
         except Exception as e:
             _LOGGER.debug("is_allow_device error : " + str(e))
-            return True
+            return None
