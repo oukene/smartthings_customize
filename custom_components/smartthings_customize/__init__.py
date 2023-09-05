@@ -29,6 +29,7 @@ from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers.entity import async_generate_entity_id
 
 from .common import SettingManager
+from .device import SmartThings_custom
 
 import yaml
 
@@ -106,7 +107,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
         return False
 
-    api = SmartThings(async_get_clientsession(hass), entry.data[CONF_ACCESS_TOKEN])
+    api = SmartThings_custom(async_get_clientsession(hass), entry.data[CONF_ACCESS_TOKEN])
 
     settings = SettingManager(await api.location(entry.data[CONF_LOCATION_ID]))
     settings.load_setting()
@@ -215,6 +216,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     for d in devices:
         device_registry.async_remove_device(d.id)
 
+    hass.data[DOMAIN]["listener"] = []
+
     #PLATFORMS.different_update(SettingManager.ignore_platforms())
     await hass.config_entries.async_forward_entry_setups(entry, SettingManager().get_enable_platforms())
 
@@ -240,6 +243,8 @@ async def async_get_entry_scenes(entry: ConfigEntry, api):
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
+    for listener in hass.data[DOMAIN]["listener"]:
+        listener()
     broker = hass.data[DOMAIN][DATA_BROKERS].pop(entry.entry_id, None)
     if broker:
         broker.disconnect()

@@ -24,8 +24,10 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import SmartThingsEntity, SmartThingsEntity_custom
-from .const import DATA_BROKERS, DOMAIN
+from .const import DATA_BROKERS, DOMAIN, CUSTOM_PLATFORMS
 from .common import SettingManager
+from .climate_custom import SmartThingsClimate_custom
+from homeassistant.const import Platform
 
 ATTR_OPERATION_STATE = "operation_state"
 MODE_TO_STATE = {
@@ -106,31 +108,15 @@ async def async_setup_entry(
                 entities.append(SmartThingsThermostat(device))
 
 
-    # broker = hass.data[DOMAIN][DATA_BROKERS][config_entry.entry_id]
-    # entities = []
-    # settings = SettingManager.get_capa_settings(broker, "climates")
-    # _LOGGER.debug("climate settings : " + str(settings))
-    # # Climate 중에 device 가 같고, component 가 같은것들 끼리 모은다
-    # #for s in settings:
-    
-    #     # entities.append(SmartThingsClimate_custom(hass,
-    #     #                                             s[0],
-    #     #                                             s[2].get("name"),
-    #     #                                             s[1].get("component"),
-    #     #                                             s[2].get("parent_entity_id"),
-    #     #                                             s[2].get("air_conditioner_mode"),
+    broker = hass.data[DOMAIN][DATA_BROKERS][config_entry.entry_id]
 
-    #     # ))
+    settings = SettingManager.get_capa_settings(broker, CUSTOM_PLATFORMS[Platform.CLIMATE])
+    for s in settings:
+        _LOGGER.debug("cap setting : " + str(s[1]))
 
-    async_add_entities(entities, True)
+        entities.append(SmartThingsClimate_custom(hass=hass, setting=s))
 
-class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
-    def __init__(self, hass, device, name:str, component, capability: str, command:str, argument:str, parent_entity_id) -> None:
-        super().__init__(hass, "button", device, name, component, capability, None, command, argument, parent_entity_id )
-    
-    @property
-    def temperature_unit(self) -> str:
-        return super().temperature_unit
+    async_add_entities(entities)
 
 
 def get_capabilities(capabilities: Sequence[str]) -> Sequence[str] | None:

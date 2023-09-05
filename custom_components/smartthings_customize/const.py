@@ -26,7 +26,7 @@ SIGNAL_SMARTAPP_PREFIX = "smartthings_smartap_"
 
 SETTINGS_INSTANCE_ID = "hassInstanceId"
 
-SUBSCRIPTION_WARNING_LIMIT = 40
+SUBSCRIPTION_WARNING_LIMIT = 100
 
 STORAGE_KEY = DOMAIN
 STORAGE_VERSION = 1
@@ -71,6 +71,8 @@ CUSTOM_PLATFORMS = {
     Platform.SELECT: "selects",
     Platform.BUTTON: "buttons",
     Platform.TEXT: "texts",
+    Platform.CLIMATE: "climates",
+    Platform.FAN: "fans",
 }
 
 IGNORED_CAPABILITIES = [

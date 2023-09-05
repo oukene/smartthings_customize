@@ -1,15 +1,76 @@
 import os
 import yaml
 from homeassistant.const import Platform
-from .const import DOMAIN, CUSTOM_PLATFORMS, GLOBAL_SETTING, DEVICE_SETTING, PLATFORMS
+from .const import DOMAIN, CUSTOM_PLATFORMS, GLOBAL_SETTING, DEVICE_SETTING, PLATFORMS, CONF_CAPABILITY, CONF_ATTRIBUTE
 import logging
 _LOGGER = logging.getLogger(__name__)
 
-def get_attribute(device, component, attribute):
-    if component == "main":
-        return device.status.attributes.get(attribute)
-    else:
-        return device.status._components.get(component).attributes.get(attribute) if device.status._components.get(component) != None else None
+def get_attribute(device, component, capability, attribute):
+    try:
+        return device.status._status.get(component).get(capability).get(attribute)
+    except:
+        return None
+
+def get_attribute_value(device, component, capability, attribute):
+    try:
+        return device.status._status.get(component).get(capability).get(attribute).value
+    except:
+        return None
+
+def get_attribute_unit(device, component, capability, attribute):
+    try:
+        return device.status._status.get(component).get(capability).get(attribute).unit
+    except:
+        return None
+
+def get_attribute_data(device, component, capability, attribute):
+    try:
+        return device.status._status.get(component).get(capability).get(attribute).data
+    except:
+        return None
+
+    # if component == "main":
+    #     return device.status.attributes.get(attribute)
+    # else:
+    #     return device.status._components.get(component).attributes.get(attribute) if device.status._components.get(component) != None else None
+
+class ExtraCapability():
+    def __init__(self) -> None:
+        self._extra_capability = {}
+
+    def is_enable_feature(self, capa):
+        return capa in self._extra_capability
+
+    def get_extra_capa_attr_value(self, key, attr):
+        try:
+            value = self._extra_capability[key].get(attr)
+            if str(type(value)) == "<class 'dict'>":
+                capa = value.get(CONF_CAPABILITY) if value.get(CONF_CAPABILITY) != None else self._extra_capability[key][key]
+                value = get_attribute_value(self._device, self._component, capa, value.get(CONF_ATTRIBUTE))
+            return value
+        except:
+            return None
+
+    def get_extra_capa_command(self, key):
+        try:
+            return self._extra_capability[key].get("commands").get("command")
+        except:
+            _LOGGER.debug("not found extra capa command : " + key)
+            return None
+        
+    def get_extra_capa_capability(self, key):
+        try:
+            return self._extra_capability[key][key]
+        except:
+            _LOGGER.debug("not found extra capa : " + key)
+            return None
+
+    def get_extra_capa(self, key):
+        try:
+            return self._extra_capability[key]
+        except:
+            _LOGGER.debug("not found extra capa : " + key)
+            return None
 
 
 class SettingManager(object):
@@ -95,11 +156,9 @@ class SettingManager(object):
 
     @staticmethod
     def get_capa_settings(broker, custom_platform):
-        capa_type = "commands"
-        if custom_platform in (CUSTOM_PLATFORMS[Platform.SENSOR], CUSTOM_PLATFORMS[Platform.BINARY_SENSOR]):
-            capa_type = "attributes"
-        # elif custom_platform in ("climates"):
-        #     capa_type = "climate_options"
+        element_type = "commands"
+        if custom_platform in (CUSTOM_PLATFORMS[Platform.SENSOR], CUSTOM_PLATFORMS[Platform.BINARY_SENSOR], CUSTOM_PLATFORMS[Platform.CLIMATE], CUSTOM_PLATFORMS[Platform.FAN]):
+            element_type = "attributes"
         settings = []
         try:
             default_setting = SettingManager.get_default_setting().get(custom_platform)
@@ -110,7 +169,7 @@ class SettingManager(object):
                             capabilities = broker.build_capability(device)
                             for key, value in capabilities.items():
                                 if cap.get("component") == key and cap.get("capability") in value:
-                                    for setting in cap.get(capa_type):
+                                    for setting in cap.get(element_type):
                                         _LOGGER.debug("add setting : " + str(setting))
                                         settings.append([device, cap, setting])
         except Exception as e:
@@ -125,7 +184,7 @@ class SettingManager(object):
                         continue
                     for cap in device_setting[custom_platform]:
                         if cap.get("component") in capabilities and cap.get("capability") in capabilities[cap.get("component")]:
-                            for setting in cap.get(capa_type):
+                            for setting in cap.get(element_type):
                                 _LOGGER.debug("add setting : " + str(setting))
                                 settings.append([broker.devices[device_setting["device_id"]], cap, setting])
         except Exception as e:
@@ -207,3 +266,12 @@ class SettingManager(object):
         except Exception as e:
             _LOGGER.debug("ignore_platforms error : " + str(e))
             return []
+
+    @staticmethod
+    def ignore_capabilities():
+        try:
+            mgr = SettingManager()
+            return mgr._settings.get(GLOBAL_SETTING).get("ignore_capabilities")
+        except Exception as e:
+            _LOGGER.debug("is_allow_device error : " + str(e))
+            return True
