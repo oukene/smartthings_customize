@@ -202,19 +202,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
         return False
 
-    entity_registry = homeassistant.helpers.entity_registry.async_get(
-            hass)
-    entities = homeassistant.helpers.entity_registry.async_entries_for_config_entry(
-        entity_registry, entry.entry_id)
-    for e in entities:
-        entity_registry.async_remove(e.entity_id)
+    # entity_registry = homeassistant.helpers.entity_registry.async_get(
+    #         hass)
+    # entities = homeassistant.helpers.entity_registry.async_entries_for_config_entry(
+    #     entity_registry, entry.entry_id)
+    # for e in entities:
+    #     entity_registry.async_remove(e.entity_id)
 
-    device_registry = homeassistant.helpers.device_registry.async_get(hass)
-    devices = homeassistant.helpers.device_registry.async_entries_for_config_entry(
-    device_registry, entry.entry_id)
-    for d in devices:
-        if DOMAIN in d.identifiers:
-            device_registry.async_remove_device(d.id)
+    # device_registry = homeassistant.helpers.device_registry.async_get(hass)
+    # devices = homeassistant.helpers.device_registry.async_entries_for_config_entry(
+    # device_registry, entry.entry_id)
+    # for d in devices:
+    #     if DOMAIN in d.identifiers:
+    #         device_registry.async_remove_device(d.id)
 
     #PLATFORMS.different_update(SettingManager.ignore_platforms())
     await hass.config_entries.async_forward_entry_setups(entry, SettingManager().get_enable_platforms())
