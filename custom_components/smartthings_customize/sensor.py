@@ -610,7 +610,11 @@ async def async_setup_entry(
             
             #_LOGGER.error("ca to sensor : " + str(CAPABILITY_TO_SENSORS))
             if broker.any_assigned(device.device_id, Platform.SWITCH):
-                for capability in broker.get_assigned(device.device_id, Platform.SWITCH):
+                ignore_capa = SettingManager().ignore_capabilities()
+                for capability in broker.get_assigned(device.device_id, Platform.SENSOR):
+                    if ignore_capa != None:
+                        if capability in ignore_capa:
+                            continue
                     if capability in (Capability.energy_meter, Capability.power_meter):
                         maps = CAPABILITY_TO_SENSORS[capability]
                         entities.extend(
