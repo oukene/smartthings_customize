@@ -18,11 +18,10 @@ ATTR_TARGET_HUM = "target_humidity"
 class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity, ExtraCapability):
     def __init__(self, hass, setting) -> None:
         super().__init__(hass, platform=Platform.CLIMATE, setting=setting)
-
         _LOGGER.debug("climate settings : " + str(setting[2]))
 
-        self._extra_capability = {}
         self._supported_features = 0
+        self._extra_capability = {}
 
         for capa in setting[2]["capabilities"]:
             if ATTR_SWITCH in capa:
@@ -74,7 +73,7 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity, ExtraCa
 
     def entity_listener(self, entity, old_state, new_state):
         self.schedule_update_ha_state(True)
-        
+
     # platform property #############################################################################
     @property
     def temperature_unit(self) -> str:

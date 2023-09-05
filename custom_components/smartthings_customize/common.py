@@ -103,6 +103,7 @@ class SettingManager(object):
                 f.write("ignore_platforms: []\n\n")
                 f.write("enable_syntax_property: true\n\n")
                 f.write("default_entity_id_format: '"'st_custom_%{device_id}_%{label}_%{component}_%{capability}_%{attribute}_%{command}_%{name}'"'\n\n")
+                f.write("always_reset_entity: true\n\n")
                 pass
         
         with open(filepath) as f:
@@ -277,3 +278,12 @@ class SettingManager(object):
         except Exception as e:
             _LOGGER.debug("is_allow_device error : " + str(e))
             return None
+
+    @staticmethod
+    def always_reset_entity() -> bool:
+        try:
+            mgr = SettingManager()
+            return mgr._settings.get("always_reset_entity")
+        except Exception as e:
+            _LOGGER.debug("always_reset_entity error : " + str(e))
+            return True

@@ -19,6 +19,7 @@ class SmartThingsFan_custom(SmartThingsEntity_custom, FanEntity, ExtraCapability
 
         self._supported_features = 0
         self._extra_capability = {}
+        
         for capa in setting[2]["capabilities"]:
             if ATTR_SWITCH in capa:
                 self._extra_capability[ATTR_SWITCH] = capa
