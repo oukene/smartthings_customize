@@ -192,6 +192,11 @@ globals:
     - b065a858-1927-fd98-a374-7fc1498e8c76
     - 46955634-09e8-6bc7-0167-a73b2e9182e6
 
+  ignore_capabilities:
+    - execute
+    - healthCheck
+    - ocf
+
 # You can also add settings for individual devices under the devices: entry
 # (if you add them here they will be ignored in the global settings).
 # parent_entity_id - Included in the same device as the specified entity ID
@@ -204,6 +209,111 @@ devices:
           - attribute: contact
             name: cooler contact
             parent_entity_id: parent_entity_id
+
+
+# Fill in the appropriate capabilities
+# This is a climate example. Fill in the appropriate capability. If you do not use the entity_id  
+# attribute, the switch capability is not required.
+# For climates->capability, enter mode capability
+    climates:
+      - capability: airConditionerMode
+        component: main
+        attributes:
+          - name: "Bedroom Aircon"
+            capabilities:
+              - switch: switch
+              - mode: airConditionerMode
+                options:
+                  attribute: supportedAcModes
+                commands:
+                  command: setAirConditionerMode
+                  attribute: airConditionerMode
+                hvac_actions:
+                  [{ "cool": "cooling", "dry": "drying", "off": "off" }]
+                aux_heat_modes: ["auxheatonly", "auxiliaryemergencyheat"]
+
+              - fan_mode: airConditionerFanMode
+                options:
+                  attribute: supportedAcFanModes
+                commands:
+                  command: setFanMode
+                  attribute: fanMode
+
+              - preset_mode: airConditionerFanMode
+                options:
+                  attribute: supportedAcFanModes
+                commands:
+                  command: setFanMode
+                  attribute: fanMode
+
+              - swing_mode: airConditionerFanMode
+                options:
+                  attribute: supportedAcFanModes
+                commands:
+                  command: setFanMode
+                  attribute: fanMode
+
+              - target_temp: thermostatCoolingSetpoint
+                min: 22
+                max: 28
+                step: 1
+                commands:
+                  command: setCoolingSetpoint
+                  attribute: coolingSetpoint
+
+              - target_temp_low: thermostatCoolingSetpoint
+                commands:
+                  command: setCoolingSetpoint
+                  attribute: coolingSetpoint
+
+              - target_temp_high: thermostatCoolingSetpoint
+                commands:
+                  command: setCoolingSetpoint
+                  attribute: coolingSetpoint
+
+              - target_humidity: thermostatCoolingSetpoint
+                min: 40
+                max: 60
+                step: 1
+                commands:
+                  command: setCoolingSetpoint
+                  attribute: coolingSetpoint
+
+              - current_temperature: temperatureMeasurement
+                attributes:
+                  attribute: temperature
+              - current_humidity:
+                entity_id: input_number.hum
+
+# Fill in the appropriate capabilities
+# This is a fan example. Fill in the appropriate capability. If you do not use the entity_id  
+# attribute, the switch capability is not required.
+    fans:
+      - capability: switch
+        component: main
+        attributes:
+          - name: "fan test"
+            capabilities:
+              - preset_mode: fanOscillationMode
+                options:
+                  attribute: supportedFanOscillationModes
+                commands:
+                  command: setFanOscillationMode
+                  attribute: fanOscillationMode
+              - direction: fanOscillationMode
+                options:
+                  attribute: supportedFanOscillationModes
+                commands:
+                  command: setFanOscillationMode
+                  attribute: fanOscillationMode
+                oscillate_modes: ['vertical', 'horizontal']
+              - percent: fanSpeed
+                min: 0
+                max: 100
+                step: 1
+                commands:
+                  command: setFanSpeed
+                  attribute: fanSpeed
 
 ignore_platforms:
   - scene
@@ -227,3 +337,5 @@ default_entity_id_format: "st_custom_%{device_id}_%{label}_%{component}_%{capabi
 - select
 - button
 - text
+- climate
+- fan
