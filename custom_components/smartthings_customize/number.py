@@ -50,7 +50,8 @@ class SmartThingsNumber_custom(SmartThingsEntity_custom, NumberEntity):
     @property
     def native_min_value(self) -> float:
         if str(type(self._min)) == "<class 'dict'>":
-            min = get_attribute(self._device, self._component, self._min["attribute"]).value
+            capa = self._min.get(CONF_CAPABILITY) if self._min.get(CONF_CAPABILITY) != None else self._capability
+            min = get_attribute_value(self._device, self._component, capa, self._min[CONF_ATTRIBUTE])
             min = min if min != None else DEFAULT_MIN_VALUE
         else:
             min = self._min
@@ -59,7 +60,8 @@ class SmartThingsNumber_custom(SmartThingsEntity_custom, NumberEntity):
     @property
     def native_max_value(self) -> float:
         if str(type(self._max)) == "<class 'dict'>":
-            max = get_attribute(self._device, self._component, self._max["attribute"]).value
+            capa = self._max.get(CONF_CAPABILITY) if self._max.get(CONF_CAPABILITY) != None else self._capability
+            max = get_attribute_value(self._device, self._component, capa, self._max[CONF_ATTRIBUTE])
             max = max if max != None else DEFAULT_MAX_VALUE
         else:
             max = self._max
@@ -71,7 +73,7 @@ class SmartThingsNumber_custom(SmartThingsEntity_custom, NumberEntity):
 
     @property
     def native_value(self) -> float | None:
-        return get_attribute(self._device, self._component, self._attribute).value
+        return get_attribute_value(self._device, self._component, self._capability, self._attribute)
 
     async def async_set_native_value(self, value: float) -> None:
         arg = []

@@ -40,13 +40,13 @@ class SmartThingsSelect_custom(SmartThingsEntity_custom, SelectEntity):
     def __init__(self, hass, setting) -> None:
 
         super().__init__(hass, platform=Platform.SELECT, setting=setting)
-        
         self._options = setting[1].get(CONF_OPTIONS)
 
     @property
     def options(self) -> list[str]:
         if str(type(self._options)) == "<class 'dict'>":
-            opt = get_attribute(self._device, self._component, self._options["attribute"]).value
+            capa = self._options.get(CONF_CAPABILITY) if self._options.get(CONF_CAPABILITY) != None else self._capability
+            opt = get_attribute_value(self._device, self._component, capa, self._options[CONF_ATTRIBUTE])
             opt = opt if opt != None else []
         else:
             opt = self._options
@@ -54,7 +54,7 @@ class SmartThingsSelect_custom(SmartThingsEntity_custom, SelectEntity):
 
     @property
     def current_option(self) -> str | None:
-        return get_attribute(self._device, self._component, self._attribute).value
+        return get_attribute_value(self._device, self._component, self._capability, self._attribute)
 
     async def async_select_option(self, option: str) -> None:
         arg = []

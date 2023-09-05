@@ -393,7 +393,12 @@ async def smartapp_sync_subscriptions(
     # Remove items not defined in the library
     capabilities.intersection_update(CAPABILITIES)
     # Remove unused capabilities
-    capabilities.difference_update(IGNORED_CAPABILITIES)
+    # capabilities.difference_update(IGNORED_CAPABILITIES)
+    # Remove ignore capabilities
+    ignore_capa = SettingManager().ignore_capabilities()
+    if ignore_capa != None:
+        capabilities.difference_update(ignore_capa)
+
     capability_count = len(capabilities)
     if capability_count > SUBSCRIPTION_WARNING_LIMIT:
         _LOGGER.warning(

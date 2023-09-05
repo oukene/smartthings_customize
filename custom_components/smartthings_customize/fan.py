@@ -18,8 +18,12 @@ from homeassistant.util.percentage import (
 )
 
 from . import SmartThingsEntity
-from .const import DATA_BROKERS, DOMAIN
+from .const import *
 from .common import SettingManager
+from .fan_custom import SmartThingsFan_custom
+
+import logging
+_LOGGER = logging.getLogger(__name__)
 
 SPEED_RANGE = (1, 3)  # off is not included
 
@@ -39,6 +43,15 @@ async def async_setup_entry(
                 if broker.any_assigned(device.device_id, "fan") and SettingManager.is_allow_device(device.device_id)
             ]
         )
+
+    broker = hass.data[DOMAIN][DATA_BROKERS][config_entry.entry_id]
+    entities = []
+    settings = SettingManager.get_capa_settings(broker, CUSTOM_PLATFORMS[Platform.FAN])
+    for s in settings:
+        _LOGGER.debug("cap setting : " + str(s[1]))
+        entities.append(SmartThingsFan_custom(hass=hass, setting=s))
+
+    async_add_entities(entities)
 
 
 def get_capabilities(capabilities: Sequence[str]) -> Sequence[str] | None:

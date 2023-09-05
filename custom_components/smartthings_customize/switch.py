@@ -92,5 +92,5 @@ class SmartThingsSwitch_custom(SmartThingsEntity_custom, SwitchEntity):
 
     @property
     def is_on(self) -> bool:
-        value = get_attribute(self._device, self._component, self._attribute).value
+        value = get_attribute_value(self._device, self._component, self._capability, self._attribute)
         return value in self._on_state

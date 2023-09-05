@@ -61,8 +61,8 @@ class SmartThingsText_custom(SmartThingsEntity_custom, TextEntity):
 
     @property
     def native_value(self) -> str | None:
-        attribute = get_attribute(self._device, self._component, self._attribute)
-        return attribute.value if attribute != None else ""
+        value = get_attribute_value(self._device, self._component, self._capability, self._attribute)
+        return value if value != None else ""
 
     async def async_set_value(self, value: str) -> None:
         arg = []

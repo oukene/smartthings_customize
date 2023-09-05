@@ -722,7 +722,7 @@ class SmartThingsSensor_custom(SmartThingsEntity_custom, SensorEntity):
     @property
     def native_value(self):
         """Return the state of the sensor."""
-        value = get_attribute(self._device, self._component, self._attribute).value
+        value = get_attribute_value(self._device, self._component, self._capability, self._attribute)
         if self._device_class == SensorDeviceClass.TIMESTAMP:
             return dt_util.parse_datetime(value)
         return value
@@ -730,7 +730,7 @@ class SmartThingsSensor_custom(SmartThingsEntity_custom, SensorEntity):
     @property
     def native_unit_of_measurement(self):
         """Return the unit this state is expressed in."""
-        unit = get_attribute(self._device, self._component, self._attribute).unit
+        unit = get_attribute_unit(self._device, self._component, self._capability, self._attribute)
         return UNITS.get(unit, unit) if unit else self._default_unit
 
 
