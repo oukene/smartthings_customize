@@ -395,9 +395,7 @@ async def smartapp_sync_subscriptions(
     # Remove unused capabilities
     capabilities.difference_update(IGNORED_CAPABILITIES)
     # Remove ignore capabilities
-    ignore_capa = SettingManager().ignore_capabilities()
-    if ignore_capa != None:
-        capabilities.difference_update(ignore_capa)
+    capabilities.difference_update(SettingManager().ignore_capabilities())
 
     capability_count = len(capabilities)
     if capability_count > SUBSCRIPTION_WARNING_LIMIT:
