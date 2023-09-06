@@ -22,6 +22,7 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity, ExtraCa
 
         self._supported_features = 0
         self._extra_capability = {}
+        self._hvad_modes = []
 
         for capa in setting[2]["capabilities"]:
             if ATTR_SWITCH in capa:
@@ -71,6 +72,15 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity, ExtraCa
             self._hass.data[DOMAIN]["listener"].append(async_track_state_change(
                 self._hass, self.get_extra_capa_attr_value(ATTR_CURRENT_HUMIDITY, "entity_id"), self.entity_listener))
 
+        # convert hvac_modes
+        modes = ["off"]
+        modes.extend(self.get_extra_capa_attr_value(ATTR_MODE, "options"))
+        modes = list(set(modes))
+        hvac_modes = self.get_extra_capa_attr_value(ATTR_MODE, "hvac_modes", [{}])
+        for mode in modes:
+            self._hvad_modes.append(hvac_modes[0].get(mode, mode))
+                
+        
     def entity_listener(self, entity, old_state, new_state):
         self.schedule_update_ha_state(True)
 
@@ -93,19 +103,28 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity, ExtraCa
         return self._supported_features
 
     @property
-    def hvac_mode(self) -> HVACMode | None:
+    def hvac_mode(self):
         entity_id = self.get_extra_capa_attr_value(ATTR_SWITCH, "entity_id")
         if entity_id:
             if self.hass.states.get(entity_id).state == "off":
                 return HVACMode.OFF
         if get_attribute_value(self._device, self._component, ATTR_SWITCH, ATTR_SWITCH) == "off":
             return HVACMode.OFF
-        return self.get_extra_capa_attr_value(ATTR_MODE, "commands")
+
+        mode = self.get_extra_capa_attr_value(ATTR_MODE, "commands")
+        hvac_modes = self.get_extra_capa_attr_value(ATTR_MODE, "hvac_modes", [{}])
+        _LOGGER.debug("mode: " + str(mode) + ", hvac_modes : " + str(hvac_modes[0]))
+        return hvac_modes[0].get(mode, mode)
 
     @property
     def hvac_modes(self) -> list[HVACMode]:
+        return self._hvad_modes
+
         options = ["off"]
         options.extend(self.get_extra_capa_attr_value(ATTR_MODE, "options"))
+        # options = list(set(options))
+
+        # modes = self.get_extra_capa_attr_value(ATTR_MODE, "hvac_modes")
         return options
 
     @property
@@ -157,20 +176,21 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity, ExtraCa
         entity_id = self.get_extra_capa_attr_value(ATTR_CURRENT_HUMIDITY, "entity_id")
         if entity_id:
             state = self.hass.states.get(entity_id)
-            return float(state.state)
+            return int(float(state.state))
         else:
-            return self.get_extra_capa_attr_value(ATTR_CURRENT_HUMIDITY, "attributes")
+            return int(float(self.get_extra_capa_attr_value(ATTR_CURRENT_HUMIDITY, "attributes")))
             
     @property
     def target_humidity(self) -> int | None:
-        return self.get_extra_capa_attr_value(ATTR_TARGET_HUM, "commands")
+        return int(float(self.get_extra_capa_attr_value(ATTR_TARGET_HUM, "commands")))
+
     @property
     def max_humidity(self) -> int:
-        return self.get_extra_capa_attr_value(ATTR_TARGET_HUM, "max")
+        return int(float(self.get_extra_capa_attr_value(ATTR_TARGET_HUM, "max")))
 
     @property
     def min_humidity(self) -> int:
-        return self.get_extra_capa_attr_value(ATTR_TARGET_HUM, "min")
+        return int(float(self.get_extra_capa_attr_value(ATTR_TARGET_HUM, "min")))
     
     @property
     def preset_mode(self) -> str | None:
@@ -191,8 +211,8 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity, ExtraCa
     @property
     def hvac_action(self) -> HVACAction | None:
         mode = self.get_extra_capa_attr_value(ATTR_MODE, "commands")
-        actions = self.get_extra_capa_attr_value(ATTR_MODE, "hvac_actions")
-        return actions[0].get(mode) if actions[0].get(mode) != None else None
+        actions = self.get_extra_capa_attr_value(ATTR_MODE, "hvac_actions", [{}])
+        return actions[0].get(mode, None)
         
     @property
     def is_aux_heat(self) -> bool | None:
@@ -206,8 +226,10 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity, ExtraCa
         if hvac_mode == HVACMode.OFF:
             await self._device.command(self._component, ATTR_SWITCH, "off")
         else:
+            hvac_modes = self.get_extra_capa_attr_value(ATTR_MODE, "hvac_modes", [{}])
+            mode = [k if v == hvac_mode else hvac_mode for k, v in hvac_modes[0].items()]
             await self._device.command(
-                self._component, self.get_extra_capa_capability(ATTR_MODE), self.get_extra_capa_command(ATTR_MODE), [hvac_mode])
+                self._component, self.get_extra_capa_capability(ATTR_MODE), self.get_extra_capa_command(ATTR_MODE), [mode])
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         await self._device.command(

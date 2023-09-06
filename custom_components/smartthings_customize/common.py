@@ -11,11 +11,11 @@ def get_attribute(device, component, capability, attribute):
     except:
         return None
 
-def get_attribute_value(device, component, capability, attribute):
+def get_attribute_value(device, component, capability, attribute, default=None):
     try:
         return device.status._status.get(component).get(capability).get(attribute).value
     except:
-        return None
+        return default
 
 def get_attribute_unit(device, component, capability, attribute):
     try:
@@ -41,15 +41,15 @@ class ExtraCapability():
     def is_enable_feature(self, capa):
         return capa in self._extra_capability
 
-    def get_extra_capa_attr_value(self, key, attr):
+    def get_extra_capa_attr_value(self, key, attr, default = None):
         try:
-            value = self._extra_capability[key].get(attr)
+            value = self._extra_capability[key].get(attr, default)
             if str(type(value)) == "<class 'dict'>":
-                capa = value.get(CONF_CAPABILITY) if value.get(CONF_CAPABILITY) != None else self._extra_capability[key][key]
-                value = get_attribute_value(self._device, self._component, capa, value.get(CONF_ATTRIBUTE))
+                capa = value.get(CONF_CAPABILITY, self._extra_capability[key][key])
+                value = get_attribute_value(self._device, self._component, capa, value.get(CONF_ATTRIBUTE), default=default)
             return value
         except:
-            return None
+            return default
 
     def get_extra_capa_command(self, key):
         try:
@@ -168,7 +168,7 @@ class SettingManager(object):
             if default_setting != None:
                 for cap in default_setting:
                     for device in broker.devices.values():
-                        if SettingManager.is_allow_device_custom(device.device_id):
+                        if SettingManager.allow_device_custom(device.device_id):
                             capabilities = broker.build_capability(device)
                             for key, value in capabilities.items():
                                 if cap.get("component") == key and cap.get("capability") in value:
@@ -223,16 +223,16 @@ class SettingManager(object):
             return False
 
     @staticmethod
-    def is_allow_device(device_id) -> bool:
+    def allow_device(device_id) -> bool:
         try:
             mgr = SettingManager()
             return device_id not in mgr._settings.get(GLOBAL_SETTING).get("ignore_devices")
         except Exception as e:
-            _LOGGER.debug("is_allow_device error : " + str(e))
+            _LOGGER.debug("allow_device error : " + str(e))
             return True
 
     @staticmethod
-    def is_allow_device_custom(device_id) -> bool:
+    def allow_device_custom(device_id) -> bool:
         try:
             mgr = SettingManager()
             setting = mgr.get_device_setting()
@@ -241,19 +241,19 @@ class SettingManager(object):
                     if device_id == d.get("device_id"): return False
             return device_id not in mgr._settings.get(GLOBAL_SETTING).get("ignore_devices")
         except Exception as e:
-            _LOGGER.debug("is_allow_device_custom error : " + str(e))
+            _LOGGER.debug("allow_device_custom error : " + str(e))
             return True
 
     def build_platform(self):
         self._platforms.clear()
         for platform in PLATFORMS:
-            if self.is_allow_platform(platform):
+            if self.allow_platform(platform):
                 self._platforms.add(platform)
 
     def get_enable_platforms(self) -> set:
         return self._platforms
 
-    def is_allow_platform(self, platform) -> bool:
+    def allow_platform(self, platform) -> bool:
         try:
             mgr = SettingManager()
             return platform not in mgr._settings.get("ignore_platforms")
@@ -274,10 +274,18 @@ class SettingManager(object):
     def ignore_capabilities():
         try:
             mgr = SettingManager()
-            return mgr._settings.get(GLOBAL_SETTING).get("ignore_capabilities")
+            return mgr._settings.get(GLOBAL_SETTING).get("ignore_capabilities", [])
         except Exception as e:
-            _LOGGER.debug("is_allow_device error : " + str(e))
-            return None
+            _LOGGER.debug("allow_device error : " + str(e))
+            return []
+
+    @staticmethod
+    def allow_capability(capability):
+        return capability not in SettingManager().ignore_capabilities()
+
+    @staticmethod
+    def ignore_capability(capability):
+        return capability in SettingManager().ignore_capabilities()
 
     @staticmethod
     def always_reset_entity() -> bool:
