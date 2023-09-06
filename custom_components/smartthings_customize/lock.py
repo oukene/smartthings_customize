@@ -38,7 +38,7 @@ async def async_setup_entry(
             [
                 SmartThingsLock(device)
                 for device in broker.devices.values()
-                if broker.any_assigned(device.device_id, "lock") and SettingManager.is_allow_device(device.device_id)
+                if broker.any_assigned(device.device_id, "lock") and SettingManager.allow_device(device.device_id)
             ]
         )
 

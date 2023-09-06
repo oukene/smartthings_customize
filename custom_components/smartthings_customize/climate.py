@@ -98,7 +98,7 @@ async def async_setup_entry(
     entities: list[ClimateEntity] = []
     if SettingManager.enable_default_entities():
         for device in broker.devices.values():
-            if SettingManager.is_allow_device(device.device_id) == False:
+            if SettingManager.allow_device(device.device_id) == False:
                 continue
             if not broker.any_assigned(device.device_id, CLIMATE_DOMAIN):
                 continue

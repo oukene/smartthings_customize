@@ -59,7 +59,7 @@ async def async_setup_entry(
     sensors = []
     if SettingManager.enable_default_entities():
         for device in broker.devices.values():
-            if SettingManager.is_allow_device(device.device_id) == False:
+            if SettingManager.allow_device(device.device_id) == False:
                 continue
             for capability in broker.get_assigned(device.device_id, Platform.BINARY_SENSOR):
                 attrib = CAPABILITY_TO_ATTRIB[capability]

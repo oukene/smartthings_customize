@@ -573,9 +573,10 @@ async def async_setup_entry(
     if SettingManager.enable_default_entities():
         for device in broker.devices.values():
             #_LOGGER.error("capability : " + str(broker.get_assigned(device.device_id, "sensor")))
-            if SettingManager.is_allow_device(device.device_id) == False:
+            if SettingManager.allow_device(device.device_id) == False:
                 continue
             for capability in broker.get_assigned(device.device_id, Platform.SENSOR):
+                if SettingManager.ignore_capability(capability=capability): continue
                 if capability == Capability.three_axis:
                     entities.extend(
                         [
@@ -610,7 +611,8 @@ async def async_setup_entry(
             
             #_LOGGER.error("ca to sensor : " + str(CAPABILITY_TO_SENSORS))
             if broker.any_assigned(device.device_id, Platform.SWITCH):
-                for capability in broker.get_assigned(device.device_id, Platform.SWITCH):
+                for capability in broker.get_assigned(device.device_id, Platform.SENSOR):
+                    if SettingManager.ignore_capability(capability=capability): continue
                     if capability in (Capability.energy_meter, Capability.power_meter):
                         maps = CAPABILITY_TO_SENSORS[capability]
                         entities.extend(

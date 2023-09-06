@@ -48,7 +48,7 @@ async def async_setup_entry(
             [
                 SmartThingsCover(device)
                 for device in broker.devices.values()
-                if broker.any_assigned(device.device_id, COVER_DOMAIN) and SettingManager.is_allow_device(device.device_id)
+                if broker.any_assigned(device.device_id, COVER_DOMAIN) and SettingManager.allow_device(device.device_id)
             ],
             True,
         )
