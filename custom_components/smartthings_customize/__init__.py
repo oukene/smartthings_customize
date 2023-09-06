@@ -566,9 +566,10 @@ class SmartThingsEntity_custom(Entity):
             self._device_info = DeviceInfo(
                 identifiers=device.identifiers,
                 connections=device.connections,
+                name=device.name
             )
         else:
-            self._device_info = DeviceInfo(identifiers={(DOMAIN, self._device.device_id)})
+            self._device_info = DeviceInfo(identifiers={(DOMAIN, self._device.device_id, self._device.name)})
 
         self._extra_state_attributes = {}
         if SettingManager.enable_syntax_property():
@@ -608,7 +609,7 @@ class SmartThingsEntity_custom(Entity):
             connections=self._device_info.get("connections"),
             manufacturer=self._device.status.ocf_manufacturer_name,
             model=self._device.status.ocf_model_number,
-            name=self._device.label,
+            name=self._device_info.get("name"),
             hw_version=self._device.status.ocf_hardware_version,
             sw_version=self._device.status.ocf_firmware_version,
         )

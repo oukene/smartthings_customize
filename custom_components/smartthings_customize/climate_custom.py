@@ -22,7 +22,7 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity, ExtraCa
 
         self._supported_features = 0
         self._extra_capability = {}
-        self._hvad_modes = []
+        self._hvac_modes = []
 
         for capa in setting[2]["capabilities"]:
             if ATTR_SWITCH in capa:
@@ -78,7 +78,7 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity, ExtraCa
         modes = list(set(modes))
         hvac_modes = self.get_extra_capa_attr_value(ATTR_MODE, "hvac_modes", [{}])
         for mode in modes:
-            self._hvad_modes.append(hvac_modes[0].get(mode, mode))
+            self._hvac_modes.append(hvac_modes[0].get(mode, mode))
                 
         
     def entity_listener(self, entity, old_state, new_state):
@@ -103,7 +103,7 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity, ExtraCa
         return self._supported_features
 
     @property
-    def hvac_mode(self):
+    def hvac_mode(self) -> HVACMode | None:
         entity_id = self.get_extra_capa_attr_value(ATTR_SWITCH, "entity_id")
         if entity_id:
             if self.hass.states.get(entity_id).state == "off":
@@ -118,14 +118,7 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity, ExtraCa
 
     @property
     def hvac_modes(self) -> list[HVACMode]:
-        return self._hvad_modes
-
-        options = ["off"]
-        options.extend(self.get_extra_capa_attr_value(ATTR_MODE, "options"))
-        # options = list(set(options))
-
-        # modes = self.get_extra_capa_attr_value(ATTR_MODE, "hvac_modes")
-        return options
+        return self._hvac_modes
 
     @property
     def fan_mode(self) -> str | None:
