@@ -7,6 +7,7 @@ from .const import *
 from .common import *
 
 from homeassistant.const import *
+import asyncio
 import logging
 _LOGGER = logging.getLogger(__name__)
 
@@ -86,6 +87,16 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity, ExtraCa
 
     # platform property #############################################################################
     @property
+    def is_on(self) -> bool:
+        entity_id = self.get_extra_capa_attr_value(ATTR_SWITCH, "entity_id")
+        if entity_id:
+            if self.hass.states.get(entity_id).state == "off":
+                return False
+        if get_attribute_value(self._device, self._component, ATTR_SWITCH, ATTR_SWITCH) == "off":
+            return False
+        return True
+
+    @property
     def temperature_unit(self) -> str:
         return self.hass.config.units.temperature_unit
 
@@ -103,14 +114,9 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity, ExtraCa
         return self._supported_features
 
     @property
-    def hvac_mode(self) -> HVACMode | None:
-        entity_id = self.get_extra_capa_attr_value(ATTR_SWITCH, "entity_id")
-        if entity_id:
-            if self.hass.states.get(entity_id).state == "off":
-                return HVACMode.OFF
-        if get_attribute_value(self._device, self._component, ATTR_SWITCH, ATTR_SWITCH) == "off":
+    def hvac_mode(self):
+        if not self.is_on:
             return HVACMode.OFF
-
         mode = self.get_extra_capa_attr_value(ATTR_MODE, "commands")
         hvac_modes = self.get_extra_capa_attr_value(ATTR_MODE, "hvac_modes", [{}])
         _LOGGER.debug("mode: " + str(mode) + ", hvac_modes : " + str(hvac_modes[0]))
@@ -218,12 +224,27 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity, ExtraCa
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         if hvac_mode == HVACMode.OFF:
             await self._device.command(self._component, ATTR_SWITCH, "off")
+            return
+        tasks = []
+        hvac_modes = self.get_extra_capa_attr_value(ATTR_MODE, "hvac_modes", [{}])
+        mode = hvac_mode
+        for k, v in hvac_modes[0].items():
+            if v == hvac_mode:
+                mode = k
+                break
+        if not self.is_on:
+            tasks.append(self._device.command(self._component, ATTR_SWITCH, "on"))
+            if mode != self.get_extra_capa_attr_value(ATTR_MODE, "commands"):
+                tasks.append(
+                    self._device.command(self._component, self.get_extra_capa_capability(ATTR_MODE), self.get_extra_capa_command(ATTR_MODE), [mode])
+                )
         else:
-            hvac_modes = self.get_extra_capa_attr_value(ATTR_MODE, "hvac_modes", [{}])
-            mode = [k if v == hvac_mode else hvac_mode for k, v in hvac_modes[0].items()]
-            await self._device.command(
-                self._component, self.get_extra_capa_capability(ATTR_MODE), self.get_extra_capa_command(ATTR_MODE), [mode])
-
+            tasks.append(
+                self._device.command(self._component, self.get_extra_capa_capability(ATTR_MODE), self.get_extra_capa_command(ATTR_MODE), [mode])
+            )
+        await asyncio.gather(*tasks)
+        self.async_write_ha_state()
+    
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         await self._device.command(
             self._component, self.get_extra_capa_capability(ATTR_PRESET_MODE), self.get_extra_capa_command(ATTR_PRESET_MODE), [preset_mode])
