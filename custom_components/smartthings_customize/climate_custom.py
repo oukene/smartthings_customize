@@ -234,14 +234,12 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity, ExtraCa
                 break
         if not self.is_on:
             tasks.append(self._device.command(self._component, ATTR_SWITCH, "on"))
-            if mode != self.get_extra_capa_attr_value(ATTR_MODE, "commands"):
-                tasks.append(
-                    self._device.command(self._component, self.get_extra_capa_capability(ATTR_MODE), self.get_extra_capa_command(ATTR_MODE), [mode])
-                )
-        else:
+
+        if mode != self.get_extra_capa_attr_value(ATTR_MODE, "commands"):
             tasks.append(
                 self._device.command(self._component, self.get_extra_capa_capability(ATTR_MODE), self.get_extra_capa_command(ATTR_MODE), [mode])
             )
+            
         await asyncio.gather(*tasks)
         self.async_write_ha_state()
     
