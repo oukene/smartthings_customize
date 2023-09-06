@@ -215,9 +215,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         devices = homeassistant.helpers.device_registry.async_entries_for_config_entry(
         device_registry, entry.entry_id)
         for d in devices:
-            if DOMAIN in list(d.identifiers)[0]:
-                _LOGGER.debug("remove device, identifiers" + str(d.identifiers))
-                device_registry.async_remove_device(d.id)
+            device_registry.async_update_device(d.id, remove_config_entry_id=entry.entry_id)
+
+        # if DOMAIN in list(d.identifiers)[0]:
+        #     _LOGGER.debug("remove device, identifiers" + str(d.identifiers))
+        #     device_registry.async_remove_device(d.id)
 
     hass.data[DOMAIN]["listener"] = []
 
@@ -569,7 +571,7 @@ class SmartThingsEntity_custom(Entity):
                 name=device.name
             )
         else:
-            self._device_info = DeviceInfo(identifiers={(DOMAIN, self._device.device_id, self._device.name)})
+            self._device_info = DeviceInfo(identifiers={(DOMAIN, self._device.device_id)}, name=self._device.label)
 
         self._extra_state_attributes = {}
         if SettingManager.enable_syntax_property():
