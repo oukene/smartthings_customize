@@ -536,13 +536,15 @@ class SmartThingsEntity_custom(Entity):
         self._device_info = []
         self._platform = platform
 
+        t = temp(DEFAULT_ENTITY_ID_FORMAT)
+        entity_id_format = t.substitute(device_id=self._device.device_id, label=self._device.label, component=self._component, capability=self._capability, attribute=self._attribute, command=self._command, name=self._name)
+        self._unique_id = async_generate_entity_id(platform + ".{}", entity_id_format, hass=hass)
+
         entity_id_format = SettingManager.default_entity_id_format() if SettingManager.default_entity_id_format() != None else DEFAULT_ENTITY_ID_FORMAT
         if setting[1].get(CONF_ENTITY_ID_FORMAT) != None:
             entity_id_format = setting[1].get(CONF_ENTITY_ID_FORMAT)
-
         t = temp(entity_id_format)
         entity_id_format = t.substitute(device_id=self._device.device_id, label=self._device.label, component=self._component, capability=self._capability, attribute=self._attribute, command=self._command, name=self._name)
-
         self.entity_id = async_generate_entity_id(platform + ".{}", entity_id_format, hass=hass)
         
         _LOGGER.debug("create entity id : %s", self.entity_id)
