@@ -215,7 +215,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         devices = homeassistant.helpers.device_registry.async_entries_for_config_entry(
         device_registry, entry.entry_id)
         for d in devices:
-            if DOMAIN in d.identifiers:
+            if DOMAIN in list(d.identifiers)[0]:
+                _LOGGER.debug("remove device, identifiers" + str(d.identifiers))
                 device_registry.async_remove_device(d.id)
 
     hass.data[DOMAIN]["listener"] = []
