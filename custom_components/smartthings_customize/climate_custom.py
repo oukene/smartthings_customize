@@ -234,7 +234,11 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity, ExtraCa
                 break
         if not self.is_on:
             tasks.append(self._device.command(self._component, ATTR_SWITCH, "on"))
-        if self._component == "main":
+            if self._component == "main":
+                tasks.append(
+                    self._device.command(self._component, self.get_extra_capa_capability(ATTR_MODE), self.get_extra_capa_command(ATTR_MODE), [mode])
+                )
+        else:
             tasks.append(
                 self._device.command(self._component, self.get_extra_capa_capability(ATTR_MODE), self.get_extra_capa_command(ATTR_MODE), [mode])
             )
