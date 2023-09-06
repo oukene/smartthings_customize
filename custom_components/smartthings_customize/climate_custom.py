@@ -23,7 +23,7 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity, ExtraCa
 
         self._supported_features = 0
         self._extra_capability = {}
-         self._hvac_modes = []
+        self._hvac_modes = []
 
         for capa in setting[2]["capabilities"]:
             if ATTR_SWITCH in capa:
