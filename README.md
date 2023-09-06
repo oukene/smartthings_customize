@@ -215,6 +215,7 @@ devices:
 # This is a climate example. Fill in the appropriate capability. If you do not use the entity_id  
 # attribute, the switch capability is not required.
 # For climates->capability, enter mode capability
+# Use hvac_modes: to map HomeAssistant's Climate and SmartThings' modes.
     climates:
       - capability: airConditionerMode
         component: main
@@ -228,6 +229,7 @@ devices:
                 commands:
                   command: setAirConditionerMode
                   attribute: airConditionerMode
+                hvac_modes: [{ "wind": "fan_only" }]
                 hvac_actions:
                   [{ "cool": "cooling", "dry": "drying", "off": "off" }]
                 aux_heat_modes: ["auxheatonly", "auxiliaryemergencyheat"]
@@ -324,8 +326,6 @@ default_entity_id_format: "st_custom_%{device_id}_%{label}_%{component}_%{capabi
 
 
   ```
-
-
 
 
 # support entity
