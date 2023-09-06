@@ -239,7 +239,7 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity, ExtraCa
             tasks.append(
                 self._device.command(self._component, self.get_extra_capa_capability(ATTR_MODE), self.get_extra_capa_command(ATTR_MODE), [mode])
             )
-            
+
         await asyncio.gather(*tasks)
         self.async_write_ha_state()
     
@@ -260,9 +260,11 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity, ExtraCa
             self._component, self.get_extra_capa_capability(ATTR_TARGET_HUM), self.get_extra_capa_command(ATTR_TARGET_HUM), [humidity])
 
     async def async_set_temperature(self, **kwargs) -> None:
+        _LOGGER.error("async_set_temperature, kwrargs : " + str(kwargs))
         for key, value in kwargs.items():
             if key != "entity_id":
-                await self._device.command(self._component, self.get_extra_capa_capability(key), self.get_extra_capa_command(key), [kwargs[key]])
+                if key == "temperature": key = ATTR_TARGET_TEMP
+                await self._device.command(self._component, self.get_extra_capa_capability(key), self.get_extra_capa_command(key), [value])
 
     async def async_turn_on(self) -> None:
         await self._device.command(self._component, ATTR_SWITCH, "on")
