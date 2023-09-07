@@ -548,7 +548,6 @@ class SmartThingsEntity_custom(Entity):
         self.entity_id = async_generate_entity_id(platform + ".{}", entity_id_format, hass=hass)
         
         _LOGGER.debug("create entity id : %s", self.entity_id)
-        self._unique_id = self.entity_id
         
         registry = er.async_get(hass)
         
