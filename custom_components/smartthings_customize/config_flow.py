@@ -267,7 +267,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         options = self.config_entry.options
 
         if user_input is not None:
-            return self.async_create_entry(title="집", data=user_input)
+            return self.async_create_entry(data=user_input)
 
         return self.async_show_form(
             step_id="init",
