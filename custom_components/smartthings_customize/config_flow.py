@@ -6,8 +6,11 @@ from aiohttp import ClientResponseError
 from pysmartthings import APIResponseError, AppOAuth, SmartThings
 from pysmartthings.installedapp import format_install_url
 import voluptuous as vol
+import homeassistant.helpers.config_validation as cv
+from typing import Any, Dict
 
 from homeassistant import config_entries
+from homeassistant.core import callback
 from homeassistant.const import CONF_ACCESS_TOKEN, CONF_CLIENT_ID, CONF_CLIENT_SECRET
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
@@ -20,6 +23,9 @@ from .const import (
     CONF_REFRESH_TOKEN,
     DOMAIN,
     VAL_UID_MATCHER,
+    CONF_ENABLE_DEFAULT_ENTITIES,
+    CONF_RESETTING_ENTITIES,
+    CONF_ENABLE_SYNTAX_PROPERTY,
 )
 from .smartapp import (
     create_app,
@@ -237,5 +243,40 @@ class SmartThingsFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         }
 
         location = await self.api.location(data[CONF_LOCATION_ID])
+        self.location = location
 
         return self.async_create_entry(title=location.name, data=data)
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry):
+        """Handle a option flow."""
+        return OptionsFlowHandler(config_entry)
+
+
+class OptionsFlowHandler(config_entries.OptionsFlow):
+    """Handles options flow for the component."""
+
+    def __init__(self, config_entry) -> None:
+        """Initialize options flow."""
+        self.config_entry = config_entry
+
+    async def async_step_init(self, user_input: Dict[str, Any] = None) -> Dict[str, Any]:
+        errors: Dict[str, str] = {}
+        """Handle options flow."""
+        options = self.config_entry.options
+
+        if user_input is not None:
+            return self.async_create_entry(title="집", data=user_input)
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                    {
+                        vol.Optional(CONF_ENABLE_DEFAULT_ENTITIES, default=options.get(CONF_ENABLE_DEFAULT_ENTITIES, True)): cv.boolean,
+                        vol.Optional(CONF_ENABLE_SYNTAX_PROPERTY, default=options.get(CONF_ENABLE_SYNTAX_PROPERTY, False)): cv.boolean,
+                        vol.Optional(CONF_RESETTING_ENTITIES, default=options.get(CONF_RESETTING_ENTITIES, False)): cv.boolean,
+                    }
+            ), errors=errors
+        )
+        

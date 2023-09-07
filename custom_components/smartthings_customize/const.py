@@ -17,6 +17,10 @@ CONF_INSTANCE_ID = "instance_id"
 CONF_LOCATION_ID = "location_id"
 CONF_REFRESH_TOKEN = "refresh_token"
 
+CONF_RESETTING_ENTITIES = "resetting_entities"
+CONF_ENABLE_DEFAULT_ENTITIES = "enable_default_entities"
+CONF_ENABLE_SYNTAX_PROPERTY = "enable_syntax_property"
+
 DATA_MANAGER = "manager"
 DATA_BROKERS = "brokers"
 EVENT_BUTTON = "smartthings.button"

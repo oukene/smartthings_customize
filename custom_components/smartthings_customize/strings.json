@@ -30,5 +30,17 @@
       "app_setup_error": "Unable to set up the SmartApp.  Please try again.",
       "webhook_error": "SmartThings could not validate the webhook URL. Please ensure the webhook URL is reachable from the internet and try again."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "SmartThings Customize Configuration",
+        "data": {
+          "enable_default_entities": "enable default entities",
+          "enable_syntax_property": "enable syntax property",
+          "resetting_entities": "resetting entities"
+        }
+      }
+    }
   }
 }

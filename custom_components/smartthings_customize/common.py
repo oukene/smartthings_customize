@@ -1,7 +1,7 @@
 import os
 import yaml
 from homeassistant.const import Platform
-from .const import DOMAIN, CUSTOM_PLATFORMS, GLOBAL_SETTING, DEVICE_SETTING, PLATFORMS, CONF_CAPABILITY, CONF_ATTRIBUTE
+from .const import *
 import logging
 _LOGGER = logging.getLogger(__name__)
 
@@ -84,6 +84,7 @@ class SettingManager(object):
         if not hasattr(cls, "_init"):
             self._location = location
             self._settings = None
+            self._options = {}
             self._platforms = set()
             self._default_settings = None
             #self.load_setting()
@@ -97,13 +98,10 @@ class SettingManager(object):
             os.makedirs(DOMAIN)
         if os.path.isfile(filepath) == False:
             with open(filepath, "w") as f:
-                f.write("enable_default_entities : true\n\n")
                 f.write("globals:\n\n")
                 f.write("devices:\n\n")
                 f.write("ignore_platforms: []\n\n")
-                f.write("enable_syntax_property: true\n\n")
                 f.write("default_entity_id_format: '"'st_custom_%{device_id}_%{label}_%{component}_%{capability}_%{attribute}_%{command}_%{name}'"'\n\n")
-                f.write("always_reset_entity: true\n\n")
                 pass
         
         with open(filepath) as f:
@@ -111,6 +109,11 @@ class SettingManager(object):
             _LOGGER.debug("full settings error : " + str(self._settings))
 
         self.build_platform()
+
+    @staticmethod
+    def set_options(options):
+        mgr = SettingManager()
+        mgr._options = options
 
     @staticmethod
     def get_default_setting():
@@ -206,21 +209,16 @@ class SettingManager(object):
 
     @staticmethod
     def enable_syntax_property() -> bool:
-        try:
-            return SettingManager()._settings.get("enable_syntax_property")
-        except Exception as e:
-            _LOGGER.debug("enable_syntax_property error : " + str(e))
-            return False
+        return SettingManager()._options.get(CONF_ENABLE_SYNTAX_PROPERTY, False)
 
 
     @staticmethod
     def enable_default_entities() -> bool:
-        try:
-            mgr = SettingManager()
-            return mgr._settings.get("enable_default_entities")
-        except Exception as e:
-            _LOGGER.debug("enable_default_entities : " + str(e))
-            return False
+        return SettingManager()._options.get(CONF_ENABLE_DEFAULT_ENTITIES, True)
+
+    @staticmethod
+    def resetting_entities() -> bool:
+        return SettingManager()._options.get(CONF_RESETTING_ENTITIES, False)
 
     @staticmethod
     def allow_device(device_id) -> bool:
@@ -287,11 +285,4 @@ class SettingManager(object):
     def ignore_capability(capability):
         return capability in SettingManager().ignore_capabilities()
 
-    @staticmethod
-    def always_reset_entity() -> bool:
-        try:
-            mgr = SettingManager()
-            return mgr._settings.get("always_reset_entity")
-        except Exception as e:
-            _LOGGER.debug("always_reset_entity error : " + str(e))
-            return True
+    

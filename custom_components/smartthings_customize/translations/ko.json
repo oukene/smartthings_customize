@@ -9,7 +9,7 @@
             "token_forbidden": "\ud1a0\ud070\uc5d0 \ud544\uc694\ud55c OAuth \ubc94\uc704\ubaa9\ub85d\uc774 \uc5c6\uc2b5\ub2c8\ub2e4.",
             "token_invalid_format": "\ud1a0\ud070\uc740 UID/GUID \ud615\uc2dd\uc774\uc5b4\uc57c \ud569\ub2c8\ub2e4",
             "token_unauthorized": "\ud1a0\ud070\uc774 \uc720\ud6a8\ud558\uc9c0 \uc54a\uac70\ub098 \uc2b9\uc778\ub418\uc9c0 \uc54a\uc558\uc2b5\ub2c8\ub2e4.",
-            "webhook_error": "SmartThings 11111\uac00 \uc6f9 \ud6c5 URL \uc744 \ud655\uc778\ud560 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4. \uc778\ud130\ub137\uc5d0\uc11c \uc6f9 \ud6c5 URL \uc5d0 \uc811\uadfc\ud560 \uc218 \uc788\ub294\uc9c0 \ud655\uc778\ud55c \ud6c4 \ub2e4\uc2dc \uc2dc\ub3c4\ud574\uc8fc\uc138\uc694."
+            "webhook_error": "SmartThings \uac00 \uc6f9 \ud6c5 URL \uc744 \ud655\uc778\ud560 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4. \uc778\ud130\ub137\uc5d0\uc11c \uc6f9 \ud6c5 URL \uc5d0 \uc811\uadfc\ud560 \uc218 \uc788\ub294\uc9c0 \ud655\uc778\ud55c \ud6c4 \ub2e4\uc2dc \uc2dc\ub3c4\ud574\uc8fc\uc138\uc694."
         },
         "step": {
             "authorize": {
@@ -32,6 +32,18 @@
             "user": {
                 "description": "SmartThings\ub294 \uc544\ub798\uc758 \uc6f9 \ud6c5 \uc8fc\uc18c\ub85c Home Assistant\uc5d0 \ud478\uc2dc \uc5c5\ub370\uc774\ud2b8\ub97c \ubcf4\ub0b4\ub3c4\ub85d \uad6c\uc131\ub429\ub2c8\ub2e4. \n > {webhook_url} \n\n\uc774 \uad6c\uc131\uc774 \uc62c\ubc14\ub974\uc9c0 \uc54a\ub2e4\uba74 \uad6c\uc131\uc744 \uc5c5\ub370\uc774\ud2b8\ud558\uace0 Home Assistant\ub97c \ub2e4\uc2dc \uc2dc\uc791\ud55c \ud6c4 \ub2e4\uc2dc \uc2dc\ub3c4\ud574\uc8fc\uc138\uc694.",
                 "title": "\ucf5c\ubc31 URL \ud655\uc778\ud558\uae30"
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "SmartThings Customize \uad6c\uc131\u0020\uc124\uc815",
+                "data": {
+                    "enable_default_entities": "\uae30\ubcf8\u0020\uc5d4\ud2f0\ud2f0\u0020\ud65c\uc131\ud654",
+                    "enable_syntax_property": "\uc18d\uc131\uc5d0\u0020\uc124\uc815\u0020\uad6c\ubb38\u0020\ud45c\uc2dc",
+                    "resetting_entities": "\uc5d4\ud2f0\ud2f0\u0020\uc7ac\uc124\uc815\u0028\ucd08\uae30\ud654\u0029"
+                }
             }
         }
     }

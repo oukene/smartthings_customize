@@ -31,6 +31,8 @@ from homeassistant.helpers.entity import async_generate_entity_id
 from .common import SettingManager
 from .device import SmartThings_custom
 
+from homeassistant import config_entries, core
+
 import yaml
 
 from .config_flow import SmartThingsFlowHandler  # noqa: F401
@@ -88,9 +90,10 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Return False because it could not be migrated.
     return False
 
-
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Initialize config entry which represents an installed SmartApp."""
+    entry.update_listeners.clear()
+
     # For backwards compat
     if entry.unique_id is None:
         hass.config_entries.async_update_entry(
@@ -111,6 +114,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     settings = SettingManager(await api.location(entry.data[CONF_LOCATION_ID]))
     settings.load_setting()
+    SettingManager().set_options(entry.options)
 
     remove_entry = False
     try:
@@ -203,7 +207,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
         return False
 
-    if SettingManager.always_reset_entity():
+    if SettingManager.resetting_entities():
         entity_registry = homeassistant.helpers.entity_registry.async_get(
                 hass)
         entities = homeassistant.helpers.entity_registry.async_entries_for_config_entry(
@@ -217,16 +221,32 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         for d in devices:
             device_registry.async_update_device(d.id, remove_config_entry_id=entry.entry_id)
 
+    hass.config_entries.async_update_entry(
+            entry,
+            options={CONF_ENABLE_DEFAULT_ENTITIES:entry.options.get(CONF_ENABLE_DEFAULT_ENTITIES, True),
+                    CONF_ENABLE_SYNTAX_PROPERTY:entry.options.get(CONF_ENABLE_SYNTAX_PROPERTY, False),
+                    CONF_RESETTING_ENTITIES:False,
+                    }
+            )
+
         # if DOMAIN in list(d.identifiers)[0]:
         #     _LOGGER.debug("remove device, identifiers" + str(d.identifiers))
         #     device_registry.async_remove_device(d.id)
 
-    hass.data[DOMAIN]["listener"] = []
+    entry.add_update_listener(update_listener)
 
+    hass.data[DOMAIN]["listener"] = []
     #PLATFORMS.different_update(SettingManager.ignore_platforms())
     await hass.config_entries.async_forward_entry_setups(entry, SettingManager().get_enable_platforms())
-
     return True
+
+async def update_listener(
+    hass: core.HomeAssistant, config_entry: config_entries.ConfigEntry
+):
+    """Handle options update."""
+    config_entry.update_listeners.clear()
+    await hass.config_entries.async_reload(config_entry.entry_id)
+
 
 async def async_get_entry_scenes(entry: ConfigEntry, api):
     """Get the scenes within an integration."""
@@ -250,6 +270,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     for listener in hass.data[DOMAIN]["listener"]:
         listener()
+
     broker = hass.data[DOMAIN][DATA_BROKERS].pop(entry.entry_id, None)
     if broker:
         broker.disconnect()
@@ -537,15 +558,15 @@ class SmartThingsEntity_custom(Entity):
         self._platform = platform
 
         t = temp(DEFAULT_ENTITY_ID_FORMAT)
-        entity_id_format = t.substitute(device_id=self._device.device_id, label=self._device.label, component=self._component, capability=self._capability, attribute=self._attribute, command=self._command, name=self._name)
-        self._unique_id = async_generate_entity_id(platform + ".{}", entity_id_format, hass=hass)
+        unique_id_format = t.substitute(device_id=self._device.device_id, label=self._device.label, component=self._component, capability=self._capability, attribute=self._attribute, command=self._command, name=self._name)
+        self._unique_id = "{}".format(platform + "." + unique_id_format)
 
         entity_id_format = SettingManager.default_entity_id_format() if SettingManager.default_entity_id_format() != None else DEFAULT_ENTITY_ID_FORMAT
         if setting[1].get(CONF_ENTITY_ID_FORMAT) != None:
             entity_id_format = setting[1].get(CONF_ENTITY_ID_FORMAT)
         t = temp(entity_id_format)
         entity_id_format = t.substitute(device_id=self._device.device_id, label=self._device.label, component=self._component, capability=self._capability, attribute=self._attribute, command=self._command, name=self._name)
-        self.entity_id = async_generate_entity_id(platform + ".{}", entity_id_format, hass=hass)
+        self.entity_id = "{}".format(platform + "." + entity_id_format)
         
         _LOGGER.debug("create entity id : %s", self.entity_id)
         
