@@ -30,9 +30,6 @@ example) entity_id_format: st_custom_%{device_id}_%{label}_%{component}_%{capabi
 # https://my.smartthings.com/advanced/
 # After identifying the information of the device from the above site, modify the setting file
 
-# Ability to activate features of official integrated components
-enable_default_entities: true
-
 globals:
   # Enter the information of the binary sensor to be added. Enter the attributes of your SmartThings device.
   binary_sensors:
@@ -319,8 +316,6 @@ devices:
 
 ignore_platforms:
   - scene
-
-enable_syntax_property: false
 
 default_entity_id_format: "st_custom_%{device_id}_%{label}_%{component}_%{capability}_%{attribute}_%{command}_%{name}"
 
