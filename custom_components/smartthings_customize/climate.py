@@ -23,9 +23,9 @@ from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import SmartThingsEntity, SmartThingsEntity_custom
-from .const import DATA_BROKERS, DOMAIN, CUSTOM_PLATFORMS
-from .common import SettingManager
+from . import SmartThingsEntity
+from .const import DATA_BROKERS, DOMAIN
+from .common import *
 from .climate_custom import SmartThingsClimate_custom
 from homeassistant.const import Platform
 
@@ -110,13 +110,13 @@ async def async_setup_entry(
 
     broker = hass.data[DOMAIN][DATA_BROKERS][config_entry.entry_id]
 
-    settings = SettingManager.get_capa_settings(broker, CUSTOM_PLATFORMS[Platform.CLIMATE])
+    settings = SettingManager.get_capa_settings(broker, Platform.CLIMATE)
     for s in settings:
         _LOGGER.debug("cap setting : " + str(s[1]))
 
         entities.append(SmartThingsClimate_custom(hass=hass, setting=s))
 
-    async_add_entities(entities)
+    async_add_entities(entities, True)
 
 
 def get_capabilities(capabilities: Sequence[str]) -> Sequence[str] | None:

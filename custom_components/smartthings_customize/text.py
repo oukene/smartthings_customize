@@ -11,7 +11,6 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import SmartThingsEntity_custom
 from .const import *
 from .common import *
 
@@ -27,7 +26,7 @@ async def async_setup_entry(
     broker = hass.data[DOMAIN][DATA_BROKERS][config_entry.entry_id]
 
     entities = []
-    settings = SettingManager.get_capa_settings(broker, CUSTOM_PLATFORMS[Platform.TEXT])
+    settings = SettingManager.get_capa_settings(broker, Platform.TEXT)
     for s in settings:
         _LOGGER.debug("cap setting : " + str(s[1]))
         entities.append(SmartThingsText_custom(hass=hass, setting=s))
@@ -38,36 +37,29 @@ class SmartThingsText_custom(SmartThingsEntity_custom, TextEntity):
     def __init__(self, hass, setting) -> None:
         super().__init__(hass, platform=Platform.TEXT, setting=setting)
 
-        self._min = setting[1].get(ATTR_MIN) if setting[1].get(ATTR_MIN) != None else 0
-        self._max = setting[1].get(ATTR_MAX) if setting[1].get(ATTR_MAX) != None else MAX_LENGTH_STATE_STATE
-        self._pattern = setting[1].get(ATTR_PATTERN) if setting[1].get(ATTR_PATTERN) != None else ""
-        self._mode = setting[1].get(ATTR_MODE) if setting[1].get(ATTR_MODE) != None else TextMode.TEXT
-
     @property
     def mode(self) -> TextMode:
-        return self._mode
+        return self.get_attr_value(Platform.TEXT, ATTR_MODE, TextMode.TEXT)
 
     @property
     def native_max(self) -> int:
-        return self._max
+        return self.get_attr_value(Platform.TEXT, ATTR_MAX, MAX_LENGTH_STATE_STATE)
 
     @property
     def native_min(self) -> int:
-        return self._min
+        return self.get_attr_value(Platform.TEXT, ATTR_MIN, 0)
 
     @property
     def pattern(self) -> str | None:
-        return self._pattern
+        return self.get_attr_value(Platform.TEXT, ATTR_PATTERN, "")
 
     @property
     def native_value(self) -> str | None:
-        value = get_attribute_value(self._device, self._component, self._capability, self._attribute)
-        return value if value != None else ""
+        return self.get_attr_value(Platform.TEXT, CONF_STATE, "")
 
     async def async_set_value(self, value: str) -> None:
         arg = []
-        if self._command == "bixbyCommand":
+        if self.get_command(Platform.TEXT) == "bixbyCommand":
             arg.append("search_all")
         arg.append(value)
-        await self._device.command(
-            self._component, self._capability, self._command, arg)
+        await self.send_command(Platform.TEXT, self.get_command(Platform.TEXT), arg)

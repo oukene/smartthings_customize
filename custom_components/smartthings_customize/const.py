@@ -46,6 +46,16 @@ CONF_COMMAND = "command"
 CONF_ARGUMENT = "argument"
 CONF_PARENT_ENTITY_ID = "parent_entity_id"
 CONF_ENTITY_ID_FORMAT = "entity_id_format"
+CONF_OPTIONS = "options"
+
+CONF_DEFAULT_UNIT = "default_unit"
+CONF_DEVICE_CLASS = "device_class"
+CONF_STATE_CLASS = "state_class"
+CONF_ENTITY_CATEGORY = "entity_category"
+
+CONF_STATE = "state"
+
+CAPA_SWITCH = "switch"
 
 ATTR_SYNTAX = "syntax"
 
@@ -67,18 +77,6 @@ PLATFORMS = [
     Platform.TEXT,
 ]
 
-CUSTOM_PLATFORMS = {
-    Platform.BINARY_SENSOR: "binary_sensors",
-    Platform.SWITCH: "switches",
-    Platform.SENSOR: "sensors",
-    Platform.NUMBER: "numbers",
-    Platform.SELECT: "selects",
-    Platform.BUTTON: "buttons",
-    Platform.TEXT: "texts",
-    Platform.CLIMATE: "climates",
-    Platform.FAN: "fans",
-}
-
 IGNORED_CAPABILITIES = [
     "execute",
     "healthCheck",
@@ -90,4 +88,5 @@ TOKEN_REFRESH_INTERVAL = timedelta(days=14)
 VAL_UID = "^(?:([0-9a-fA-F]{32})|([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}))$"
 VAL_UID_MATCHER = re.compile(VAL_UID)
 
-DEFAULT_ENTITY_ID_FORMAT = "st_custom_%{device_id}_%{label}_%{component}_%{capability}_%{attribute}_%{command}_%{name}"
+DEFAULT_UNIQUE_ID_FORMAT = "st_custom_%{device_id}_%{device_type}_%{label}_%{component}_%{capability}_%{attribute}_%{command}_%{name}"
+DEFAULT_ENTITY_ID_FORMAT = "st_custom_%{device_id}_%{device_type}_%{label}_%{component}_%{capability}_%{attribute}_%{command}_%{name}"

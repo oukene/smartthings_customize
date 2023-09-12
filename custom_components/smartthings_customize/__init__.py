@@ -59,10 +59,9 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 ENTITY_ID_FORMAT = DOMAIN + ".{}"
 
-import string
 
-class temp(string.Template):
-    delimiter="%" 
+
+ 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Initialize the SmartThings platform."""
@@ -237,6 +236,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.data[DOMAIN]["listener"] = []
     #PLATFORMS.different_update(SettingManager.ignore_platforms())
+    _LOGGER.debug("enable platforms : " + str(SettingManager().get_enable_platforms()))
     await hass.config_entries.async_forward_entry_setups(entry, SettingManager().get_enable_platforms())
     return True
 
@@ -535,125 +535,3 @@ class SmartThingsEntity(Entity):
         """Return a unique ID."""
         return self._device.device_id
 
-class SmartThingsEntity_custom(Entity):
-    """Defines a SmartThings entity."""
-
-    _attr_should_poll = False
-
-    def __init__(self, hass, platform: Platform, setting) -> None:
-        """Initialize the instance."""
-        self._hass = hass
-        self._device = setting[0]
-        self._component = setting[1].get(CONF_COMPONENT)
-        self._capability = setting[1].get(CONF_CAPABILITY)
-        self._name = setting[2].get(CONF_NAME)
-        self._attribute = setting[2].get(CONF_ATTRIBUTE)
-        self._command = setting[2].get(CONF_COMMAND)
-        self._argument = setting[2].get(CONF_ARGUMENT)
-        self._parent_entity_id = setting[2].get(CONF_PARENT_ENTITY_ID)
-        self._syntax = setting[1]
-
-        self._dispatcher_remove = None
-        self._device_info = []
-        self._platform = platform
-
-        t = temp(DEFAULT_ENTITY_ID_FORMAT)
-        unique_id_format = t.substitute(device_id=self._device.device_id, label=self._device.label, component=self._component, capability=self._capability, attribute=self._attribute, command=self._command, name=self._name)
-        self._unique_id = "{}".format(platform + "." + unique_id_format)
-
-        entity_id_format = SettingManager.default_entity_id_format() if SettingManager.default_entity_id_format() != None else DEFAULT_ENTITY_ID_FORMAT
-        if setting[1].get(CONF_ENTITY_ID_FORMAT) != None:
-            entity_id_format = setting[1].get(CONF_ENTITY_ID_FORMAT)
-        t = temp(entity_id_format)
-        entity_id_format = t.substitute(device_id=self._device.device_id, label=self._device.label, component=self._component, capability=self._capability, attribute=self._attribute, command=self._command, name=self._name)
-        self.entity_id = "{}".format(platform + "." + entity_id_format)
-        
-        _LOGGER.debug("create entity id : %s", self.entity_id)
-        
-        registry = er.async_get(hass)
-        
-        source_entity = registry.async_get(self._parent_entity_id)
-        dev_reg = dr.async_get(hass)
-        # Resolve source entity device
-        if (
-            (source_entity is not None)
-            and (source_entity.device_id is not None)
-            and (
-                (
-                    device := dev_reg.async_get(
-                        device_id=source_entity.device_id,
-                    )
-                )
-                is not None
-            )
-        ):
-            self._device_info = DeviceInfo(
-                identifiers=device.identifiers,
-                name=device.name,
-                manufacturer=device.manufacturer,
-                model=device.model,
-                hw_version=device.hw_version,
-                sw_version=device.sw_version,
-            )
-        else:
-            self._device_info = DeviceInfo(
-                identifiers={(DOMAIN, self._device.device_id)}, 
-                name=self._device.label,
-                manufacturer=self._device.status.ocf_manufacturer_name,
-                model=self._device.status.ocf_model_number,
-                hw_version=self._device.status.ocf_hardware_version,
-                sw_version=self._device.status.ocf_firmware_version,
-                )
-
-        self._extra_state_attributes = {}
-        if SettingManager.enable_syntax_property():
-            self._extra_state_attributes[ATTR_SYNTAX] = self._syntax
-
-    async def async_added_to_hass(self):
-        """Device added to hass."""
-
-        async def async_update_state(devices):
-            """Update device state."""
-            if self._device.device_id in devices:
-                await self.async_update_ha_state(True)
-
-        self._dispatcher_remove = async_dispatcher_connect(
-            self.hass, SIGNAL_SMARTTHINGS_UPDATE, async_update_state
-        )
-
-    async def async_will_remove_from_hass(self) -> None:
-        """Disconnect the device when removed."""
-        if self._dispatcher_remove:
-            self._dispatcher_remove()
-
-    @property
-    def has_entity_name(self) -> bool:
-        return True
-
-    @property
-    def extra_state_attributes(self):
-        return self._extra_state_attributes
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Get attributes about the device."""
-        return DeviceInfo(
-            configuration_url="https://account.smartthings.com",
-            identifiers=self._device_info.get("identifiers"),
-            connections=self._device_info.get("connections"),
-            manufacturer=self._device.status.ocf_manufacturer_name,
-            model=self._device.status.ocf_model_number,
-            name=self._device_info.get("name"),
-            hw_version=self._device.status.ocf_hardware_version,
-            sw_version=self._device.status.ocf_firmware_version,
-        )
-
-    @property
-    def name(self) -> str:
-        t = temp(self._name)
-        name = t.substitute(label=self._device.label, component=self._component, capability=self._capability, attribute=self._attribute, command=self._command)
-        return f"{name}"
-
-    @property
-    def unique_id(self) -> str | None:
-        return self._unique_id

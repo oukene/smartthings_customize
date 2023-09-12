@@ -46,7 +46,7 @@ async def async_setup_entry(
 
     broker = hass.data[DOMAIN][DATA_BROKERS][config_entry.entry_id]
     entities = []
-    settings = SettingManager.get_capa_settings(broker, CUSTOM_PLATFORMS[Platform.FAN])
+    settings = SettingManager.get_capa_settings(broker, Platform.FAN)
     for s in settings:
         _LOGGER.debug("cap setting : " + str(s[1]))
         entities.append(SmartThingsFan_custom(hass=hass, setting=s))

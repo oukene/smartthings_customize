@@ -32,18 +32,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
-from . import SmartThingsEntity, SmartThingsEntity_custom
+from . import SmartThingsEntity
 from .const import *
 from .common import *
 
 Map = namedtuple(
     "Map", "attribute name default_unit device_class state_class entity_category"
 )
-
-CONF_DEFAULT_UNIT = "default_unit"
-CONF_DEVICE_CLASS = "device_class"
-CONF_STATE_CLASS = "state_class"
-CONF_ENTITY_CATEGORY = "entity_category"
 
 CAPABILITY_TO_SENSORS: dict[str, list[Map]] = {
     Capability.activity_lighting_mode: [
@@ -629,8 +624,8 @@ async def async_setup_entry(
                                 for m in maps
                             ]
                         )
-
-    settings = SettingManager.get_capa_settings(broker, CUSTOM_PLATFORMS[Platform.SENSOR])
+                        
+    settings = SettingManager.get_capa_settings(broker, Platform.SENSOR)
     for s in settings:
         _LOGGER.debug("cap setting : " + str(s[1]))
         entities.append(SmartThingsSensor_custom(hass=hass, setting=s))
@@ -703,28 +698,29 @@ class SmartThingsSensor_custom(SmartThingsEntity_custom, SensorEntity):
     def __init__(self, hass, setting) -> None:
         super().__init__(hass, platform=Platform.SENSOR,setting=setting)
 
-        self._default_unit = setting[2].get(CONF_DEFAULT_UNIT)
-        self._device_class = setting[2].get(CONF_DEVICE_CLASS)
-        self._state_class = setting[2].get(CONF_STATE_CLASS)
-        self._entity_category = setting[2].get(CONF_ENTITY_CATEGORY)
+        self._default_unit = setting[1].get(CONF_DEFAULT_UNIT)
+        self._device_class = setting[1].get(CONF_DEVICE_CLASS)
+        self._state_class = setting[1].get(CONF_STATE_CLASS)
+        self._entity_category = setting[1].get(CONF_ENTITY_CATEGORY)
 
     @property
     def device_class(self):
         """Return the device class of the sensor."""
-        return self._device_class
+        return self.get_attr_value(Platform.SENSOR, CONF_DEVICE_CLASS)
 
     @property
     def state_class(self):
-        return self._state_class
+        return self.get_attr_value(Platform.SENSOR, CONF_STATE_CLASS)
 
     @property
     def entity_category(self):
-        return self._entity_category
+        return self.get_attr_value(Platform.SENSOR, CONF_ENTITY_CATEGORY)
 
     @property
     def native_value(self):
         """Return the state of the sensor."""
-        value = get_attribute_value(self._device, self._component, self._capability, self._attribute)
+        value = self.get_attr_value(Platform.SENSOR, CONF_STATE)
+        #value = get_attribute_value(self._device, self._component, self._capability, self._attribute)
         if self._device_class == SensorDeviceClass.TIMESTAMP:
             return dt_util.parse_datetime(value)
         return value
@@ -732,7 +728,7 @@ class SmartThingsSensor_custom(SmartThingsEntity_custom, SensorEntity):
     @property
     def native_unit_of_measurement(self):
         """Return the unit this state is expressed in."""
-        unit = get_attribute_unit(self._device, self._component, self._capability, self._attribute)
+        unit = self.get_attr_unit(Platform.SENSOR, CONF_STATE)
         return UNITS.get(unit, unit) if unit else self._default_unit
 
 

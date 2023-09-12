@@ -1,77 +1,254 @@
 import os
 import yaml
-from homeassistant.const import Platform
+from homeassistant.const import Platform, CONF_TYPE
 from .const import *
+from homeassistant.const import (
+    STATE_UNKNOWN, STATE_UNAVAILABLE
+)
+
+from homeassistant.helpers.dispatcher import (
+    async_dispatcher_connect,
+    async_dispatcher_send,
+)
+
+from homeassistant.helpers import (
+    device_registry as dr,
+    entity_platform,
+    entity_registry as er,
+)
+
+from homeassistant.helpers.entity import DeviceInfo, Entity
+import string
 import logging
 _LOGGER = logging.getLogger(__name__)
 
-def get_attribute(device, component, capability, attribute):
-    try:
-        return device.status._status.get(component).get(capability).get(attribute)
-    except:
-        return None
 
-def get_attribute_value(device, component, capability, attribute, default=None):
-    try:
-        return device.status._status.get(component).get(capability).get(attribute).value
-    except:
-        return default
+def is_valid_state(state) -> bool:
+    return state and state.state != STATE_UNKNOWN and state.state != STATE_UNAVAILABLE and state.state != None
 
-def get_attribute_unit(device, component, capability, attribute):
-    try:
-        return device.status._status.get(component).get(capability).get(attribute).unit
-    except:
-        return None
+class format_util(string.Template):
+    delimiter = "%"
 
-def get_attribute_data(device, component, capability, attribute):
-    try:
-        return device.status._status.get(component).get(capability).get(attribute).data
-    except:
-        return None
+class SmartThingsEntity_custom(Entity):
+    """Defines a SmartThings entity."""
 
-    # if component == "main":
-    #     return device.status.attributes.get(attribute)
-    # else:
-    #     return device.status._components.get(component).attributes.get(attribute) if device.status._components.get(component) != None else None
+    _attr_should_poll = False
 
-class ExtraCapability():
-    def __init__(self) -> None:
-        self._extra_capability = {}
+    def __init__(self, hass, platform: Platform, setting) -> None:
+        """Initialize the instance."""
+        self._hass = hass
+        self._device = setting[0]
+
+        component = setting[1].get(CONF_COMPONENT)
+        capability = setting[1].get(CONF_CAPABILITY)
+        name = setting[1].get(CONF_NAME)
+        attribute = setting[1].get(CONF_ATTRIBUTE)
+        command = setting[1].get(CONF_COMMAND)
+        #argument = setting[1].get(CONF_ARGUMENT)
+        parent_entity_id = setting[1].get(CONF_PARENT_ENTITY_ID)
+
+        self._extra_state_attributes = {}
+        if SettingManager.enable_syntax_property():
+            self._extra_state_attributes[ATTR_SYNTAX] = setting[1]
+
+        self._dispatcher_remove = None
+        self._device_info = []
+        self._platform = platform
+
+        self._capability = {}
+        self._capability[platform] = setting[1]
+
+        t = format_util(DEFAULT_UNIQUE_ID_FORMAT)
+        unique_id_format = t.substitute(device_id=self._device.device_id, device_type=self._device.type, label=self._device.label, component=component,
+                                        capability=capability, attribute=attribute, command=command, name=name)
+        self._unique_id = "{}".format(platform + "." + unique_id_format)
+
+        entity_id_format = SettingManager.default_entity_id_format(
+        ) if SettingManager.default_entity_id_format() != None else DEFAULT_ENTITY_ID_FORMAT
+        if setting[1].get(CONF_ENTITY_ID_FORMAT) != None:
+            entity_id_format = setting[1].get(CONF_ENTITY_ID_FORMAT)
+        t = format_util(entity_id_format)
+        entity_id_format = t.substitute(device_id=self._device.device_id, device_type=self._device.type, label=self._device.label, component=component,
+                                        capability=capability, attribute=attribute, command=command, name=name)
+        self.entity_id = "{}".format(platform + "." + entity_id_format)
+
+        t = format_util(name)
+        self._name = t.substitute(device_id=self._device.device_id, device_type=self._device.type, label=self._device.label, component=component,
+                                  capability=capability, attribute=attribute, command=command, name=name)
+        
+        _LOGGER.debug("create entity id : %s", self.entity_id)
+
+        registry = er.async_get(hass)
+
+        source_entity = registry.async_get(parent_entity_id)
+        dev_reg = dr.async_get(hass)
+        # Resolve source entity device
+        if (
+            (source_entity is not None)
+            and (source_entity.device_id is not None)
+            and (
+                (
+                    device := dev_reg.async_get(
+                        device_id=source_entity.device_id,
+                    )
+                )
+                is not None
+            )
+        ):
+            self._device_info = DeviceInfo(
+                identifiers=device.identifiers,
+                name=device.name,
+                manufacturer=device.manufacturer,
+                model=device.model,
+                hw_version=device.hw_version,
+                sw_version=device.sw_version,
+            )
+        else:
+            self._device_info = DeviceInfo(
+                identifiers={(DOMAIN, self._device.device_id)},
+                name=self._device.label,
+                manufacturer=self._device.status.ocf_manufacturer_name,
+                model=self._device.status.ocf_model_number,
+                hw_version=self._device.status.ocf_hardware_version,
+                sw_version=self._device.status.ocf_firmware_version,
+            )
+
+    async def async_added_to_hass(self):
+        """Device added to hass."""
+
+        async def async_update_state(devices):
+            """Update device state."""
+            if self._device.device_id in devices:
+                await self.async_update_ha_state(True)
+
+        self._dispatcher_remove = async_dispatcher_connect(
+            self.hass, SIGNAL_SMARTTHINGS_UPDATE, async_update_state
+        )
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Disconnect the device when removed."""
+        if self._dispatcher_remove:
+            self._dispatcher_remove()
+
+    @property
+    def has_entity_name(self) -> bool:
+        return True
+
+    @property
+    def extra_state_attributes(self):
+        return self._extra_state_attributes
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Get attributes about the device."""
+        return DeviceInfo(
+            configuration_url="https://account.smartthings.com",
+            identifiers=self._device_info.get("identifiers"),
+            connections=self._device_info.get("connections"),
+            manufacturer=self._device.status.ocf_manufacturer_name,
+            model=self._device.status.ocf_model_number,
+            name=self._device_info.get("name"),
+            hw_version=self._device.status.ocf_hardware_version,
+            sw_version=self._device.status.ocf_firmware_version,
+        )
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def unique_id(self) -> str | None:
+        return self._unique_id
+
+    async def send_command(self, platform, command, arg):
+        if arg_type := self.get_argument(platform, {}).get(CONF_TYPE):
+            if str(type(arg)) == "<class 'list'>":
+                if arg_type == "float":
+                    _LOGGER.error("convert type float")
+                    arg = list(map(float, arg))
+                elif arg_type == "str":
+                    arg = list(map(str, arg))
+                elif arg_type == "int":
+                    arg = list(map(int, arg))
+            else:
+                if arg_type == "float":
+                    _LOGGER.error("convert type float2")
+                    arg = float(arg)
+                elif arg_type == "str":
+                    arg = str(arg)
+                elif arg_type == "int":
+                    arg = int(arg)
+
+        await self._device.command(self.get_component(platform), self.get_capability(platform), command, arg)
+        self.async_write_ha_state()
 
     def is_enable_feature(self, capa):
-        return capa in self._extra_capability
+        return capa in self._capability
 
-    def get_extra_capa_attr_value(self, key, attr, default = None):
+    def get_component(self, platform):
+        return self._capability[platform].get(CONF_COMPONENT, self._capability[self._platform].get(CONF_COMPONENT))
+
+    def get_capability(self, platform):
+        return self._capability[platform].get(CONF_CAPABILITY, self._capability[self._platform].get(CONF_CAPABILITY))
+
+    def _get_attr_status_value(self, component, capability, attribute, default=None):
         try:
-            value = self._extra_capability[key].get(attr, default)
-            if str(type(value)) == "<class 'dict'>":
-                capa = value.get(CONF_CAPABILITY, self._extra_capability[key][key])
-                value = get_attribute_value(self._device, self._component, capa, value.get(CONF_ATTRIBUTE), default=default)
-            return value
+            return self._device.status._status.get(component).get(capability).get(attribute).value
         except:
             return default
 
-    def get_extra_capa_command(self, key):
+    def _get_attribute_unit(self, component, capability, attribute):
         try:
-            return self._extra_capability[key].get("commands").get("command")
+            return self._device.status._status.get(component).get(capability).get(attribute).unit
         except:
-            _LOGGER.debug("not found extra capa command : " + key)
-            return None
-        
-    def get_extra_capa_capability(self, key):
-        try:
-            return self._extra_capability[key][key]
-        except:
-            _LOGGER.debug("not found extra capa : " + key)
             return None
 
-    def get_extra_capa(self, key):
-        try:
-            return self._extra_capability[key]
-        except:
-            _LOGGER.debug("not found extra capa : " + key)
-            return None
+    def get_attr_unit(self, platform, attr):
+        return self._get_attribute_unit(self.get_component(platform), self.get_capability(platform), attr)
 
+    def get_attr_value(self, platform, attr, default = None):
+        try:
+            _LOGGER.debug("extra capa : " + str(self._capability[platform]))
+            value = self._capability[platform].get(attr, default)
+            _LOGGER.debug("platform : " + str(platform) + ", attr : " + str(attr) + ", value: " + str(value) + ", type : " + str(type(value)))
+            if str(type(value)) == "<class 'dict'>":
+                component = value.get(CONF_COMPONENT, self.get_component(platform))
+                capa = value.get(CONF_CAPABILITY, self.get_capability(platform))
+                _LOGGER.debug("get dict attr - platform : " + str(platform) + ", component : " + str(component) + ", capa : " + str(capa) + ", default : " + str(default))
+                value = self._get_attr_status_value(component, capa, value.get(CONF_ATTRIBUTE), default=default)
+            return value
+        except Exception as e:
+            _LOGGER.debug("error : " + str(e))
+            return default
+
+    def get_attribute(self, platform, default=None):
+        try:
+            return self._capability[platform].get(CONF_ATTRIBUTE)
+        except:
+            _LOGGER.debug("not found attribute : " + platform)
+            return default
+
+    def get_command(self, platform, default=None):
+        try:
+            return self._capability[platform].get(CONF_COMMAND)
+        except:
+            _LOGGER.debug("not found command : " + platform)
+            return default
+
+    def get_argument(self, platform, default=None):
+        try:
+            return self._capability[platform].get(CONF_ARGUMENT)
+        except:
+            _LOGGER.debug("not found argument : " + platform)
+            return default
+
+    def get_capabilities(self, platform, default=None):
+        try:
+            return self._capability[platform]
+        except:
+            _LOGGER.debug("not found capabilities : " + platform)
+            return default
+    
 
 class SettingManager(object):
     def __new__(cls, *args, **kwargs):
@@ -134,26 +311,32 @@ class SettingManager(object):
             return None
 
     @staticmethod
-    def get_capabilities():
+    def get_capabilities() -> list[str]:
         setting = SettingManager()
         capabilities = []
         try:
             mgr = SettingManager()
             setting = mgr._settings.get(GLOBAL_SETTING)
             if setting != None:
-                for platform in CUSTOM_PLATFORMS.values():
-                    #_LOGGER.error("get_capa capabilities0 : " + str(setting.get(platform)))
+                for platform in PLATFORMS:
                     if setting.get(platform):
                         for cap in setting.get(platform):
-                            capabilities.append(cap.get("capability"))
+                            capabilities.append(cap.get("capability")) 
+                            for sub_cap in cap.get("capabilities"):
+                                capabilities.append(sub_cap.get("capability"))
                 #_LOGGER.error("get_capa capabilities1 : " + str(capabilities))
             settings = mgr._settings.get(DEVICE_SETTING)
             if settings != None:
                 for setting in settings:
-                    for platform in CUSTOM_PLATFORMS.values():
+                    for platform in PLATFORMS:
                         if setting.get(platform):
                             for cap in setting[platform]:
                                 capabilities.append(cap.get("capability"))
+                                for sub_cap in cap.get("capabilities"):
+                                    capabilities.append(sub_cap.get("capability"))
+
+            #capabilities.extend(mgr.subscribe_capabilities())
+            _LOGGER.debug("get_capabilities : " + str(capabilities))
         except Exception as e:
             _LOGGER.debug("get_capabilities error : " + str(e))
             pass
@@ -161,40 +344,40 @@ class SettingManager(object):
             return capabilities
 
     @staticmethod
-    def get_capa_settings(broker, custom_platform):
-        element_type = "commands"
-        if custom_platform in (CUSTOM_PLATFORMS[Platform.SENSOR], CUSTOM_PLATFORMS[Platform.BINARY_SENSOR], CUSTOM_PLATFORMS[Platform.CLIMATE], CUSTOM_PLATFORMS[Platform.FAN]):
-            element_type = "attributes"
+    def get_capa_settings(broker, platform):
         settings = []
         try:
-            default_setting = SettingManager.get_default_setting().get(custom_platform)
+            default_setting = SettingManager.get_default_setting().get(platform)
             if default_setting != None:
-                for cap in default_setting:
+                for setting in default_setting:
                     for device in broker.devices.values():
                         if SettingManager.allow_device_custom(device.device_id):
                             capabilities = broker.build_capability(device)
                             for key, value in capabilities.items():
-                                if cap.get("component") == key and cap.get("capability") in value:
-                                    for setting in cap.get(element_type):
-                                        _LOGGER.debug("add setting : " + str(setting))
-                                        settings.append([device, cap, setting])
+                                _LOGGER.debug("key : " + str(key) + ", value : " + str(value) + ", component : " + str(setting.get("component")) + ", capa : " + str(setting.get("capability")))
+                                if setting.get("component") == key and setting.get("capability") in value:
+                                    settings.append([device, setting])
         except Exception as e:
-            _LOGGER.debug("get_capa_settings_1 error : " + str(e))
+            _LOGGER.error("get_capa_settings_1 error : " + str(e))
             pass
         
         try:
             for device_setting in SettingManager.get_device_setting():
                 if device_setting["device_id"] in broker.devices:
                     capabilities = broker.build_capability(broker.devices[device_setting["device_id"]])
-                    if custom_platform not in device_setting: 
+                    if device_type := device_setting.get("type", None):
+                        _LOGGER.debug("setting device_type : " + str(device_type) +
+                                      ", device_type : " + str(broker.devices[device_setting["device_id"]].type))
+                        if device_type.lower() != broker.devices[device_setting["device_id"]].type.lower():
+                            continue
+                    if platform not in device_setting:
                         continue
-                    for cap in device_setting[custom_platform]:
-                        if cap.get("component") in capabilities and cap.get("capability") in capabilities[cap.get("component")]:
-                            for setting in cap.get(element_type):
-                                _LOGGER.debug("add setting : " + str(setting))
-                                settings.append([broker.devices[device_setting["device_id"]], cap, setting])
+                    for setting in device_setting.get(platform, []):
+                        if setting.get("component") in capabilities and setting.get("capability") in capabilities[setting.get("component")]:
+                            settings.append(
+                                [broker.devices[device_setting["device_id"]], setting])
         except Exception as e:
-            _LOGGER.debug("get_capa_settings_2 error : " + str(e))
+            _LOGGER.error("get_capa_settings_2 error : " + str(e))
             pass
 
         return settings
@@ -274,7 +457,16 @@ class SettingManager(object):
             mgr = SettingManager()
             return mgr._settings.get(GLOBAL_SETTING).get("ignore_capabilities", [])
         except Exception as e:
-            _LOGGER.debug("allow_device error : " + str(e))
+            _LOGGER.debug("ignore_capabilities error : " + str(e))
+            return []
+
+    @staticmethod
+    def subscribe_capabilities():
+        try:
+            mgr = SettingManager()
+            return mgr._settings.get("subscribe_capabilities", [])
+        except Exception as e:
+            _LOGGER.debug("allow_capabilities error : " + str(e))
             return []
 
     @staticmethod
@@ -285,4 +477,3 @@ class SettingManager(object):
     def ignore_capability(capability):
         return capability in SettingManager().ignore_capabilities()
 
-    

@@ -52,7 +52,6 @@ from .const import (
     STORAGE_KEY,
     STORAGE_VERSION,
     SUBSCRIPTION_WARNING_LIMIT,
-    CUSTOM_PLATFORMS,
 )
 
 _LOGGER = logging.getLogger(__name__)

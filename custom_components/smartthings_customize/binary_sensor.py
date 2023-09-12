@@ -16,7 +16,7 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import SmartThingsEntity, SmartThingsEntity_custom
+from . import SmartThingsEntity
 from .const import *
 from .common import *
 import logging
@@ -65,7 +65,7 @@ async def async_setup_entry(
                 attrib = CAPABILITY_TO_ATTRIB[capability]
                 sensors.append(SmartThingsBinarySensor(device, attrib))
 
-    settings = SettingManager.get_capa_settings(broker, CUSTOM_PLATFORMS[Platform.BINARY_SENSOR])
+    settings = SettingManager.get_capa_settings(broker, Platform.BINARY_SENSOR)
     for s in settings:
         _LOGGER.debug("cap setting : " + str(s[1]))
         sensors.append(SmartThingsBinarySensor_custom(hass=hass, setting=s))
@@ -120,18 +120,18 @@ class SmartThingsBinarySensor_custom(SmartThingsEntity_custom, BinarySensorEntit
 
     @property
     def device_class(self):
-        """Return the class of this device."""
-        return ATTRIB_TO_CLASS[self._attribute]
-
+        """Return the device class of the sensor."""
+        return self.get_attr_value(Platform.BINARY_SENSOR, CONF_DEVICE_CLASS)
     @property
     def entity_category(self):
-        """Return the entity category of this device."""
-        return ATTRIB_TO_ENTTIY_CATEGORY.get(self._attribute)
+        return self.get_attr_value(Platform.BINARY_SENSOR, CONF_ENTITY_CATEGORY)
 
     @property
     def is_on(self):
-        value = get_attribute_value(self._device, self._component, self._capability, self._attribute)
-
-        if self._attribute not in ATTRIBUTE_ON_VALUES:
-            return bool(value)
-        return value == ATTRIBUTE_ON_VALUES[self._attribute]
+        value = self.get_attr_value(Platform.BINARY_SENSOR, CONF_STATE)
+        on_state = self.get_attr_value(Platform.BINARY_SENSOR, "on_state")
+        return value in on_state
+            
+        #if self._attribute not in ATTRIBUTE_ON_VALUES:
+        #    return bool(value)
+        #return value == ATTRIBUTE_ON_VALUES[self.get_attribute(Platform.BINARY_SENSOR)]
