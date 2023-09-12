@@ -36,7 +36,6 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
                 self._supported_features |= ClimateEntityFeature.FAN_MODE
             elif ATTR_TARGET_TEMP in capa:
                 self._capability[ATTR_TARGET_TEMP] = capa
-                _LOGGER.error("set support target_temp")
                 self._supported_features |= ClimateEntityFeature.TARGET_TEMPERATURE
             elif ATTR_TARGET_TEMP_LOW in capa:
                 self._capability[ATTR_TARGET_TEMP_LOW] = capa
@@ -132,7 +131,6 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
             return HVACMode.OFF
         mode = self.get_attr_value(ATTR_MODE, CONF_STATE)
         hvac_modes = self.get_attr_value(ATTR_MODE, "s2h_mode_mapping", [{}])
-        _LOGGER.error("mode: " + str(mode) +", s2h_mode_mapping : " + str(hvac_modes[0]))
         return hvac_modes[0].get(mode, mode)
 
     @property
@@ -250,7 +248,6 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
                 mode = k
                 break
         if self._capability.get(ATTR_SWITCH) and not self.is_on:
-            _LOGGER.error("send switch on, component")
             await self.async_turn_on()
 
         if mode != self.get_attr_value(ATTR_MODE, CONF_STATE):
@@ -276,17 +273,17 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
         await self.send_command(ATTR_TARGET_HUM, self.get_command(ATTR_TARGET_HUM), [humidity])
 
     async def async_set_temperature(self, **kwargs) -> None:
-        _LOGGER.error("async_set_temperature, kwrargs : " + str(kwargs))
         for key, value in kwargs.items():
             if key != "entity_id":
                 if key == "temperature": key = ATTR_TARGET_TEMP
                 await self.send_command(key, self.get_command(key), [value])
 
     async def async_turn_on(self) -> None:
-        await self.send_command(ATTR_SWITCH, self.get_command(ATTR_SWITCH).get(STATE_ON), self.get_argument(Platform.SWITCH).get(STATE_ON, []))
+        await self.send_command(ATTR_SWITCH, self.get_command(ATTR_SWITCH).get(STATE_ON), self.get_argument(ATTR_SWITCH).get(STATE_ON, []))
         
     async def async_turn_off(self) -> None:
-        await self.send_command(ATTR_SWITCH, self.get_command(ATTR_SWITCH).get(STATE_OFF), self.get_argument(Platform.SWITCH).get(STATE_OFF, []))
+        _LOGGER.error("call async_turn_off")
+        await self.send_command(ATTR_SWITCH, self.get_command(ATTR_SWITCH).get(STATE_OFF), self.get_argument(ATTR_SWITCH).get(STATE_OFF, []))
     
     async def async_turn_aux_heat_off(self) -> None:
         await self.send_command(ATTR_AUX_HEAT, self.get_command(ATTR_AUX_HEAT).get(STATE_OFF), self.get_argument(ATTR_AUX_HEAT).get(STATE_OFF, []))

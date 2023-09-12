@@ -161,23 +161,22 @@ class SmartThingsEntity_custom(Entity):
         return self._unique_id
 
     async def send_command(self, platform, command, arg):
-        if arg_type := self.get_argument(platform, {}).get(CONF_TYPE):
-            if str(type(arg)) == "<class 'list'>":
-                if arg_type == "float":
-                    _LOGGER.error("convert type float")
-                    arg = list(map(float, arg))
-                elif arg_type == "str":
-                    arg = list(map(str, arg))
-                elif arg_type == "int":
-                    arg = list(map(int, arg))
-            else:
-                if arg_type == "float":
-                    _LOGGER.error("convert type float2")
-                    arg = float(arg)
-                elif arg_type == "str":
-                    arg = str(arg)
-                elif arg_type == "int":
-                    arg = int(arg)
+        if arg_setting := self.get_argument(platform):
+            if arg_type := arg_setting.get(CONF_TYPE):
+                if str(type(arg)) == "<class 'list'>":
+                    if arg_type == "float":
+                        arg = list(map(float, arg))
+                    elif arg_type == "str":
+                        arg = list(map(str, arg))
+                    elif arg_type == "int":
+                        arg = list(map(int, arg))
+                else:
+                    if arg_type == "float":
+                        arg = float(arg)
+                    elif arg_type == "str":
+                        arg = str(arg)
+                    elif arg_type == "int":
+                        arg = int(arg)
 
         await self._device.command(self.get_component(platform), self.get_capability(platform), command, arg)
         self.async_write_ha_state()
@@ -315,25 +314,22 @@ class SettingManager(object):
         setting = SettingManager()
         capabilities = []
         try:
-            mgr = SettingManager()
-            setting = mgr._settings.get(GLOBAL_SETTING)
-            if setting != None:
+            if default_setting := SettingManager.get_default_setting():
+                if default_setting.get(platform):
+                    for setting in default_setting:
+                        for platform in PLATFORMS:
+                            if setting.get(platform):
+                                for cap in setting.get(platform):
+                                    capabilities.append(cap.get("capability")) 
+                                    for sub_cap in cap.get("capabilities", []):
+                                        capabilities.append(sub_cap.get("capability"))
+            for setting in SettingManager().get_device_setting():
                 for platform in PLATFORMS:
                     if setting.get(platform):
-                        for cap in setting.get(platform):
-                            capabilities.append(cap.get("capability")) 
-                            for sub_cap in cap.get("capabilities"):
+                        for cap in setting[platform]:
+                            capabilities.append(cap.get("capability"))
+                            for sub_cap in cap.get("capabilities", []):
                                 capabilities.append(sub_cap.get("capability"))
-                #_LOGGER.error("get_capa capabilities1 : " + str(capabilities))
-            settings = mgr._settings.get(DEVICE_SETTING)
-            if settings != None:
-                for setting in settings:
-                    for platform in PLATFORMS:
-                        if setting.get(platform):
-                            for cap in setting[platform]:
-                                capabilities.append(cap.get("capability"))
-                                for sub_cap in cap.get("capabilities"):
-                                    capabilities.append(sub_cap.get("capability"))
 
             #capabilities.extend(mgr.subscribe_capabilities())
             _LOGGER.debug("get_capabilities : " + str(capabilities))
@@ -347,16 +343,16 @@ class SettingManager(object):
     def get_capa_settings(broker, platform):
         settings = []
         try:
-            default_setting = SettingManager.get_default_setting().get(platform)
-            if default_setting != None:
-                for setting in default_setting:
-                    for device in broker.devices.values():
-                        if SettingManager.allow_device_custom(device.device_id):
-                            capabilities = broker.build_capability(device)
-                            for key, value in capabilities.items():
-                                _LOGGER.debug("key : " + str(key) + ", value : " + str(value) + ", component : " + str(setting.get("component")) + ", capa : " + str(setting.get("capability")))
-                                if setting.get("component") == key and setting.get("capability") in value:
-                                    settings.append([device, setting])
+            if default_setting := SettingManager.get_default_setting():
+                if default_setting.get(platform):
+                    for setting in default_setting:
+                        for device in broker.devices.values():
+                            if SettingManager.allow_device_custom(device.device_id):
+                                capabilities = broker.build_capability(device)
+                                for key, value in capabilities.items():
+                                    _LOGGER.debug("key : " + str(key) + ", value : " + str(value) + ", component : " + str(setting.get("component")) + ", capa : " + str(setting.get("capability")))
+                                    if setting.get("component") == key and setting.get("capability") in value:
+                                        settings.append([device, setting])
         except Exception as e:
             _LOGGER.error("get_capa_settings_1 error : " + str(e))
             pass
