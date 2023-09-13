@@ -1,5 +1,6 @@
 import os
 import yaml
+import traceback
 from homeassistant.const import Platform, CONF_TYPE
 from .const import *
 from homeassistant.const import (
@@ -220,10 +221,13 @@ class SmartThingsEntity_custom(Entity):
     #         return None
 
     def get_attr_status(self, conf, platform, default = None):
-        component = conf.get(CONF_COMPONENT, self.get_component(platform))
-        capa = conf.get(CONF_CAPABILITY, self.get_capability(platform))
-        _LOGGER.debug("get dict attr - platform : " + str(platform) + ", component : " + str(component) + ", capa : " + str(capa) + ", default : " + str(default))
-        return self._get_attr_status(component, capa, conf.get(CONF_ATTRIBUTE), default=default)
+        try:
+            component = conf.get(CONF_COMPONENT, self.get_component(platform))
+            capa = conf.get(CONF_CAPABILITY, self.get_capability(platform))
+            _LOGGER.debug("get dict attr - platform : " + str(platform) + ", component : " + str(component) + ", capa : " + str(capa) + ", default : " + str(default))
+            return self._get_attr_status(component, capa, conf.get(CONF_ATTRIBUTE), default=default)
+        except:
+            return default
 
     def get_attr_unit(self, platform, default=None):
         conf = self._capability[platform].get(CONF_STATE, default)
@@ -236,45 +240,45 @@ class SmartThingsEntity_custom(Entity):
         try:
             _LOGGER.debug("extra capa : " + str(self._capability[platform]))
             value = self._capability[platform].get(attr, default)
-            _LOGGER.debug("platform : " + str(platform) + ", attr : " + str(attr) +", value: " + str(value) + ", type : " + str(type(value)))
+            _LOGGER.debug("platform : " + str(platform) + ", attr : " + str(attr) + ", value: " + str(value) + ", type : " + str(type(value)))
             if str(type(value)) == "<class 'dict'>":
-                if status := self.get_attr_status(value, platform):
-                    value = status.value
-                # component = value.get(CONF_COMPONENT, self.get_component(platform))
-                # capa = value.get(CONF_CAPABILITY, self.get_capability(platform))
-                # _LOGGER.debug("get dict attr - platform : " + str(platform) + ", component : " + str(component) + ", capa : " + str(capa) + ", default : " + str(default))
-                # value = self._get_attr_status_value(component, capa, value.get(CONF_ATTRIBUTE), default=default)
+                # if status := self.get_attr_status(value, platform, default):
+                #     _LOGGER.error("set status value: " + str(status.value))
+                #     value = status.value
+                component = value.get(CONF_COMPONENT, self.get_component(platform))
+                capa = value.get(CONF_CAPABILITY, self.get_capability(platform))
+                _LOGGER.debug("get dict attr - platform : " + str(platform) + ", component : " + str(component) + ", capa : " + str(capa) + ", default : " + str(default))
+                value = self._get_attr_status_value(component, capa, value.get(CONF_ATTRIBUTE), default=default)
             return value
         except Exception as e:
-            _LOGGER.debug("error : " + str(e))
-            return default
+            _LOGGER.debug("error : " + traceback.format_exc())
 
     def get_attribute(self, platform, default=None):
         try:
             return self._capability[platform].get(CONF_ATTRIBUTE)
         except:
-            _LOGGER.debug("not found attribute : " + platform)
+            _LOGGER.debug("not found attribute : " + traceback.format_exc())
             return default
 
     def get_command(self, platform, default=None):
         try:
             return self._capability[platform].get(CONF_COMMAND)
         except:
-            _LOGGER.debug("not found command : " + platform)
+            _LOGGER.debug("not found command : " + traceback.format_exc())
             return default
 
     def get_argument(self, platform, default=None):
         try:
             return self._capability[platform].get(CONF_ARGUMENT)
         except:
-            _LOGGER.debug("not found argument : " + platform)
+            _LOGGER.debug("not found argument : " + traceback.format_exc())
             return default
 
     def get_capabilities(self, platform, default=None):
         try:
             return self._capability[platform]
         except:
-            _LOGGER.debug("not found capabilities : " + platform)
+            _LOGGER.debug("not found capabilities : " + traceback.format_exc())
             return default
     
 
@@ -326,7 +330,7 @@ class SettingManager(object):
             mgr = SettingManager()
             return mgr._settings.get(GLOBAL_SETTING)
         except Exception as e:
-            _LOGGER.debug("get_default_setting error : " + str(e))
+            _LOGGER.debug("get_default_setting error : " + traceback.format_exc())
             return None
 
     @staticmethod
@@ -335,7 +339,7 @@ class SettingManager(object):
             mgr = SettingManager()
             return mgr._settings.get(DEVICE_SETTING)
         except Exception as e:
-            _LOGGER.debug("get_device_setting error : " + str(e))
+            _LOGGER.debug("get_device_setting error : " + traceback.format_exc())
             return None
 
     @staticmethod
@@ -344,14 +348,12 @@ class SettingManager(object):
         capabilities = []
         try:
             if default_setting := SettingManager.get_default_setting():
-                if default_setting.get(platform):
-                    for setting in default_setting:
-                        for platform in PLATFORMS:
-                            if setting.get(platform):
-                                for cap in setting.get(platform):
-                                    capabilities.append(cap.get("capability")) 
-                                    for sub_cap in cap.get("capabilities", []):
-                                        capabilities.append(sub_cap.get("capability"))
+                for platform in PLATFORMS:
+                    if default_setting.get(platform):
+                        for cap in default_setting.get(platform):
+                            capabilities.append(cap.get("capability")) 
+                            for sub_cap in cap.get("capabilities", []):
+                                capabilities.append(sub_cap.get("capability"))
             for setting in SettingManager().get_device_setting():
                 for platform in PLATFORMS:
                     if setting.get(platform):
@@ -363,7 +365,7 @@ class SettingManager(object):
             #capabilities.extend(mgr.subscribe_capabilities())
             _LOGGER.debug("get_capabilities : " + str(capabilities))
         except Exception as e:
-            _LOGGER.debug("get_capabilities error : " + str(e))
+            _LOGGER.debug("get_capabilities error : " + traceback.format_exc())
             pass
         finally:
             return capabilities
@@ -374,35 +376,33 @@ class SettingManager(object):
         try:
             if default_setting := SettingManager.get_default_setting():
                 if default_setting.get(platform):
-                    for setting in default_setting:
+                    for setting in default_setting.get(platform):
                         for device in broker.devices.values():
                             if SettingManager.allow_device_custom(device.device_id):
                                 capabilities = broker.build_capability(device)
                                 for key, value in capabilities.items():
-                                    _LOGGER.debug("key : " + str(key) + ", value : " + str(value) + ", component : " + str(setting.get("component")) + ", capa : " + str(setting.get("capability")))
                                     if setting.get("component") == key and setting.get("capability") in value:
                                         settings.append([device, setting])
         except Exception as e:
-            _LOGGER.error("get_capa_settings_1 error : " + str(e))
+            _LOGGER.debug("get_capa_settings_1 error : " + traceback.format_exc())
             pass
         
         try:
-            for device_setting in SettingManager.get_device_setting():
-                if device_setting["device_id"] in broker.devices:
-                    capabilities = broker.build_capability(broker.devices[device_setting["device_id"]])
-                    if device_type := device_setting.get("type", None):
-                        _LOGGER.debug("setting device_type : " + str(device_type) +
-                                      ", device_type : " + str(broker.devices[device_setting["device_id"]].type))
-                        if device_type.lower() != broker.devices[device_setting["device_id"]].type.lower():
+            if s := SettingManager.get_device_setting():
+                for device_setting in s:
+                    if device_setting["device_id"] in broker.devices:
+                        capabilities = broker.build_capability(broker.devices[device_setting["device_id"]])
+                        if device_type := device_setting.get("type", None):
+                            if device_type.lower() != broker.devices[device_setting["device_id"]].type.lower():
+                                continue
+                        if platform not in device_setting:
                             continue
-                    if platform not in device_setting:
-                        continue
-                    for setting in device_setting.get(platform, []):
-                        if setting.get("component") in capabilities and setting.get("capability") in capabilities[setting.get("component")]:
-                            settings.append(
-                                [broker.devices[device_setting["device_id"]], setting])
+                        for setting in device_setting.get(platform, []):
+                            if setting.get("component") in capabilities and setting.get("capability") in capabilities[setting.get("component")]:
+                                settings.append(
+                                    [broker.devices[device_setting["device_id"]], setting])
         except Exception as e:
-            _LOGGER.error("get_capa_settings_2 error : " + str(e))
+            _LOGGER.debug("get_capa_settings_2 error : " + traceback.format_exc())
             pass
 
         return settings
@@ -412,7 +412,7 @@ class SettingManager(object):
         try:
             return SettingManager()._settings.get("default_entity_id_format")
         except Exception as e:
-            _LOGGER.debug("default_entity_id_format error : " + str(e))
+            _LOGGER.debug("default_entity_id_format error : " + traceback.format_exc())
             return False 
 
     @staticmethod
@@ -434,7 +434,7 @@ class SettingManager(object):
             mgr = SettingManager()
             return device_id not in mgr._settings.get(GLOBAL_SETTING).get("ignore_devices")
         except Exception as e:
-            _LOGGER.debug("allow_device error : " + str(e))
+            _LOGGER.debug("allow_device error : " + traceback.format_exc())
             return True
 
     @staticmethod
@@ -447,7 +447,7 @@ class SettingManager(object):
                     if device_id == d.get("device_id"): return False
             return device_id not in mgr._settings.get(GLOBAL_SETTING).get("ignore_devices")
         except Exception as e:
-            _LOGGER.debug("allow_device_custom error : " + str(e))
+            _LOGGER.debug("allow_device_custom error : " + traceback.format_exc())
             return True
 
     def build_platform(self):
@@ -464,7 +464,7 @@ class SettingManager(object):
             mgr = SettingManager()
             return platform not in mgr._settings.get("ignore_platforms")
         except Exception as e:
-            _LOGGER.debug("is_allow_platform error : " + str(e))
+            _LOGGER.debug("is_allow_platform error : " + traceback.format_exc())
             return True 
 
     @staticmethod
@@ -473,7 +473,7 @@ class SettingManager(object):
             mgr = SettingManager()
             return mgr._settings.get("ignore_platforms")
         except Exception as e:
-            _LOGGER.debug("ignore_platforms error : " + str(e))
+            _LOGGER.debug("ignore_platforms error : " + traceback.format_exc())
             return []
 
     @staticmethod
@@ -482,7 +482,7 @@ class SettingManager(object):
             mgr = SettingManager()
             return mgr._settings.get(GLOBAL_SETTING).get("ignore_capabilities", [])
         except Exception as e:
-            _LOGGER.debug("ignore_capabilities error : " + str(e))
+            _LOGGER.debug("ignore_capabilities error : " + traceback.format_exc())
             return []
 
     @staticmethod
@@ -491,7 +491,7 @@ class SettingManager(object):
             mgr = SettingManager()
             return mgr._settings.get("subscribe_capabilities", [])
         except Exception as e:
-            _LOGGER.debug("allow_capabilities error : " + str(e))
+            _LOGGER.debug("allow_capabilities error : " + traceback.format_exc())
             return []
 
     @staticmethod

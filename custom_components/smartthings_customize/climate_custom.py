@@ -173,7 +173,7 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
         else:
             _LOGGER.debug("current_temperature : " +
                           str(ATTR_CURRENT_TEMPERATURE) + ", attr : " + str(CONF_STATE))
-            return self.get_attr_value(ATTR_CURRENT_TEMPERATURE, CONF_STATE)
+            return self.get_attr_value(ATTR_CURRENT_TEMPERATURE, CONF_STATE, 0)
             
     @property
     def max_temp(self) -> float:
