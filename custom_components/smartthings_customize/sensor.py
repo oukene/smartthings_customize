@@ -624,7 +624,7 @@ async def async_setup_entry(
                                 for m in maps
                             ]
                         )
-                        
+
     settings = SettingManager.get_capa_settings(broker, Platform.SENSOR)
     for s in settings:
         _LOGGER.debug("cap setting : " + str(s[1]))
@@ -721,9 +721,11 @@ class SmartThingsSensor_custom(SmartThingsEntity_custom, SensorEntity):
         """Return the state of the sensor."""
         value = self.get_attr_value(Platform.SENSOR, CONF_STATE)
         #value = get_attribute_value(self._device, self._component, self._capability, self._attribute)
-        if self._device_class == SensorDeviceClass.TIMESTAMP:
+        if self.device_class == SensorDeviceClass.TIMESTAMP:
             return dt_util.parse_datetime(value)
-        return value
+
+        states = self.get_attr_value(Platform.SENSOR, "s2h_state_mapping", [{}])
+        return states[0].get(value, value)
 
     @property
     def native_unit_of_measurement(self):

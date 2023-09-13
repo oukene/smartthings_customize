@@ -3,7 +3,7 @@ import yaml
 from homeassistant.const import Platform, CONF_TYPE
 from .const import *
 from homeassistant.const import (
-    STATE_UNKNOWN, STATE_UNAVAILABLE
+    STATE_UNKNOWN, STATE_UNAVAILABLE, CONF_ICON
 )
 
 from homeassistant.helpers.dispatcher import (
@@ -46,6 +46,7 @@ class SmartThingsEntity_custom(Entity):
         command = setting[1].get(CONF_COMMAND)
         #argument = setting[1].get(CONF_ARGUMENT)
         parent_entity_id = setting[1].get(CONF_PARENT_ENTITY_ID)
+        self._icon = setting[1].get(CONF_ICON)
 
         self._extra_state_attributes = {}
         if SettingManager.enable_syntax_property():
@@ -160,6 +161,10 @@ class SmartThingsEntity_custom(Entity):
     def unique_id(self) -> str | None:
         return self._unique_id
 
+    @property
+    def icon(self) -> str | None:
+        return self._icon
+
     async def send_command(self, platform, command, arg):
         if arg_setting := self.get_argument(platform):
             if arg_type := arg_setting.get(CONF_TYPE):
@@ -190,31 +195,55 @@ class SmartThingsEntity_custom(Entity):
     def get_capability(self, platform):
         return self._capability[platform].get(CONF_CAPABILITY, self._capability[self._platform].get(CONF_CAPABILITY))
 
+    def _get_attr_status(self, component, capability, attribute, default=None):
+        try:
+            return self._device.status._status.get(component).get(capability).get(attribute)
+        except:
+            return default
+
     def _get_attr_status_value(self, component, capability, attribute, default=None):
         try:
             return self._device.status._status.get(component).get(capability).get(attribute).value
         except:
             return default
 
-    def _get_attribute_unit(self, component, capability, attribute):
+    def _get_attr_status_unit(self, component, capability, attribute, default=None):
         try:
             return self._device.status._status.get(component).get(capability).get(attribute).unit
         except:
-            return None
+            return default
 
-    def get_attr_unit(self, platform, attr):
-        return self._get_attribute_unit(self.get_component(platform), self.get_capability(platform), attr)
+    # def _get_attribute_unit(self, component, capability, attribute):
+    #     try:
+    #         return self._device.status._status.get(component).get(capability).get(attribute).unit
+    #     except:
+    #         return None
+
+    def get_attr_status(self, conf, platform, default = None):
+        component = conf.get(CONF_COMPONENT, self.get_component(platform))
+        capa = conf.get(CONF_CAPABILITY, self.get_capability(platform))
+        _LOGGER.debug("get dict attr - platform : " + str(platform) + ", component : " + str(component) + ", capa : " + str(capa) + ", default : " + str(default))
+        return self._get_attr_status(component, capa, conf.get(CONF_ATTRIBUTE), default=default)
+
+    def get_attr_unit(self, platform, default=None):
+        conf = self._capability[platform].get(CONF_STATE, default)
+        if str(type(conf)) == "<class 'dict'>":
+            if status := self.get_attr_status(conf, platform):
+                return status.unit
+        return default
 
     def get_attr_value(self, platform, attr, default = None):
         try:
             _LOGGER.debug("extra capa : " + str(self._capability[platform]))
             value = self._capability[platform].get(attr, default)
-            _LOGGER.debug("platform : " + str(platform) + ", attr : " + str(attr) + ", value: " + str(value) + ", type : " + str(type(value)))
+            _LOGGER.debug("platform : " + str(platform) + ", attr : " + str(attr) +", value: " + str(value) + ", type : " + str(type(value)))
             if str(type(value)) == "<class 'dict'>":
-                component = value.get(CONF_COMPONENT, self.get_component(platform))
-                capa = value.get(CONF_CAPABILITY, self.get_capability(platform))
-                _LOGGER.debug("get dict attr - platform : " + str(platform) + ", component : " + str(component) + ", capa : " + str(capa) + ", default : " + str(default))
-                value = self._get_attr_status_value(component, capa, value.get(CONF_ATTRIBUTE), default=default)
+                if status := self.get_attr_status(value, platform):
+                    value = status.value
+                # component = value.get(CONF_COMPONENT, self.get_component(platform))
+                # capa = value.get(CONF_CAPABILITY, self.get_capability(platform))
+                # _LOGGER.debug("get dict attr - platform : " + str(platform) + ", component : " + str(component) + ", capa : " + str(capa) + ", default : " + str(default))
+                # value = self._get_attr_status_value(component, capa, value.get(CONF_ATTRIBUTE), default=default)
             return value
         except Exception as e:
             _LOGGER.debug("error : " + str(e))

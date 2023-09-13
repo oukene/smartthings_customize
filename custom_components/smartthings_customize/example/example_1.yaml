@@ -1,296 +1,406 @@
 # https://my.smartthings.com/advanced/
 # After identifying the information of the device from the above site, modify the setting file
 
-# Ability to activate features of official integrated components
-enable_default_entities: true
-
 globals:
-  # Enter the information of the binary sensor to be added. Enter the attributes of your SmartThings device.
-  binary_sensors:
-    - capability: contactSensor
-      component: cooler
-      attributes:
-        - attribute: contact
-          name: cooler contact
-
-  # Enter the information of the sensor to be added. Enter the attributes of your SmartThings device.
-  # Empty items can be left blank
-  sensors:
-    - capability: refrigeration
-      component: main
-      attributes:
-        - attribute: rapidCooling
-          name: power cool activate
-          default_unit:
-          device_class:
-          state_class:
-          entity_category:
-        - attribute: rapidFreezing
-          name: power freeze activate
-          default_unit:
-          device_class:
-          state_class:
-          entity_category:
-    - capability: contactSensor
-      component: cooler
-      attributes:
-        - attribute: contact
-          name: cooler contact
-          default_unit:
-          device_class:
-          state_class:
-          entity_category:
-
-  # Enter the switch information to be added. You must enter the Command item of the SmartThings device and designate the attribute that is changed by the command.
-  # on_state requires a state value that is treated as an on state.
-  switches:
-    - capability: switch
-      component: main
-      commands:
-        - name: "power"
-          on_command: "on"
-          off_command: "off"
-          argument:
-            "on": ["on"]
-            "off": ["off"]
-          attribute: switch
-          on_state: ["on"]
-
-    - capability: refrigeration
-      component: main
-      commands:
-        - name: "power cool"
-          on_command: setRapidCooling
-          off_command: setRapidCooling
-          argument:
-            "on": ["on"]
-            "off": ["off"]
-          attribute: rapidCooling
-          on_state: ["on"]
-        - name: "power freeze"
-          on_command: setRapidCooling
-          off_command: setRapidCooling
-          argument:
-            "on": ["on"]
-            "off": ["off"]
-          attribute: rapidFreezing
-          on_state: ["on"]
-
-  # Enter the information of the number item to be added.
-  # You must enter the command entry for your SmartThings device and specify the properties that are changed by the command.
-  # For min and max, integers can be specified, or attribute items can be specified.
-  numbers:
-    - capability: thermostatCoolingSetpoint
-      component: freezer
-      mode: slider
-      min:
-        attribute: minimumSetpoint
-      max: -17
-      step: 1
-      commands:
-        - name: "set freezer temperature"
-          command: setCoolingSetpoint
-          attribute: coolingSetpoint
-
-  # Enter the information of the select item to be added. You must enter the command entry for your SmartThings device and specify the properties that are changed by the command.
-  selects:
-    - capability: airConditionerFanMode
-      component: main
-      options:
-        attribute: supportedAcFanModes
-      commands:
-        - name: "set fan mode"
-          command: setFanMode
-          attribute: fanMode
-    - capability: airConditionerMode
-      component: main
-      options:
-        attribute: supportedAcModes
-      commands:
-        - name: "set ac mode"
-          command: setAirConditionerMode
-          attribute: airConditionerMode
-
-  # Enter the information of the button entity to be added.
-  # You must enter the command entry for your SmartThings device and specify the properties that are changed by the
-  # Galaxy home mini ir fan example
-  buttons:
-    - capability: statelessPowerToggleButton
-      component: main
-      commands:
-        - name: "%{label} %{component} %{capability} %{attribute} %{command} fan power"
-          command: setButton
-          argument: [powerToggle]
-
-    - capability: statelessFanspeedButton
-      component: main
-      commands:
-        - name: "fan speed"
-          command: setButton
-          argument: [fanspeedUp]
-
-    # An example of changing the quick freezing of the refrigerator to a button
-    - capability: refrigeration
-      component: main
-      commands:
-        - name: "power cool button"
-          command: setRapidCooling
-          argument: ["on"]
-
-  texts:
-    - capability: samsungvd.mediaInputSource
-      component: "main"
-      commands:
-        - name: "Input Source"
-          command: setInputSource
-          attribute: inputSource
-    - capability: samsungim.bixbyContent
-      component: main
-      commands:
-        - name: "명령"
-          command: bixbyCommand
-          attribute: text
-    - capability: speechSynthesis
-      component: main
-      commands:
-        - name: "방송"
-          command: speak
-          attribute: text
-
-  # The device ID of the SmartThings to ignore. Once added here, it will not be added as a device.
-  # This setting does not affect individual device settings (devies:)
-  ignore_devices:
-    - b065a858-1927-fd98-a374-7fc1498e8c76
-    - 46955634-09e8-6bc7-0167-a73b2e9182e6
-
   ignore_capabilities:
     - execute
     - healthCheck
     - ocf
 
+  switch:
+    - name: "power cool"
+      capability: refrigeration
+      component: main
+      command:
+        "on": "setRapidCooling"
+        "off": "setRapidCooling"
+      argument:
+        "on": ["on"]
+        "off": ["off"]
+        #type: optional
+      state:
+        #component: optional
+        #capability: optional
+        attribute: rapidCooling
+      on_state: ["on"]
+
+    - name: "power freeze"
+      capability: refrigeration
+      component: main
+      command:
+        "on": "setRapidFreezing"
+        "off": "setRapidFreezing"
+      argument:
+        "on": ["on"]
+        "off": ["off"]
+        #type: optional
+      state:
+        attribute: rapidFreezing
+      on_state: ["on"]
+
+  sensor:
+    - name: power cool activate
+      capability: refrigeration
+      component: main
+      state:
+        attribute: rapidCooling
+      default_unit:
+      device_class:
+      state_class:
+      entity_category:
+
+    - name: power freeze activate
+      capability: refrigeration
+      component: main
+      state:
+        attribute: rapidFreezing
+      default_unit:
+      device_class:
+      state_class:
+      entity_category:
+
+  binary_sensor:
+    - name: rapid cooling
+      capability: refrigeration
+      component: main
+      state:
+        attribute: rapidCooling
+      on_state: ["on"]
+      device_class:
+      entity_category:
+
+    - name: rapid freezing
+      capability: refrigeration
+      component: main
+      state:
+        attribute: rapidFreezing
+      on_state: ["on"]
+
+  select:
+    - name: "operating"
+      component: main
+      capability: samsungce.robotCleanerOperatingState
+      options:
+        attribute: supportedOperatingState
+      command: setOperatingState
+      state:
+        attribute: operatingState
+
+  number:
+    - name: "set freezer temperature"
+      capability: thermostatCoolingSetpoint
+      component: freezer
+      command: setCoolingSetpoint
+      state:
+        attribute: coolingSetpoint
+      mode: slider
+      #min: -23
+      min:
+        component: freezer
+        capability: custom.thermostatSetpointControl
+        attribute: minimumSetpoint
+      max: -17
+      step: 1
+      parent_entity_id: binary_sensor.naengjanggo_contact_2
+
+  # Enter the information of the button entity to be added.
+  # You must enter the command entry for your SmartThings device and specify the properties that are changed by the
+  # Galaxy home mini ir fan example
+  button:
+    - name: "%{label} %{component} %{capability} %{attribute} %{command} fan power"
+      capability: statelessPowerToggleButton
+      component: main
+      command: setButton
+      argument: [powerToggle]
+
+    - name: "fan speed"
+      capability: statelessFanspeedButton
+      component: main
+      command: setButton
+      argument: [fanspeedUp]
+
+  text:
+    - name: "Input Source"
+      capability: samsungvd.mediaInputSource
+      component: "main"
+      command: setInputSource
+      state:
+        attribute: inputSource
+
+    - name: "명령"
+      capability: samsungim.bixbyContent
+      component: main
+      command: bixbyCommand
+      state:
+        attribute: text
+
+    - name: "방송"
+      capability: speechSynthesis
+      component: main
+      command: speak
+      state:
+        attribute: text
+
+  # The device ID of the SmartThings to ignore. Once added here, it will not be added as a device.
+  # This setting does not affect individual device settings (devies:)
+  ignore_devices: []
+  #  - b065a858-1927-fd98-a374-7fc1498e8c76
+
 # You can also add settings for individual devices under the devices: entry
 # (if you add them here they will be ignored in the global settings).
 # parent_entity_id - Included in the same device as the specified entity ID
 devices:
+  # 로봇청소기
   - device_id: "46955634-09e8-6bc7-0167-a73b2e9182e6"
-    binary_sensors:
-      - component: cooler
-        capability: contactSensor
-        attributes:
-          - attribute: contact
-            name: cooler contact
-            parent_entity_id: parent_entity_id
-
-
-# Fill in the appropriate capabilities
-# This is a climate example. Fill in the appropriate capability. If you do not use the entity_id  
-# attribute, the switch capability is not required.
-# For climates->capability, enter mode capability
-# Use hvac_modes: to map HomeAssistant's Climate and SmartThings' modes.
-    climates:
-      - capability: airConditionerMode
+    sensor:
+      - name: "clean extent"
         component: main
-        attributes:
-          - name: "Bedroom Aircon"
-            capabilities:
-              - switch: switch
-              - mode: airConditionerMode
-                options:
-                  attribute: supportedAcModes
-                commands:
-                  command: setAirConditionerMode
-                  attribute: airConditionerMode
-                hvac_modes: [{ "wind": "fan_only" }]
-                hvac_actions:
-                  [{ "cool": "cooling", "dry": "drying", "off": "off" }]
-                aux_heat_modes: ["auxheatonly", "auxiliaryemergencyheat"]
-
-              - fan_mode: airConditionerFanMode
-                options:
-                  attribute: supportedAcFanModes
-                commands:
-                  command: setFanMode
-                  attribute: fanMode
-
-              - preset_mode: airConditionerFanMode
-                options:
-                  attribute: supportedAcFanModes
-                commands:
-                  command: setFanMode
-                  attribute: fanMode
-
-              - swing_mode: airConditionerFanMode
-                options:
-                  attribute: supportedAcFanModes
-                commands:
-                  command: setFanMode
-                  attribute: fanMode
-
-              - target_temp: thermostatCoolingSetpoint
-                min: 22
-                max: 28
-                step: 1
-                commands:
-                  command: setCoolingSetpoint
-                  attribute: coolingSetpoint
-
-              - target_temp_low: thermostatCoolingSetpoint
-                commands:
-                  command: setCoolingSetpoint
-                  attribute: coolingSetpoint
-
-              - target_temp_high: thermostatCoolingSetpoint
-                commands:
-                  command: setCoolingSetpoint
-                  attribute: coolingSetpoint
-
-              - target_humidity: thermostatCoolingSetpoint
-                min: 40
-                max: 60
-                step: 1
-                commands:
-                  command: setCoolingSetpoint
-                  attribute: coolingSetpoint
-
-              - current_temperature: temperatureMeasurement
-                attributes:
-                  attribute: temperature
-              - current_humidity:
-                entity_id: input_number.hum
-
-# Fill in the appropriate capabilities
-# This is a fan example. Fill in the appropriate capability. If you do not use the entity_id  
-# attribute, the switch capability is not required.
-    fans:
-      - capability: switch
+        capability: samsungce.robotCleanerMapCleaningInfo
+        state:
+          attribute: cleanedExtent
+      - name: "Dust bag state"
+        component: station
+        capability: samsungce.robotCleanerDustBag
+        state:
+          attribute: status
+        s2h_state_mapping: [{ "normal": "정상", "full": "가득참" }]
+        icon: mdi:delete
+    select:
+      - name: "operating"
         component: main
-        attributes:
-          - name: "fan test"
-            capabilities:
-              - preset_mode: fanOscillationMode
-                options:
-                  attribute: supportedFanOscillationModes
-                commands:
-                  command: setFanOscillationMode
-                  attribute: fanOscillationMode
-              - direction: fanOscillationMode
-                options:
-                  attribute: supportedFanOscillationModes
-                commands:
-                  command: setFanOscillationMode
-                  attribute: fanOscillationMode
-                oscillate_modes: ['vertical', 'horizontal']
-              - percent: fanSpeed
-                min: 0
-                max: 100
-                step: 1
-                commands:
-                  command: setFanSpeed
-                  attribute: fanSpeed
+        capability: samsungce.robotCleanerOperatingState
+        options:
+          attribute: supportedOperatingState
+        command: setOperatingState
+        state:
+          attribute: operatingState
+
+  - device_id: b065a858-1927-fd98-a374-7fc1498e8c76
+    type: ocf
+    sensor:
+      - name: power cool activate
+        capability: refrigeration
+        component: main
+        state:
+          attribute: rapidCooling
+        default_unit:
+        device_class:
+        state_class:
+        entity_category:
+
+      - name: power freeze activate
+        capability: refrigeration
+        component: main
+        state:
+          attribute: rapidFreezing
+        default_unit:
+        device_class:
+        state_class:
+        entity_category:
+
+    switch:
+      - name: "power cool"
+        capability: refrigeration
+        component: main
+        command:
+          "on": "setRapidCooling"
+          "off": "setRapidCooling"
+        argument:
+          "on": ["on"]
+          "off": ["off"]
+        state:
+          attribute: rapidCooling
+        on_state: ["on"]
+
+      - name: "power freeze"
+        capability: refrigeration
+        component: main
+        command:
+          "on": "setRapidFreezing"
+          "off": "setRapidFreezing"
+        argument:
+          "on": ["on"]
+          "off": ["off"]
+        state:
+          attribute: rapidFreezing
+        on_state: ["on"]
+    climate:
+      - name: freezer temperature
+        capability: thermostatCoolingSetpoint
+        component: freezer
+        capabilities:
+          - switch:
+            capability: refrigeration
+            component: main
+            command:
+              "on": "setRapidCooling"
+              "off": "setRapidCooling"
+            argument:
+              "on": ["on"]
+              "off": ["off"]
+            state:
+              attribute: rapidCooling
+          - mode:
+            capability: refrigeration
+            component: main
+            command: setRapidCooling
+            state:
+              attribute: rapidCooling
+            options: ["cool", "off"]
+            s2h_mode_mapping: [{ "on": "cool" }]
+            s2h_action_mapping: [{ "on": "cooling", "off": "off" }]
+          - target_temp:
+            capability: thermostatCoolingSetpoint
+            min:
+              capability: custom.thermostatSetpointControl
+              attribute: minimumSetpoint
+            max:
+              capability: custom.thermostatSetpointControl
+              attribute: maximumSetpoint
+            step: 1
+            command: setCoolingSetpoint
+            state:
+              attribute: coolingSetpoint
+            argument:
+              type: float
+          - current_temperature:
+            capability: temperatureMeasurement
+            state:
+              attribute: temperature
+
+  - device_id: 53eade61-7950-4b89-868b-60ee53e49248
+    fan:
+      - name: "fan test"
+        capability: airConditionerFanMode
+        component: main
+        capabilities:
+          - switch:
+            capability: switch
+            component: main
+            command:
+              "on": "on"
+              "off": "off"
+            argument:
+              "on": ["on"]
+              "off": ["off"]
+          - preset_mode:
+            capability: airConditionerFanMode
+            options:
+              attribute: supportedAcModes
+            command: setFanMode
+            state:
+              attribute: fanMode
+          - direction:
+            capability: airConditionerFanMode
+            options:
+              attribute: supportedAcModes
+            command: setFanMode
+            state:
+              attribute: fanMode
+            oscillate_modes: ["low"]
+          - percentage:
+            capability: thermostatCoolingSetpoint
+            min: 0
+            max: 100
+            step: 1
+            command: setCoolingSetpoint
+            state:
+              attribute: coolingSetpoint
+    climate:
+      - name: "Bedroom Aircon"
+        capability: airConditionerMode
+        component: main
+        capabilities:
+          - switch:
+            capability: switch
+            component: main
+            command:
+              "on": "on"
+              "off": "off"
+            argument:
+              "on": ["on"]
+              "off": ["off"]
+            state:
+              attribute: switch
+          - mode:
+            capability: airConditionerMode
+            options:
+              ["off", "wind", "cool", "dry"]
+              #attribute: supportedAcModes
+            command: setAirConditionerMode
+            state:
+              attribute: airConditionerMode
+            s2h_mode_mapping: [{ "wind": "fan_only" }]
+            s2h_action_mapping:
+              [{ "cool": "cooling", "dry": "drying", "off": "off" }]
+          - fan_mode:
+            capability: airConditionerFanMode
+            options:
+              attribute: supportedAcFanModes
+            command: setFanMode
+            state:
+              attribute: fanMode
+            s2h_fan_mode_mapping: [{}]
+          - preset_mode:
+            capability: airConditionerFanMode
+            options:
+              attribute: supportedAcFanModes
+            command: setFanMode
+            state:
+              attribute: fanMode
+
+          - swing_mode:
+            capability: airConditionerFanMode
+            options:
+              attribute: supportedAcFanModes
+            command: setFanMode
+            state:
+              attribute: fanMode
+
+          - target_temp:
+            capability: thermostatCoolingSetpoint
+            min: 22
+            max: 28
+            step: 1
+            command: setCoolingSetpoint
+            state:
+              attribute: coolingSetpoint
+
+          - target_temp_low:
+            capability: thermostatCoolingSetpoint
+            command: setCoolingSetpoint
+            state:
+              attribute: coolingSetpoint
+
+          - target_temp_high:
+            capability: thermostatCoolingSetpoint
+            command: setCoolingSetpoint
+            state:
+              attribute: coolingSetpoint
+
+          - target_humidity:
+            capability: thermostatCoolingSetpoint
+            min: 40
+            max: 60
+            step: 1
+            command: setCoolingSetpoint
+            state:
+              attribute: coolingSetpoint
+
+          - current_temperature:
+            capability: temperatureMeasurement
+            state:
+              attribute: temperature
+          - current_humidity:
+            entity_id: input_number.hum
+
+          - aux_heat:
+            capability: airConditionerMode
+            state:
+              attribute: airConditionerMode
+            aux_heat_modes: ["cool", "dry"]
 
 ignore_platforms:
   - scene
 
-enable_syntax_property: false
-
-default_entity_id_format: "st_custom_%{device_id}_%{label}_%{component}_%{capability}_%{attribute}_%{command}_%{name}"
+default_entity_id_format: "st_custom_%{device_id}_%{device_type}_%{label}_%{component}_%{capability}_%{attribute}_%{command}_%{name}"
