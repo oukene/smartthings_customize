@@ -61,19 +61,6 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
         if self._capability.get(ATTR_TARGET_TEMP_HIGH) and self._capability.get(ATTR_TARGET_TEMP_LOW):
             self._supported_features |= ClimateEntityFeature.TARGET_TEMPERATURE_RANGE
 
-        # external_entity
-        if entity_id := self.get_attr_value(ATTR_SWITCH, CONF_ENTITY_ID):
-            self._hass.data[DOMAIN]["listener"].append(async_track_state_change(
-                self._hass, entity_id, self.entity_listener))
-
-        if entity_id := self.get_attr_value(ATTR_CURRENT_TEMPERATURE, CONF_ENTITY_ID):
-            self._hass.data[DOMAIN]["listener"].append(async_track_state_change(
-                self._hass, entity_id, self.entity_listener))
-
-        if entity_id := self.get_attr_value(ATTR_CURRENT_HUMIDITY, CONF_ENTITY_ID):
-            self._hass.data[DOMAIN]["listener"].append(async_track_state_change(
-                self._hass, entity_id, self.entity_listener))
-
         # modes
         if self.get_attr_value(ATTR_MODE, CONF_OPTIONS):
             mode = self.get_attr_value(ATTR_MODE, CONF_OPTIONS)
@@ -84,7 +71,6 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
             hvac_modes = self.get_attr_value(ATTR_MODE, "s2h_mode_mapping", [{}])
             for mode in modes:
                 self._hvac_modes.append(hvac_modes[0].get(mode, mode))
-
         
         # fan_modes
         if self.get_attr_value(ATTR_FAN_MODE, CONF_OPTIONS):
@@ -104,8 +90,6 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
     # platform property #############################################################################
     @property
     def is_on(self) -> bool:
-        if entity_id := self.get_attr_value(ATTR_SWITCH, CONF_ENTITY_ID):
-            return self.hass.states.get(entity_id).state != STATE_OFF
         return self.get_attr_value(ATTR_SWITCH, CONF_STATE) != STATE_OFF
 
     @property
@@ -166,14 +150,7 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
 
     @property
     def current_temperature(self) -> float | None:
-        # external temperature entity
-        if entity_id := self.get_attr_value(ATTR_CURRENT_TEMPERATURE, CONF_ENTITY_ID):
-            state = self.hass.states.get(entity_id)
-            return state.state if is_valid_state(state) else None
-        else:
-            _LOGGER.debug("current_temperature : " +
-                          str(ATTR_CURRENT_TEMPERATURE) + ", attr : " + str(CONF_STATE))
-            return self.get_attr_value(ATTR_CURRENT_TEMPERATURE, CONF_STATE, 0)
+        return self.get_attr_value(ATTR_CURRENT_TEMPERATURE, CONF_STATE, 0)
             
     @property
     def max_temp(self) -> float:
@@ -185,13 +162,8 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
 
     @property
     def current_humidity(self) -> int | None:
-        # external humidity entity
-        if entity_id := self.get_attr_value(ATTR_CURRENT_HUMIDITY, CONF_ENTITY_ID):
-            state = self.hass.states.get(entity_id)
-            return int(float(state.state)) if is_valid_state(state) else None
-        else:
-            hum = self.get_attr_value(ATTR_CURRENT_HUMIDITY, CONF_STATE, None)
-            return int(float(hum)) if hum != None else None
+        hum = self.get_attr_value(ATTR_CURRENT_HUMIDITY, CONF_STATE, None)
+        return int(float(hum)) if hum != None else None
 
     @property
     def target_humidity(self) -> int | None:
