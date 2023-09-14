@@ -264,7 +264,7 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
                 mode = k
                 break
         if mode != self.get_attr_value(ATTR_FAN_MODE, CONF_STATE):
-            await self.send_command(ATTR_FAN_MODE, self.get_command(ATTR_FAN_MODE), [fan_mode])
+            await self.send_command(ATTR_FAN_MODE, self.get_command(ATTR_FAN_MODE), [mode])
 
     async def async_set_swing_mode(self, swing_mode: str) -> None:
         await self.send_command(ATTR_SWING_MODE, self.get_command(ATTR_SWING_MODE), [swing_mode])
