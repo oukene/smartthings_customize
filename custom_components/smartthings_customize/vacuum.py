@@ -21,6 +21,7 @@ _LOGGER = logging.getLogger(__name__)
 
 CONF_COMMANDS = "commands"
 CONF_FAN_SPEED = "fan_speed"
+CONF_FAN_SPEED_MAPPING = "s2h_fan_speed_mapping"
 
 
 async def async_setup_entry(
@@ -69,10 +70,10 @@ class SmartThingsVacuum_custom(SmartThingsEntity_custom, StateVacuumEntity):
             mode = self.get_attr_value("fan_speed", CONF_OPTIONS)
             # convert hvac_modes
             modes = []
-            modes.extend(self.get_attr_value("fan_speed", CONF_OPTIONS))
+            modes.extend(self.get_attr_value(CONF_FAN_SPEED, CONF_OPTIONS))
             modes = list(set(modes))
             fan_modes = self.get_attr_value(
-                "fan_speed", "s2h_fan_speed_mapping", [{}])
+                CONF_FAN_SPEED, CONF_FAN_SPEED_MAPPING, [{}])
             for mode in modes:
                 self._fan_speed_list.append(fan_modes[0].get(mode, mode))
 
@@ -87,19 +88,10 @@ class SmartThingsVacuum_custom(SmartThingsEntity_custom, StateVacuumEntity):
     @property
     def state(self) -> str | None:
         """Return the state of the vacuum cleaner."""
-        if state := self.get_attr_value("commands", CONF_STATE):
-            if state == "cleaning":
-                return STATE_CLEANING
-            elif state in ("charging", "charged"):
-                return STATE_DOCKED
-            elif state == "idle":
-                return STATE_IDLE
-            elif state == "homing":
-                return STATE_RETURNING
-            else:
-                return state
-        else:
-            return STATE_ERROR
+        mode = self.get_attr_value(CONF_COMMANDS, CONF_STATE)
+        state_modes = self.get_attr_value(CONF_COMMANDS, "s2h_fan_speed_mapping", [{}])
+        return state_modes[0].get(mode, mode)
+
 
     # @property
     # def battery_level(self) -> int | None:
@@ -116,8 +108,8 @@ class SmartThingsVacuum_custom(SmartThingsEntity_custom, StateVacuumEntity):
     @property
     def fan_speed(self) -> str | None:
         """Return the fan speed of the vacuum cleaner."""
-        speed = self.get_attr_value("fan_speed", CONF_STATE)
-        fan_speed = self.get_attr_value("fan_speed", "s2h_fan_speed_mapping", [{}])
+        speed = self.get_attr_value(CONF_FAN_SPEED, CONF_STATE)
+        fan_speed = self.get_attr_value(CONF_FAN_SPEED, CONF_FAN_SPEED_MAPPING, [{}])
         return fan_speed[0].get(speed, speed)
 
     async def async_return_to_base(self, **kwargs: Any) -> None:
@@ -140,9 +132,9 @@ class SmartThingsVacuum_custom(SmartThingsEntity_custom, StateVacuumEntity):
     #     """Locate the vacuum cleaner."""
     #     # self.device.run(sucks.PlaySound())
 
-    async def set_fan_speed(self, fan_speed: str, **kwargs: Any) -> None:
+    async def async_set_fan_speed(self, fan_speed: str, **kwargs: Any) -> None:
         """Set fan speed."""
-        fan_modes = self.get_attr_value(CONF_FAN_SPEED, "s2h_fan_speed_mapping", [{}])
+        fan_modes = self.get_attr_value(CONF_FAN_SPEED, CONF_FAN_SPEED_MAPPING, [{}])
         mode = fan_speed
         for k, v in fan_modes[0].items():
             if v == fan_speed:
@@ -159,4 +151,5 @@ class SmartThingsVacuum_custom(SmartThingsEntity_custom, StateVacuumEntity):
         **kwargs: Any,
     ) -> None:
         """Send a command to a vacuum cleaner."""
-        _LOGGER.error("send command!!!")
+        await self.send_command(CONF_COMMANDS, command, params)
+
