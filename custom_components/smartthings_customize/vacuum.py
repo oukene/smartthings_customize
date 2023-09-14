@@ -31,7 +31,7 @@ async def async_setup_entry(
 ) -> None:
     """Add switches for a config entry."""
     broker = hass.data[DOMAIN][DATA_BROKERS][config_entry.entry_id]
-
+    
     entities = []
     settings = SettingManager.get_capa_settings(broker, Platform.VACUUM)
     for s in settings:
@@ -57,13 +57,9 @@ class SmartThingsVacuum_custom(SmartThingsEntity_custom, StateVacuumEntity):
                 #self._supported_features |= VacuumEntityFeature.LOCATE
                 self._supported_features |= VacuumEntityFeature.STATE
                 self._supported_features |= VacuumEntityFeature.SEND_COMMAND
-
             elif "fan_speed" in capa:
                 self._capability["fan_speed"] = capa
                 self._supported_features |= VacuumEntityFeature.FAN_SPEED
-            elif "battery" in capa:
-                self._capability["battery"] = capa
-                self._supported_features |= VacuumEntityFeature.BATTERY
 
         # fan_modes
         if self.get_attr_value("fan_speed", CONF_OPTIONS):
