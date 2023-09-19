@@ -35,9 +35,9 @@ class SmartThingsFan_custom(SmartThingsEntity_custom, FanEntity):
                 self._supported_features |= FanEntityFeature.SET_SPEED
             
         # external_entity
-        if entity_id := self.get_attr_value(ATTR_SWITCH, CONF_ENTITY_ID):
-            self._hass.data[DOMAIN]["listener"].append(async_track_state_change(
-                self._hass, entity_id, self.entity_listener))
+        # if entity_id := self.get_attr_value(ATTR_SWITCH, CONF_ENTITY_ID):
+        #     self._hass.data[DOMAIN]["listener"].append(async_track_state_change(
+        #         self._hass, entity_id, self.entity_listener))
 
     def entity_listener(self, entity, old_state, new_state):
         self.schedule_update_ha_state(True)
@@ -45,8 +45,8 @@ class SmartThingsFan_custom(SmartThingsEntity_custom, FanEntity):
     # platform property #############################################################################
     @property
     def is_on(self) -> bool | None:
-        if entity_id := self.get_attr_value(ATTR_SWITCH, CONF_ENTITY_ID):
-            return self.hass.states.get(entity_id).state != STATE_OFF
+        # if entity_id := self.get_attr_value(ATTR_SWITCH, CONF_ENTITY_ID):
+        #     return self.hass.states.get(entity_id).state != STATE_OFF
         return self.get_attr_value(ATTR_SWITCH, CONF_STATE) != STATE_OFF
 
     @property
