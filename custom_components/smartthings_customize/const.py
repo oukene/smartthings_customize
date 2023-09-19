@@ -75,6 +75,7 @@ PLATFORMS = [
     Platform.SELECT,
     Platform.BUTTON,
     Platform.TEXT,
+    Platform.VACUUM,
 ]
 
 IGNORED_CAPABILITIES = [

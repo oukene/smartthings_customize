@@ -4,8 +4,9 @@ import traceback
 from homeassistant.const import Platform, CONF_TYPE
 from .const import *
 from homeassistant.const import (
-    STATE_UNKNOWN, STATE_UNAVAILABLE, CONF_ICON
+    STATE_UNKNOWN, STATE_UNAVAILABLE, CONF_ICON, CONF_VALUE_TEMPLATE,
 )
+import homeassistant.helpers.config_validation as cv
 
 from homeassistant.helpers.dispatcher import (
     async_dispatcher_connect,
@@ -245,10 +246,15 @@ class SmartThingsEntity_custom(Entity):
                 # if status := self.get_attr_status(value, platform, default):
                 #     _LOGGER.error("set status value: " + str(status.value))
                 #     value = status.value
-                component = value.get(CONF_COMPONENT, self.get_component(platform))
-                capa = value.get(CONF_CAPABILITY, self.get_capability(platform))
-                _LOGGER.debug("get dict attr - platform : " + str(platform) + ", component : " + str(component) + ", capa : " + str(capa) + ", default : " + str(default))
-                value = self._get_attr_status_value(component, capa, value.get(CONF_ATTRIBUTE), default=default)
+                
+                # value_template check
+                if value_template := value.get(CONF_VALUE_TEMPLATE):
+                    value = cv.template(value_template).async_render()
+                else:
+                    component = value.get(CONF_COMPONENT, self.get_component(platform))
+                    capa = value.get(CONF_CAPABILITY, self.get_capability(platform))
+                    _LOGGER.debug("get dict attr - platform : " + str(platform) + ", component : " + str(component) + ", capa : " + str(capa) + ", default : " + str(default))
+                    value = self._get_attr_status_value(component, capa, value.get(CONF_ATTRIBUTE), default=default)
             return value
         except Exception as e:
             _LOGGER.debug("error : " + traceback.format_exc())

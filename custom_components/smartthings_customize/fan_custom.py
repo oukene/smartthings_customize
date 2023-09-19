@@ -18,7 +18,6 @@ class SmartThingsFan_custom(SmartThingsEntity_custom, FanEntity):
         _LOGGER.debug("climate settings : " + str(setting[1]))
 
         self._supported_features = 0
-        self._extra_capability = {}
         
         for capa in setting[1]["capabilities"]:
             if ATTR_SWITCH in capa:
