@@ -179,6 +179,38 @@ globals:
 # (if you add them here they will be ignored in the global settings).
 # parent_entity_id - Included in the same device as the specified entity ID
 devices:
+  # vacuum example
+  - device_id: "46955634-09e8-6bc7-0167-a73b2e9182e6"
+    vacuum:
+      - name: "robot vacuum test"
+        component: main
+        capability: samsungce.robotCleanerOperatingState
+        capabilities:
+          - commands:
+            capability: samsungce.robotCleanerOperatingState
+            command: setOperatingState
+            argument:
+              "return": ["homing"]
+              "start": ["cleaning"]
+              "stop": ["paused"]
+            state:
+              attribute: operatingState
+            s2h_state_mapping:
+              [
+                {
+                  "charging": "docked",
+                  "charged": "docked",
+                  "returning": "homing",
+                },
+              ]
+          - fan_speed:
+            capability: robotCleanerTurboMode
+            options: ["on", "off"]
+            command: setRobotCleanerTurboMode
+            s2h_fan_speed_mapping: [{ "on": "turbo", "off": "normal" }]
+            state:
+              attribute: robotCleanerTurboMode
+
   - device_id: b065a858-1927-fd98-a374-7fc1498e8c76
     type: ocf
     sensor:
