@@ -28,7 +28,7 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
         for capa in setting[1].get("capabilities", []):
             if ATTR_SWITCH in capa:
                 self._capability[ATTR_SWITCH] = capa
-                self._capability[capa.get(CONF_CAPABILITY)] = capa
+                #self._capability[capa.get(CONF_CAPABILITY)] = capa
             elif ATTR_MODE in capa:
                 self._capability[ATTR_MODE] = capa
             elif ATTR_FAN_MODE in capa:
@@ -282,7 +282,6 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
         await self.send_command(ATTR_SWITCH, self.get_command(ATTR_SWITCH).get(STATE_ON), self.get_argument(ATTR_SWITCH).get(STATE_ON, []))
         
     async def async_turn_off(self) -> None:
-        _LOGGER.error("call async_turn_off")
         await self.send_command(ATTR_SWITCH, self.get_command(ATTR_SWITCH).get(STATE_OFF), self.get_argument(ATTR_SWITCH).get(STATE_OFF, []))
     
     async def async_turn_aux_heat_off(self) -> None:
