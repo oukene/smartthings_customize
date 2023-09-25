@@ -354,6 +354,8 @@ devices:
             command:
               "on": "on"
               "off": "off"
+            state:
+              attribute: switch
             argument:
               "on": ["on"]
               "off": ["off"]
