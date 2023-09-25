@@ -28,7 +28,6 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
         for capa in setting[1].get("capabilities", []):
             if ATTR_SWITCH in capa:
                 self._capability[ATTR_SWITCH] = capa
-                #self._capability[capa.get(CONF_CAPABILITY)] = capa
             elif ATTR_MODE in capa:
                 self._capability[ATTR_MODE] = capa
             elif ATTR_FAN_MODE in capa:
@@ -106,7 +105,9 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
     def is_on(self) -> bool:
         # if entity_id := self.get_attr_value(ATTR_SWITCH, CONF_ENTITY_ID):
         #     return self.hass.states.get(entity_id).state != STATE_OFF
-        return self.get_attr_value(ATTR_SWITCH, CONF_STATE) != STATE_OFF
+        value = self.get_attr_value(Platform.SWITCH, CONF_STATE, STATE_OFF)
+        on_state = self.get_attr_value(Platform.SWITCH, "on_state", [STATE_ON])
+        return value in on_state
 
     @property
     def temperature_unit(self) -> str:

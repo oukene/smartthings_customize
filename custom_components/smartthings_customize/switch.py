@@ -11,6 +11,8 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from homeassistant.const import STATE_ON, STATE_OFF
+
 from . import SmartThingsEntity
 from .const import *
 
@@ -19,9 +21,6 @@ _LOGGER = logging.getLogger(__name__)
 
 from .common import *
 
-CONF_ON_COMMAND = "on_command"
-CONF_OFF_COMMAND = "off_command"
-CONF_ON_STATE = "on_state"
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -77,16 +76,11 @@ class SmartThingsSwitch_custom(SmartThingsEntity_custom, SwitchEntity):
     def __init__(self, hass, setting) -> None:
         super().__init__(hass, platform=Platform.SWITCH,setting=setting)
 
-        # overwrite on command
-        #self._command = setting[2].get(CONF_COMMAND)[0]
-        #self._off_command = setting[2].get(CONF_OFF_COMMAND)
-        #self._on_state = setting[2].get(CONF_ON_STATE)
-
     async def async_turn_off(self, **kwargs: Any) -> None:
-        await self.send_command(Platform.SWITCH, self.get_command(Platform.SWITCH).get("off"), self.get_argument(Platform.SWITCH).get("off", []))
+        await self.send_command(Platform.SWITCH, self.get_command(Platform.SWITCH, {STATE_OFF:STATE_OFF}).get(STATE_OFF), self.get_argument(Platform.SWITCH, {STATE_OFF:[STATE_OFF]}).get(STATE_OFF, []))
 
     async def async_turn_on(self, **kwargs: Any) -> None:
-        await self.send_command(Platform.SWITCH, self.get_command(Platform.SWITCH).get("on"), self.get_argument(Platform.SWITCH).get("on", []))
+        await self.send_command(Platform.SWITCH, self.get_command(Platform.SWITCH, {STATE_ON:STATE_ON}).get(STATE_ON), self.get_argument(Platform.SWITCH, {STATE_ON:[STATE_ON]}).get(STATE_ON, []))
 
     @property
     def is_on(self) -> bool:
