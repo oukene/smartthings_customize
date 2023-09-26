@@ -272,8 +272,8 @@ devices:
               "on": "setRapidCooling"
               "off": "setRapidCooling"
             argument:
-              "on": []
-              "off": []
+              "on": ["on"]
+              "off": ["off"]
             state:
               attribute: rapidCooling
           - mode:
