@@ -77,10 +77,10 @@ class SmartThingsSwitch_custom(SmartThingsEntity_custom, SwitchEntity):
         super().__init__(hass, platform=Platform.SWITCH,setting=setting)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
-        await self.send_command(Platform.SWITCH, self.get_command(Platform.SWITCH, {STATE_OFF:STATE_OFF}).get(STATE_OFF), self.get_argument(Platform.SWITCH, {STATE_OFF:[STATE_OFF]}).get(STATE_OFF, []))
+        await self.send_command(Platform.SWITCH, self.get_command(Platform.SWITCH, {STATE_OFF:STATE_OFF}).get(STATE_OFF), self.get_argument(Platform.SWITCH, {STATE_OFF:[]}).get(STATE_OFF, []))
 
     async def async_turn_on(self, **kwargs: Any) -> None:
-        await self.send_command(Platform.SWITCH, self.get_command(Platform.SWITCH, {STATE_ON:STATE_ON}).get(STATE_ON), self.get_argument(Platform.SWITCH, {STATE_ON:[STATE_ON]}).get(STATE_ON, []))
+        await self.send_command(Platform.SWITCH, self.get_command(Platform.SWITCH, {STATE_ON:STATE_ON}).get(STATE_ON), self.get_argument(Platform.SWITCH, {STATE_ON:[]}).get(STATE_ON, []))
 
     @property
     def is_on(self) -> bool:

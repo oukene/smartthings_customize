@@ -280,10 +280,10 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
                 await self.send_command(key, self.get_command(key), [value])
 
     async def async_turn_on(self) -> None:
-        await self.send_command(ATTR_SWITCH, self.get_command(ATTR_SWITCH, {STATE_ON: STATE_ON}).get(STATE_ON), self.get_argument(ATTR_SWITCH, {STATE_ON: [STATE_ON]}).get(STATE_ON, []))
+        await self.send_command(ATTR_SWITCH, self.get_command(ATTR_SWITCH, {STATE_ON: STATE_ON}).get(STATE_ON), self.get_argument(ATTR_SWITCH, {STATE_ON: []}).get(STATE_ON, []))
         
     async def async_turn_off(self) -> None:
-        await self.send_command(ATTR_SWITCH, self.get_command(ATTR_SWITCH, {STATE_OFF: STATE_OFF}).get(STATE_OFF), self.get_argument(ATTR_SWITCH, {STATE_OFF: [STATE_OFF]}).get(STATE_OFF, []))
+        await self.send_command(ATTR_SWITCH, self.get_command(ATTR_SWITCH, {STATE_OFF: STATE_OFF}).get(STATE_OFF), self.get_argument(ATTR_SWITCH, {STATE_OFF: []}).get(STATE_OFF, []))
     
     async def async_turn_aux_heat_off(self) -> None:
         await self.send_command(ATTR_AUX_HEAT, self.get_command(ATTR_AUX_HEAT).get(STATE_OFF), self.get_argument(ATTR_AUX_HEAT).get(STATE_OFF, []))

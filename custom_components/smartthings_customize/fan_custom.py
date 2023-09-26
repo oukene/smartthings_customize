@@ -82,14 +82,14 @@ class SmartThingsFan_custom(SmartThingsEntity_custom, FanEntity):
     
     # method ########################################################################################
     async def async_turn_on(self, percentage: int | None = None, preset_mode: str | None = None, **kwargs: Any) -> None:
-        await self.send_command(ATTR_SWITCH, self.get_command(ATTR_SWITCH, {STATE_ON:STATE_ON}).get(STATE_ON), self.get_argument(ATTR_SWITCH, {STATE_ON:[STATE_ON]}).get(STATE_ON, []))
+        await self.send_command(ATTR_SWITCH, self.get_command(ATTR_SWITCH, {STATE_ON:STATE_ON}).get(STATE_ON), self.get_argument(ATTR_SWITCH, {STATE_ON:[]}).get(STATE_ON, []))
         if percentage:
             await self.async_set_percentage(percentage)
         if preset_mode:
             await self.async_set_preset_mode(preset_mode)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
-        await self.send_command(ATTR_SWITCH, self.get_command(ATTR_SWITCH, {STATE_OFF: STATE_OFF}).get(STATE_OFF), self.get_argument(ATTR_SWITCH, {STATE_OFF:[STATE_OFF]}).get(STATE_OFF, []))
+        await self.send_command(ATTR_SWITCH, self.get_command(ATTR_SWITCH, {STATE_OFF: STATE_OFF}).get(STATE_OFF), self.get_argument(ATTR_SWITCH, {STATE_OFF:[]}).get(STATE_OFF, []))
 
     async def async_set_direction(self, direction: str) -> None:
         await self.send_command(ATTR_DIRECTION, self.get_command(ATTR_DIRECTION), [direction])
