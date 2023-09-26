@@ -272,8 +272,8 @@ devices:
               "on": "setRapidCooling"
               "off": "setRapidCooling"
             argument:
-              "on": ["on"]
-              "off": ["off"]
+              "on": []
+              "off": []
             state:
               attribute: rapidCooling
           - mode:
@@ -318,8 +318,8 @@ devices:
               "on": "on"
               "off": "off"
             argument:
-              "on": ["on"]
-              "off": ["off"]
+              "on": []
+              "off": []
           - preset_mode:
             capability: airConditionerFanMode
             options:
@@ -357,8 +357,8 @@ devices:
             state:
               attribute: switch
             argument:
-              "on": ["on"]
-              "off": ["off"]
+              "on": []
+              "off": []
           - mode:
             capability: airConditionerMode
             options:
