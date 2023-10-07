@@ -37,6 +37,6 @@ class SmartThingsButton_custom(SmartThingsEntity_custom, ButtonEntity):
         super().__init__(hass, platform=Platform.BUTTON, setting=setting)
     
     async def async_press(self) -> None:
-        await self.send_command(Platform.Button, self.get_command(Platform.BUTTON), self.get_argument(Platform.BUTTON))
+        await self.send_command(Platform.BUTTON, self.get_command(Platform.BUTTON), self.get_argument(Platform.BUTTON))
 
     
