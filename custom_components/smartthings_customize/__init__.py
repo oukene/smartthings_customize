@@ -101,7 +101,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 entry.data[CONF_APP_ID], entry.data[CONF_LOCATION_ID]
             ),
         )
-
     if not validate_webhook_requirements(hass):
         _LOGGER.warning(
             "The 'base_url' of the 'http' integration must be configured and start with"
@@ -110,11 +109,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         return False
 
     api = SmartThings_custom(async_get_clientsession(hass), entry.data[CONF_ACCESS_TOKEN])
-
     settings = SettingManager(await api.location(entry.data[CONF_LOCATION_ID]))
     settings.load_setting()
     SettingManager().set_options(entry.options)
-
     remove_entry = False
     try:
         # See if the app is already setup. This occurs when there are
@@ -130,7 +127,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         installed_app = await validate_installed_app(
             api, entry.data[CONF_INSTALLED_APP_ID]
         )
-
         # Get scenes
         scenes = await async_get_entry_scenes(entry, api)
 
@@ -143,7 +139,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.config_entries.async_update_entry(
             entry, data={**entry.data, CONF_REFRESH_TOKEN: token.refresh_token}
         )
-
         # Get devices and their current status
         devices = await api.devices(location_ids=[installed_app.location_id])
 
@@ -163,7 +158,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 devices.remove(device)
 
         await asyncio.gather(*(retrieve_device_status(d) for d in devices.copy()))
-
         # Sync device subscriptions
         await smartapp_sync_subscriptions(
             hass,
@@ -177,7 +171,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         broker = DeviceBroker(hass, entry, token, smart_app, devices, scenes)
         broker.connect()
         hass.data[DOMAIN][DATA_BROKERS][entry.entry_id] = broker
-
     except ClientResponseError as ex:
         if ex.status in (HTTPStatus.UNAUTHORIZED, HTTPStatus.FORBIDDEN):
             _LOGGER.exception(
@@ -205,7 +198,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 )
             )
         return False
-
     if SettingManager.resetting_entities():
         entity_registry = homeassistant.helpers.entity_registry.async_get(
                 hass)
@@ -221,20 +213,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             device_registry.async_update_device(d.id, remove_config_entry_id=entry.entry_id)
 
     hass.config_entries.async_update_entry(
-            entry,
-            options={CONF_ENABLE_DEFAULT_ENTITIES:entry.options.get(CONF_ENABLE_DEFAULT_ENTITIES, True),
-                    CONF_ENABLE_SYNTAX_PROPERTY:entry.options.get(CONF_ENABLE_SYNTAX_PROPERTY, False),
-                    CONF_RESETTING_ENTITIES:False,
-                    }
-            )
+        entry,
+        options={CONF_ENABLE_DEFAULT_ENTITIES:entry.options.get(CONF_ENABLE_DEFAULT_ENTITIES, True),
+                CONF_ENABLE_SYNTAX_PROPERTY:entry.options.get(CONF_ENABLE_SYNTAX_PROPERTY, False),
+                CONF_RESETTING_ENTITIES:False,
+                }
+    )
 
         # if DOMAIN in list(d.identifiers)[0]:
         #     _LOGGER.debug("remove device, identifiers" + str(d.identifiers))
         #     device_registry.async_remove_device(d.id)
-
     entry.add_update_listener(update_listener)
-
-    hass.data[DOMAIN]["listener"] = []
+    hass.data[DOMAIN][entry.entry_id] = {}
+    hass.data[DOMAIN][entry.entry_id]["listener"] = []
     #PLATFORMS.different_update(SettingManager.ignore_platforms())
     _LOGGER.debug("enable platforms : " + str(SettingManager().get_enable_platforms()))
     await hass.config_entries.async_forward_entry_setups(entry, SettingManager().get_enable_platforms())
@@ -268,7 +259,7 @@ async def async_get_entry_scenes(entry: ConfigEntry, api):
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    for listener in hass.data[DOMAIN]["listener"]:
+    for listener in hass.data[DOMAIN][entry.entry_id]["listener"]:
         listener()
 
     broker = hass.data[DOMAIN][DATA_BROKERS].pop(entry.entry_id, None)
@@ -280,7 +271,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Perform clean-up when entry is being removed."""
-    api = SmartThings(async_get_clientsession(hass), entry.data[CONF_ACCESS_TOKEN])
+    api = SmartThings_custom(async_get_clientsession(hass), entry.data[CONF_ACCESS_TOKEN])
 
     # Remove the installed_app, which if already removed raises a HTTPStatus.FORBIDDEN error.
     installed_app_id = entry.data[CONF_INSTALLED_APP_ID]

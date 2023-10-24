@@ -104,34 +104,34 @@ class SmartThingsFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         # Setup end-point
         self.api = SmartThings(async_get_clientsession(self.hass), self.access_token)
         try:
-            app = await find_app(self.hass, self.api)
-            if app:
-                await app.refresh()  # load all attributes
-                await update_app(self.hass, app)
-                # Find an existing entry to copy the oauth client
-                existing = next(
-                    (
-                        entry
-                        for entry in self._async_current_entries()
-                        if entry.data[CONF_APP_ID] == app.app_id
-                    ),
-                    None,
-                )
-                if existing:
-                    self.oauth_client_id = existing.data[CONF_CLIENT_ID]
-                    self.oauth_client_secret = existing.data[CONF_CLIENT_SECRET]
-                else:
-                    # Get oauth client id/secret by regenerating it
-                    app_oauth = AppOAuth(app.app_id)
-                    app_oauth.client_name = APP_OAUTH_CLIENT_NAME
-                    app_oauth.scope.extend(APP_OAUTH_SCOPES)
-                    client = await self.api.generate_app_oauth(app_oauth)
-                    self.oauth_client_secret = client.client_secret
-                    self.oauth_client_id = client.client_id
-            else:
-                app, client = await create_app(self.hass, self.api)
-                self.oauth_client_secret = client.client_secret
-                self.oauth_client_id = client.client_id
+            # app = await find_app(self.hass, self.api)
+            # if app:
+            #     await app.refresh()  # load all attributes
+            #     await update_app(self.hass, app)
+            #     # Find an existing entry to copy the oauth client
+            #     existing = next(
+            #         (
+            #             entry
+            #             for entry in self._async_current_entries()
+            #             if entry.data[CONF_APP_ID] == app.app_id
+            #         ),
+            #         None,
+            #     )
+            #     if existing:
+            #         self.oauth_client_id = existing.data[CONF_CLIENT_ID]
+            #         self.oauth_client_secret = existing.data[CONF_CLIENT_SECRET]
+            #     else:
+            #         # Get oauth client id/secret by regenerating it
+            #         app_oauth = AppOAuth(app.app_id)
+            #         app_oauth.client_name = APP_OAUTH_CLIENT_NAME
+            #         app_oauth.scope.extend(APP_OAUTH_SCOPES)
+            #         client = await self.api.generate_app_oauth(app_oauth)
+            #         self.oauth_client_secret = client.client_secret
+            #         self.oauth_client_id = client.client_id
+            # else:
+            app, client = await create_app(self.hass, self.api)
+            self.oauth_client_secret = client.client_secret
+            self.oauth_client_id = client.client_id
             setup_smartapp(self.hass, app)
             self.app_id = app.app_id
 
@@ -170,9 +170,10 @@ class SmartThingsFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         """Ask user to select the location to setup."""
         if user_input is None or CONF_LOCATION_ID not in user_input:
             # Get available locations
-            existing_locations = [
-                entry.data[CONF_LOCATION_ID] for entry in self._async_current_entries()
-            ]
+            existing_locations = []
+            # existing_locations = [
+            #     entry.data[CONF_LOCATION_ID] for entry in self._async_current_entries()
+            # ]
             locations = await self.api.locations()
             locations_options = {
                 location.location_id: location.name
@@ -199,6 +200,7 @@ class SmartThingsFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         self.installed_app_id = user_input.get(CONF_INSTALLED_APP_ID)
         self.refresh_token = user_input.get(CONF_REFRESH_TOKEN)
         if self.installed_app_id is None:
+            _LOGGER.debug("installed app id is None")
             # Launch the external setup URL
             url = format_install_url(self.app_id, self.location_id)
             return self.async_external_step(step_id="authorize", url=url)
@@ -241,7 +243,7 @@ class SmartThingsFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             CONF_APP_ID: self.app_id,
             CONF_INSTALLED_APP_ID: self.installed_app_id,
         }
-
+        _LOGGER.debug("installed app id : " + str(self.installed_app_id))
         location = await self.api.location(data[CONF_LOCATION_ID])
         self.location = location
 

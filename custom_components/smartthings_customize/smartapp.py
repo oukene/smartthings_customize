@@ -98,6 +98,7 @@ async def find_app(hass: HomeAssistant, api):
     for app in [app for app in apps if app.app_name.startswith(APP_NAME_PREFIX)]:
         # Load settings to compare instance id
         settings = await app.settings()
+        _LOGGER.debug("settings instance_id : " + str(settings.settings.get(SETTINGS_INSTANCE_ID)) + ", hass instance id : " + str(hass.data[DOMAIN][CONF_INSTANCE_ID]))
         if (
             settings.settings.get(SETTINGS_INSTANCE_ID)
             == hass.data[DOMAIN][CONF_INSTANCE_ID]
@@ -235,6 +236,7 @@ async def setup_smartapp_endpoint(hass: HomeAssistant):
     """
     if hass.data.get(DOMAIN):
         # already setup
+        _LOGGER.debug("already setup - DOMAIN : " + str(DOMAIN))
         return
 
     # Get/create config to store a unique id for this hass instance.
@@ -386,7 +388,7 @@ async def smartapp_sync_subscriptions(
     extend_capa = SettingManager().get_capabilities()
     _LOGGER.debug("extend capa : " + str(extend_capa))
     extend_capa = list(set(extend_capa))
-    CAPABILITIES.extend(extend_capa)
+    #CAPABILITIES.extend(extend_capa)
     for device in devices:
         capabilities.update(device.capabilities)
     # Remove items not defined in the library
@@ -395,6 +397,19 @@ async def smartapp_sync_subscriptions(
     capabilities.difference_update(IGNORED_CAPABILITIES)
     # Remove ignore capabilities
     capabilities.difference_update(SettingManager().ignore_capabilities())
+    capabilities.update(extend_capa)
+
+    # capabilities.update(extend_capa)
+    # if SettingManager().enable_default_entities():
+    #     for device in devices:
+    #         capabilities.update(device.capabilities)
+    #     CAPABILITIES.extend(extend_capa)
+    #     # Remove items not defined in the library
+    #     capabilities.intersection_update(CAPABILITIES)
+    #     # Remove unused capabilities
+    #     capabilities.difference_update(IGNORED_CAPABILITIES)
+    #     # Remove ignore capabilities
+    #     capabilities.difference_update(SettingManager().ignore_capabilities())
 
     capability_count = len(capabilities)
     if capability_count > SUBSCRIPTION_WARNING_LIMIT:
@@ -418,6 +433,7 @@ async def smartapp_sync_subscriptions(
     # Get current subscriptions and find differences
     subscriptions = await api.subscriptions(installed_app_id)
     for subscription in subscriptions:
+        _LOGGER.debug("subscription : " + str(subscription.capability))
         if subscription.capability in capabilities:
             capabilities.remove(subscription.capability)
         else:
@@ -440,6 +456,7 @@ async def _continue_flow(
     installed_app_id: str,
     refresh_token: str,
 ):
+    _LOGGER.debug("continue flow install app id : " + str(installed_app_id))
     """Continue a config flow if one is in progress for the specific installed app."""
     unique_id = format_unique_id(app_id, location_id)
     flow = next(

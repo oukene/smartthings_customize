@@ -35,6 +35,7 @@ from homeassistant.util import dt as dt_util
 from . import SmartThingsEntity
 from .const import *
 from .common import *
+from .setting import *
 
 Map = namedtuple(
     "Map", "attribute name default_unit device_class state_class entity_category"
