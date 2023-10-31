@@ -261,21 +261,21 @@ class SmartThingsEntity_custom(Entity):
 
     def get_attribute(self, platform, default=None):
         try:
-            return self._capability[platform].get(CONF_ATTRIBUTE)
+            return self._capability[platform].get(CONF_ATTRIBUTE, default)
         except:
             _LOGGER.debug("not found attribute : " + traceback.format_exc())
             return default
 
     def get_command(self, platform, default=None):
         try:
-            return self._capability[platform].get(CONF_COMMAND)
+            return self._capability[platform].get(CONF_COMMAND, default)
         except:
             _LOGGER.debug("not found command : " + traceback.format_exc())
             return default
 
     def get_argument(self, platform, default=None):
         try:
-            return self._capability[platform].get(CONF_ARGUMENT)
+            return self._capability[platform].get(CONF_ARGUMENT, default)
         except:
             _LOGGER.debug("not found argument : " + traceback.format_exc())
             return default

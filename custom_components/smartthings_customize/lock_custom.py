@@ -1,6 +1,7 @@
 """Support for locks through the SmartThings cloud API."""
 from __future__ import annotations
 
+
 from collections.abc import Sequence
 from typing import Any
 
@@ -11,45 +12,27 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import SmartThingsEntity
-from .common import SettingManager
 
-from . import SmartThingsEntity
+ST_CMD_LOCK = "lock"
+ST_CMD_UNLOCK = "unlock"
+
 from .const import *
+from .common import *
+
+from .lock import ST_LOCK_ATTR_MAP
 
 import logging
 _LOGGER = logging.getLogger(__name__)
 
-
-ST_STATE_LOCKED = "locked"
-ST_LOCK_ATTR_MAP = {
-    "codeId": "code_id",
-    "codeName": "code_name",
-    "lockName": "lock_name",
-    "method": "method",
-    "timeout": "timeout",
-    "usedCode": "used_code",
-}
-
-from .lock_custom import SmartThingsLock_custom
 
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Add locks for a config entry."""
+    """Add switches for a config entry."""
     broker = hass.data[DOMAIN][DATA_BROKERS][config_entry.entry_id]
     entities = []
-    if SettingManager.enable_default_entities():
-        async_add_entities(
-            [
-                SmartThingsLock(device)
-                for device in broker.devices.values()
-                if broker.any_assigned(device.device_id, "lock") and SettingManager.allow_device(device.device_id)
-            ]
-        )
-
     settings = SettingManager.get_capa_settings(broker, Platform.LOCK)
     for s in settings:
         _LOGGER.debug("cap setting : " + str(s[1]))
@@ -58,40 +41,37 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-def get_capabilities(capabilities: Sequence[str]) -> Sequence[str] | None:
-    """Return all capabilities supported if minimum required are present."""
-    if Capability.lock in capabilities:
-        return [Capability.lock]
-    return None
-
-
-class SmartThingsLock(SmartThingsEntity, LockEntity):
-    """Define a SmartThings lock."""
+class SmartThingsLock_custom(SmartThingsEntity_custom, LockEntity):
+    def __init__(self, hass, setting) -> None:
+        super().__init__(hass, platform=Platform.LOCK, setting=setting)
 
     async def async_lock(self, **kwargs: Any) -> None:
         """Lock the device."""
-        await self._device.lock(set_status=True)
-        self.async_write_ha_state()
+        await self.send_command(Platform.LOCK, self.get_command(Platform.LOCK, {ST_CMD_LOCK: ST_CMD_LOCK}).get(ST_CMD_LOCK), self.get_argument(Platform.LOCK, {ST_CMD_LOCK: []}).get(ST_CMD_LOCK, []))
 
     async def async_unlock(self, **kwargs: Any) -> None:
         """Unlock the device."""
-        await self._device.unlock(set_status=True)
-        self.async_write_ha_state()
+        await self.send_command(Platform.LOCK, self.get_command(Platform.LOCK, {ST_CMD_UNLOCK: ST_CMD_UNLOCK}).get(ST_CMD_UNLOCK), self.get_argument(Platform.LOCK, {ST_CMD_UNLOCK: []}).get(ST_CMD_UNLOCK, []))
 
     @property
     def is_locked(self) -> bool:
         """Return true if lock is locked."""
-        return self._device.status.lock == ST_STATE_LOCKED
+        value = self.get_attr_value(Platform.LOCK, CONF_STATE)
+        lock_state = self.get_attr_value(Platform.LOCK, "lock_state")
+        _LOGGER.error("is locked - value : " + str(value) + ", lock_state : " + str(lock_state))
+        return value in lock_state
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return device specific state attributes."""
-        state_attrs = {}
-        status = self._device.status.attributes[Attribute.lock]
+        
+        conf = self._capability[Platform.LOCK].get(CONF_STATE, [])
+        status = self.get_attr_status(conf, Platform.LOCK)
         if status.value:
-            state_attrs["lock_state"] = status.value
+            self._extra_state_attributes["lock_state"] = status.value
         if isinstance(status.data, dict):
             for st_attr, ha_attr in ST_LOCK_ATTR_MAP.items():
                 if (data_val := status.data.get(st_attr)) is not None:
-                    state_attrs[ha_attr] = data_val
-        return state_attrs
+                    self._extra_state_attributes[ha_attr] = data_val
+        return self._extra_state_attributes
+

@@ -7,6 +7,17 @@ globals:
     - healthCheck
     - ocf
 
+  lock:
+    - name: "door lock"
+      component: main
+      capability: switch
+      state:
+        attribute: switch
+      command:
+        "lock": "on"
+        "unlock": "off"
+      lock_state: ["on"]
+
   switch:
     - name: "power cool"
       capability: refrigeration
