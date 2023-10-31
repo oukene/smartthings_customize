@@ -240,6 +240,39 @@ globals:
 # (if you add them here they will be ignored in the global settings).
 # parent_entity_id - Included in the same device as the specified entity ID
 devices:
+  # 김치냉장고
+  - device_id: bc98a847-3fbb-e0fa-96f9-e9a8157c16ae
+    binary_sensor:
+      - name: top contact
+        capability: contactSensor
+        component: top
+        state:
+          attribute: contact
+        on_state: ["open"]
+        device_class: door
+      - name: middle contact
+        capability: contactSensor
+        component: middle
+        state:
+          attribute: contact
+        on_state: ["open"]
+        device_class: door
+      - name: bottom contact
+        capability: contactSensor
+        component: bottom
+        state:
+          attribute: contact
+        on_state: ["open"]
+        device_class: door
+
+    sensor:
+      - name: top OperatingState
+        capability: samsungce.kimchiRefrigeratorOperatingState
+        component: top
+        state:
+          attribute: operatingState
+          key: mode
+
   # 로봇청소기
   - device_id: "46955634-09e8-6bc7-0167-a73b2e9182e6"
     sensor:
