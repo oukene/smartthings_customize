@@ -242,7 +242,7 @@ class SmartThingsEntity_custom(Entity):
             _LOGGER.debug("extra capa : " + str(self._capability[platform]))
             value = self._capability[platform].get(attr, default)
             _LOGGER.debug("platform : " + str(platform) + ", attr : " + str(attr) + ", value: " + str(value) + ", type : " + str(type(value)))
-            if str(type(value)) == "<class 'dict'>":
+            if isinstance(value, dict):
                 # if status := self.get_attr_status(value, platform, default):
                 #     _LOGGER.error("set status value: " + str(status.value))
                 #     value = status.value

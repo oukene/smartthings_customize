@@ -58,7 +58,6 @@ class SmartThingsLock_custom(SmartThingsEntity_custom, LockEntity):
         """Return true if lock is locked."""
         value = self.get_attr_value(Platform.LOCK, CONF_STATE)
         lock_state = self.get_attr_value(Platform.LOCK, "lock_state")
-        _LOGGER.error("is locked - value : " + str(value) + ", lock_state : " + str(lock_state))
         return value in lock_state
 
     @property

@@ -723,9 +723,19 @@ class SmartThingsSensor_custom(SmartThingsEntity_custom, SensorEntity):
         #value = get_attribute_value(self._device, self._component, self._capability, self._attribute)
         if self.device_class == SensorDeviceClass.TIMESTAMP:
             return dt_util.parse_datetime(value)
+        
+        mapping_states = self.get_attr_value(Platform.SENSOR, "s2h_state_mapping", [{}])
 
-        states = self.get_attr_value(Platform.SENSOR, "s2h_state_mapping", [{}])
-        return states[0].get(value, value)
+        if isinstance(value, dict):
+            conf = self._capability[Platform.SENSOR].get(CONF_STATE, [])
+            key = conf.get("key")
+            for k, v in value.items():
+                self._extra_state_attributes[k] = v.get("value", v) if isinstance(v, dict) else v
+                if key == k:
+                    value = v
+            return value
+        else:
+            return mapping_states[0].get(value, value)
 
     @property
     def native_unit_of_measurement(self):
