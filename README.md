@@ -32,10 +32,101 @@ example) entity_id_format: st_custom_%{device_id}_%{device_type}_%{label}_%{comp
 
 globals:
   ignore_capabilities:
-    - execute
-    - healthCheck
-    - ocf
+    # - healthCheck
+    # - accelerationSensor
+    # - activityLightingMode
+    # - airConditionerFanMode
+    # - airConditionerMode
+    # - airFlowDirection
+    # - airQualitySensor
+    # - alarm
+    # - audioMute
+    # - audioVolume
+    # - battery
+    # - bodyMassIndexMeasurement
+    # - bodyWeightMeasurement
+    # - button
+    # - carbonDioxideMeasurement
+    # - carbonMonoxideDetector
+    # - carbonMonoxideMeasurement
+    # - colorControl
+    # - colorTemperature
+    # - contactSensor
+    # - demandResponseLoadControl
+    # - dishwasherMode
+    # - dishwasherOperatingState
+    # - doorControl
+    # - dryerMode
+    # - dryerOperatingState
+    # - dustSensor
+    # - energyMeter
+    # - equivalentCarbonDioxideMeasurement
+    # - execute
+    # - fanSpeed
+    # - filterStatus
+    # - formaldehydeMeasurement
+    # - garageDoorControl
+    # - gasMeter
+    # - illuminanceMeasurement
+    # - infraredLevel
+    # - lock
+    # - mediaInputSource
+    # - mediaPlayback
+    # - mediaPlaybackRepeat
+    # - mediaPlaybackShuffle
+    # - motionSensor
+    # - ocf
+    # - odorSensor
+    # - ovenMode
+    # - ovenOperatingState
+    # - ovenSetpoint
+    # - powerConsumptionReport
+    # - powerMeter
+    # - powerSource
+    # - presenceSensor
+    # - rapidCooling
+    # - refrigerationSetpoint
+    # - relativeHumidityMeasurement
+    # - robotCleanerCleaningMode
+    # - robotCleanerMovement
+    # - robotCleanerTurboMode
+    # - signalStrength
+    # - smokeDetector
+    # - soundSensor
+    # - switch
+    # - switchLevel
+    # - tamperAlert
+    # - temperatureMeasurement
+    # - thermostat
+    # - thermostatCoolingSetpoint
+    # - thermostatFanMode
+    # - thermostatHeatingSetpoint
+    # - thermostatMode
+    # - thermostatOperatingState
+    # - thermostatSetpoint
+    # - threeAxis
+    # - tvChannel
+    # - tvocMeasurement
+    # - ultravioletIndex
+    # - valve
+    # - voltageMeasurement
+    # - washerMode
+    # - washerOperatingState
+    # - waterSensor
+    # - windowShade
 
+
+  lock:
+    - name: "door lock"
+      component: main
+      capability: switch
+      state:
+        attribute: switch
+      command:
+        "lock": "on"
+        "unlock": "off"
+      lock_state: ["on"]
+      
   switch:
     - name: "power cool"
       capability: refrigeration
@@ -457,3 +548,4 @@ default_entity_id_format: "st_custom_%{device_id}_%{device_type}_%{label}_%{comp
 - text
 - climate
 - fan
+- lock 
