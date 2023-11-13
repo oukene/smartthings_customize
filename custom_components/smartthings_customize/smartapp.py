@@ -386,15 +386,19 @@ async def smartapp_sync_subscriptions(
     extend_capa = SettingManager().get_capabilities()
     _LOGGER.debug("extend capa : " + str(extend_capa))
     extend_capa = list(set(extend_capa))
-    CAPABILITIES.extend(extend_capa)
-    for device in devices:
-        capabilities.update(device.capabilities)
-    # Remove items not defined in the library
-    capabilities.intersection_update(CAPABILITIES)
-    # Remove unused capabilities
-    capabilities.difference_update(IGNORED_CAPABILITIES)
-    # Remove ignore capabilities
-    capabilities.difference_update(SettingManager().ignore_capabilities())
+    if SettingManager().enable_default_entities():
+        CAPABILITIES.extend(extend_capa)
+        for device in devices:
+            capabilities.update(device.capabilities)
+        # Remove items not defined in the library
+        capabilities.intersection_update(extend_capa)
+        capabilities.update(extend_capa)
+        # Remove unused capabilities
+        capabilities.difference_update(IGNORED_CAPABILITIES)
+        # Remove ignore capabilities
+        capabilities.difference_update(SettingManager().ignore_capabilities())
+    else:
+        capabilities.update(extend_capa)
 
     capability_count = len(capabilities)
     if capability_count > SUBSCRIPTION_WARNING_LIMIT:

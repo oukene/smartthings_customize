@@ -405,6 +405,8 @@ class SettingManager(object):
                             continue
                         for setting in device_setting.get(platform, []):
                             if setting.get("component") in capabilities and setting.get("capability") in capabilities[setting.get("component")]:
+                                if parent_entity_id := device_setting.get("parent_entity_id", None):
+                                    setting[CONF_PARENT_ENTITY_ID] = parent_entity_id
                                 settings.append(
                                     [broker.devices[device_setting["device_id"]], setting])
         except Exception as e:
@@ -428,7 +430,7 @@ class SettingManager(object):
 
     @staticmethod
     def enable_default_entities() -> bool:
-        return SettingManager()._options.get(CONF_ENABLE_DEFAULT_ENTITIES, True)
+        return SettingManager()._options.get(CONF_ENABLE_DEFAULT_ENTITIES, False)
 
     @staticmethod
     def resetting_entities() -> bool:
@@ -438,7 +440,7 @@ class SettingManager(object):
     def allow_device(device_id) -> bool:
         try:
             mgr = SettingManager()
-            return device_id not in mgr._settings.get(GLOBAL_SETTING).get("ignore_devices")
+            return device_id not in mgr._settings.get(GLOBAL_SETTING, {}).get("ignore_devices", [])
         except Exception as e:
             _LOGGER.debug("allow_device error : " + traceback.format_exc())
             return True

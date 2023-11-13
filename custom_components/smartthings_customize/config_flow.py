@@ -273,7 +273,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             step_id="init",
             data_schema=vol.Schema(
                     {
-                        vol.Optional(CONF_ENABLE_DEFAULT_ENTITIES, default=options.get(CONF_ENABLE_DEFAULT_ENTITIES, True)): cv.boolean,
+                        vol.Optional(CONF_ENABLE_DEFAULT_ENTITIES, default=options.get(CONF_ENABLE_DEFAULT_ENTITIES, False)): cv.boolean,
                         vol.Optional(CONF_ENABLE_SYNTAX_PROPERTY, default=options.get(CONF_ENABLE_SYNTAX_PROPERTY, False)): cv.boolean,
                         vol.Optional(CONF_RESETTING_ENTITIES, default=options.get(CONF_RESETTING_ENTITIES, False)): cv.boolean,
                     }
