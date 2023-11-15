@@ -55,6 +55,8 @@ CONF_ENTITY_CATEGORY = "entity_category"
 
 CONF_STATE = "state"
 
+CONF_LAST_TIMESTAMP = "last_timestamp"
+
 CAPA_SWITCH = "switch"
 
 ATTR_SYNTAX = "syntax"

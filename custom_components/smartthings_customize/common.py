@@ -22,6 +22,7 @@ from homeassistant.helpers import (
 from homeassistant.helpers.entity import DeviceInfo, Entity
 import string
 import logging
+from time import time
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -118,10 +119,11 @@ class SmartThingsEntity_custom(Entity):
 
     async def async_added_to_hass(self):
         """Device added to hass."""
-
+        self.set_timestamp()
         async def async_update_state(devices):
             """Update device state."""
             if self._device.device_id in devices:
+                self.set_timestamp()
                 await self.async_update_ha_state(True)
 
         self._dispatcher_remove = async_dispatcher_connect(
@@ -132,6 +134,9 @@ class SmartThingsEntity_custom(Entity):
         """Disconnect the device when removed."""
         if self._dispatcher_remove:
             self._dispatcher_remove()
+
+    def set_timestamp(self):
+        self._extra_state_attributes[CONF_LAST_TIMESTAMP] = time()
 
     @property
     def has_entity_name(self) -> bool:
