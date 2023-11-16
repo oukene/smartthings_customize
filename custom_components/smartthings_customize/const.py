@@ -23,10 +23,10 @@ CONF_ENABLE_SYNTAX_PROPERTY = "enable_syntax_property"
 
 DATA_MANAGER = "manager"
 DATA_BROKERS = "brokers"
-EVENT_BUTTON = "smartthings.button"
+EVENT_BUTTON = "smartthings_customize.button"
 
-SIGNAL_SMARTTHINGS_UPDATE = "smartthings_update"
-SIGNAL_SMARTAPP_PREFIX = "smartthings_smartap_"
+SIGNAL_SMARTTHINGS_UPDATE = "smartthings_customize_update"
+SIGNAL_SMARTAPP_PREFIX = "smartthings_customize_smartap_"
 
 SETTINGS_INSTANCE_ID = "hassInstanceId"
 
