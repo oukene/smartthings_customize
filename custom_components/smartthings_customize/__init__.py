@@ -483,7 +483,7 @@ class DeviceBroker:
 
             updated_devices.add(device.device_id)
 
-        async_dispatcher_send(self._hass, SIGNAL_SMARTTHINGS_UPDATE, updated_devices)
+        async_dispatcher_send(self._hass, SIGNAL_SMARTTHINGS_UPDATE, updated_devices, evt)
 
 class SmartThingsEntity(Entity):
     """Defines a SmartThings entity."""

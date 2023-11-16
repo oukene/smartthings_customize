@@ -23,6 +23,7 @@ from homeassistant.helpers.entity import DeviceInfo, Entity
 import string
 import logging
 from time import time
+from operator import eq
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -31,6 +32,7 @@ def is_valid_state(state) -> bool:
 
 class format_util(string.Template):
     delimiter = "%"
+
 
 class SmartThingsEntity_custom(Entity):
     """Defines a SmartThings entity."""
@@ -120,10 +122,13 @@ class SmartThingsEntity_custom(Entity):
     async def async_added_to_hass(self):
         """Device added to hass."""
         self.set_timestamp()
-        async def async_update_state(devices):
+        async def async_update_state(devices, evt):
             """Update device state."""
             if self._device.device_id in devices:
-                self.set_timestamp()
+                if eq(self._device.device_id, evt.device_id):
+                    for key, cap in self._capability.items():
+                        if eq(self.get_component(key), evt.component_id) and eq(self.get_capability(key), evt.capability):
+                            self.set_timestamp()
                 await self.async_update_ha_state(True)
 
         self._dispatcher_remove = async_dispatcher_connect(
