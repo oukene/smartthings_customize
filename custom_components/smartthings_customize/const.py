@@ -63,6 +63,8 @@ ATTR_SYNTAX = "syntax"
 
 ON_STATE = "on_state"
 
+DEFAULT = "default"
+
 # Ordered 'specific to least-specific platform' in order for capabilities
 # to be drawn-down and represented by the most appropriate platform.
 PLATFORMS = [
