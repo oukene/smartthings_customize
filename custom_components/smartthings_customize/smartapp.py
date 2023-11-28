@@ -387,11 +387,12 @@ async def smartapp_sync_subscriptions(
     _LOGGER.debug("extend capa : " + str(extend_capa))
     extend_capa = list(set(extend_capa))
     if SettingManager().enable_default_entities():
+        _LOGGER.warning("The default entity activation feature will be removed soon. Edit your settings please")
         CAPABILITIES.extend(extend_capa)
         for device in devices:
             capabilities.update(device.capabilities)
         # Remove items not defined in the library
-        capabilities.intersection_update(extend_capa)
+        capabilities.intersection_update(CAPABILITIES)
         capabilities.update(extend_capa)
         # Remove unused capabilities
         capabilities.difference_update(IGNORED_CAPABILITIES)
