@@ -100,6 +100,7 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
             hvac_modes = self.get_attr_value(ATTR_MODE, "s2h_mode_mapping", [{}])
             for mode in modes:
                 self._hvac_modes.append(hvac_modes[0].get(mode, mode))
+            self._hvac_modes = list(set(self._hvac_modes))
 
         
         # fan_modes
@@ -112,6 +113,8 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
             fan_modes = self.get_attr_value(ATTR_FAN_MODE, "s2h_fan_mode_mapping", [{}])
             for mode in modes:
                 self._fan_modes.append(fan_modes[0].get(mode, mode))
+            self._fan_modes = list(set(self._fan_modes))
+            
 
         
     def entity_listener(self, entity, old_state, new_state):
