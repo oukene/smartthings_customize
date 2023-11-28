@@ -15,8 +15,23 @@ ATTR_SWITCH = "switch"
 ATTR_MODE = "mode"
 ATTR_TARGET_TEMP = "target_temp"
 ATTR_TARGET_HUM = "target_humidity"
+ATTR_APPLY_MODE = "apply_mode"
 
 class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
+
+    def set_ext_attr(self, attr, capa):
+        if self._ext_attr.get(attr) is None:
+            self._ext_attr[attr] = {}
+        mode = capa.get(ATTR_APPLY_MODE, DEFAULT)
+        self._capability[attr] = capa
+        self._ext_attr[attr][mode] = capa
+
+    def assign_ext_attr(self, attr):
+        if ext := self._ext_attr.get(attr, {}).get(self.preset_mode) is None:
+            ext = self._ext_attr.get(attr, {}).get(self.hvac_mode)
+
+        self._capability[attr] = self._ext_attr.get(attr, {}).get(DEFAULT) if ext is None else ext
+
     def __init__(self, hass, setting) -> None:
         super().__init__(hass, platform=Platform.CLIMATE, setting=setting)
         _LOGGER.debug("climate settings : " + str(setting[1]))
@@ -24,6 +39,7 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
         self._supported_features = 0
         self._hvac_modes = []
         self._fan_modes = []
+        self._ext_attr = {}
         
         for capa in setting[1].get("capabilities", []):
             if ATTR_SWITCH in capa:
@@ -34,19 +50,19 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
                 self._capability[ATTR_FAN_MODE] = capa
                 self._supported_features |= ClimateEntityFeature.FAN_MODE
             elif ATTR_TARGET_TEMP in capa:
-                self._capability[ATTR_TARGET_TEMP] = capa
+                self.set_ext_attr(ATTR_TARGET_TEMP, capa)
                 self._supported_features |= ClimateEntityFeature.TARGET_TEMPERATURE
             elif ATTR_TARGET_TEMP_LOW in capa:
-                self._capability[ATTR_TARGET_TEMP_LOW] = capa
+                self.set_ext_attr(ATTR_TARGET_TEMP_LOW, capa)
             elif ATTR_TARGET_TEMP_HIGH in capa:
-                self._capability[ATTR_TARGET_TEMP_HIGH] = capa
+                self.set_ext_attr(ATTR_TARGET_TEMP_HIGH, capa)
             elif ATTR_TARGET_HUM in capa:
-                self._capability[ATTR_TARGET_HUM] = capa
+                self.set_ext_attr(ATTR_TARGET_HUM, capa)
                 self._supported_features |= ClimateEntityFeature.TARGET_HUMIDITY
             elif ATTR_CURRENT_TEMPERATURE in capa:
-                self._capability[ATTR_CURRENT_TEMPERATURE] = capa
+                self.set_ext_attr(ATTR_CURRENT_TEMPERATURE, capa)
             elif ATTR_CURRENT_HUMIDITY in capa:
-                self._capability[ATTR_CURRENT_HUMIDITY] = capa
+                self.set_ext_attr(ATTR_CURRENT_HUMIDITY, capa)
             elif ATTR_PRESET_MODE in capa:
                 self._capability[ATTR_PRESET_MODE] = capa
                 self._supported_features |= ClimateEntityFeature.PRESET_MODE
@@ -154,15 +170,18 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
 
     @property
     def target_temperature_high(self) -> float | None:
+        self.assign_ext_attr(ATTR_TARGET_TEMP_HIGH)
         return self.get_attr_value(ATTR_TARGET_TEMP_HIGH, CONF_STATE)
 
     @property
     def target_temperature_low(self) -> float | None:
+        self.assign_ext_attr(ATTR_TARGET_TEMP_LOW)
         return self.get_attr_value(ATTR_TARGET_TEMP_LOW, CONF_STATE)
 
 
     @property
     def target_temperature_step(self) -> float | None:
+        self.assign_ext_attr(ATTR_TARGET_TEMP)
         return self.get_attr_value(ATTR_TARGET_TEMP, "step")
 
     @property
@@ -172,16 +191,17 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
         #     state = self.hass.states.get(entity_id)
         #     return state.state if is_valid_state(state) else None
         # else:
-        _LOGGER.debug("current_temperature : " +
-                        str(ATTR_CURRENT_TEMPERATURE) + ", attr : " + str(CONF_STATE))
+        self.assign_ext_attr(ATTR_CURRENT_TEMPERATURE)
         return self.get_attr_value(ATTR_CURRENT_TEMPERATURE, CONF_STATE, 0)
             
     @property
     def max_temp(self) -> float:
+        self.assign_ext_attr(ATTR_TARGET_TEMP)
         return self.get_attr_value(ATTR_TARGET_TEMP, "max", DEFAULT_MAX_TEMP)
 
     @property
     def min_temp(self) -> float:
+        self.assign_ext_attr(ATTR_TARGET_TEMP)
         return self.get_attr_value(ATTR_TARGET_TEMP, "min", DEFAULT_MIN_TEMP)
 
     @property
@@ -191,19 +211,23 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
         #     state = self.hass.states.get(entity_id)
         #     return int(float(state.state)) if is_valid_state(state) else None
         # else:
+        self.assign_ext_attr(ATTR_CURRENT_HUMIDITY)
         hum = self.get_attr_value(ATTR_CURRENT_HUMIDITY, CONF_STATE, None)
         return int(float(hum)) if hum != None else None
 
     @property
     def target_humidity(self) -> int | None:
+        self.assign_ext_attr(ATTR_TARGET_HUM)
         return int(float(self.get_attr_value(ATTR_TARGET_HUM, CONF_STATE, None)))
 
     @property
     def max_humidity(self) -> int:
+        self.assign_ext_attr(ATTR_TARGET_HUM)
         return int(float(self.get_attr_value(ATTR_TARGET_HUM, "max", None)))
 
     @property
     def min_humidity(self) -> int:
+        self.assign_ext_attr(ATTR_TARGET_HUM)
         return int(float(self.get_attr_value(ATTR_TARGET_HUM, "min", DEFAULT_MIN_HUMIDITY)))
     
     @property
