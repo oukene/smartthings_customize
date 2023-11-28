@@ -1,0 +1,40 @@
+# POWERBOT_9500_19P 제트봇 AI 삼성 로봇 청소기
+devices:
+  # 로봇청소기
+  - device_id: "46955634-09e8-6bc7-0167-a73b2e9182e6"
+    parent_entity_id: switch.maeceondaeg
+    sensor:
+      - name: "청소 면적"
+        component: main
+        capability: samsungce.robotCleanerMapCleaningInfo
+        state:
+          attribute: cleanedExtent
+    vacuum:
+      - name: "operating"
+        component: main
+        capability: samsungce.robotCleanerOperatingState
+        capabilities:
+          - commands:
+            capability: samsungce.robotCleanerOperatingState
+            command: setOperatingState
+            argument:
+              "return": ["homing"]
+              "start": ["cleaning"]
+              "stop": ["paused"]
+            state:
+              attribute: operatingState
+            s2h_state_mapping:
+              [
+                {
+                  "charging": "docked",
+                  "charged": "docked",
+                  "returning": "homing",
+                },
+              ]
+          - fan_speed:
+            capability: robotCleanerTurboMode
+            options: ["on", "off"]
+            command: setRobotCleanerTurboMode
+            s2h_fan_speed_mapping: [{ "on": "turbo", "off": "normal" }]
+            state:
+              attribute: robotCleanerTurboMode

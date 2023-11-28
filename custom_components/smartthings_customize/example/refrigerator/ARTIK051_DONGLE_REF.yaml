@@ -1,0 +1,107 @@
+# device info
+# 스마트홈 동글 연결 냉장고
+devices:
+  - device_id: b065a858-1927-fd98-a374-7fc1498e8c76
+    parent_entity_id: binary_sensor.naengjanggo_contact
+    binary_sensor:
+      - name: cooler contect
+        capability: contactSensor
+        component: cooler
+        state:
+          attribute: contact
+        on_state: ["open"]
+        device_class: door
+
+      - name: freezer contact
+        capability: contactSensor
+        component: freezer
+        state:
+          attribute: contact
+        on_state: ["open"]
+    climate:
+      - name: freezer temperature
+        capability: thermostatCoolingSetpoint
+        component: freezer
+        capabilities:
+          - switch:
+            capability: refrigeration
+            component: main
+            command:
+              "on": "setRapidFreezing"
+              "off": "setRapidFreezing"
+            argument:
+              "on": ["on"]
+              "off": ["off"]
+            state:
+              attribute: rapidFreezing
+          - mode:
+            capability: refrigeration
+            component: main
+            command: setRapidFreezing
+            state:
+              attribute: rapidFreezing
+            options: ["cool", "off"]
+            s2h_mode_mapping: [{ "on": "cool" }]
+            s2h_action_mapping: [{ "on": "cooling", "off": "off" }]
+          - target_temp:
+            capability: thermostatCoolingSetpoint
+            min:
+              capability: custom.thermostatSetpointControl
+              attribute: minimumSetpoint
+            max:
+              capability: custom.thermostatSetpointControl
+              attribute: maximumSetpoint
+            step: 1
+            command: setCoolingSetpoint
+            state:
+              attribute: coolingSetpoint
+            argument:
+              type: float
+          - current_temperature:
+            capability: temperatureMeasurement
+            state:
+              attribute: temperature
+
+      - name: cooler temperature
+        capability: thermostatCoolingSetpoint
+        component: cooler
+        capabilities:
+          - switch:
+            capability: refrigeration
+            component: main
+            command:
+              "on": "setRapidCooling"
+              "off": "setRapidCooling"
+            argument:
+              "on": ["on"]
+              "off": ["off"]
+            state:
+              attribute: rapidCooling
+          - mode:
+            capability: refrigeration
+            component: main
+            command: setRapidCooling
+            state:
+              attribute: rapidCooling
+            options: ["cool", "off"]
+            s2h_mode_mapping: [{ "on": "cool" }]
+            s2h_action_mapping: [{ "on": "cooling", "off": "off" }]
+
+          - target_temp:
+            capability: thermostatCoolingSetpoint
+            min:
+              capability: custom.thermostatSetpointControl
+              attribute: minimumSetpoint
+            max:
+              capability: custom.thermostatSetpointControl
+              attribute: maximumSetpoint
+            step: 1
+            command: setCoolingSetpoint
+            state:
+              attribute: coolingSetpoint
+            argument:
+              type: float
+          - current_temperature:
+            capability: temperatureMeasurement
+            state:
+              attribute: temperature

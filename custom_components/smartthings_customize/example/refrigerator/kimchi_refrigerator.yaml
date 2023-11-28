@@ -1,0 +1,99 @@
+# model num
+# 김치냉장고
+# RQ49C94Y1AP
+devics:
+  - device_id: bc98a847-3fbb-e0fa-96f9-e9a8157c16ae
+    parent_entity_id: binary_sensor.gimcinaengjanggo_contact
+    binary_sensor:
+      - name: top contact
+        capability: contactSensor
+        component: top
+        state:
+          attribute: contact
+        on_state: ["open"]
+        device_class: door
+      - name: middle contact
+        capability: contactSensor
+        component: middle
+        state:
+          attribute: contact
+        on_state: ["open"]
+        device_class: door
+      - name: bottom contact
+        capability: contactSensor
+        component: bottom
+        state:
+          attribute: contact
+        on_state: ["open"]
+        device_class: door
+
+    sensor:
+      - name: top state
+        capability: samsungce.kimchiRefrigeratorOperatingState
+        component: top
+        state:
+          attribute: operatingState
+          key: mode
+        s2h_state_mapping:
+          [
+            {
+              "fridgeMediumCooling": "냉장(표준-2℃)",
+              "fridgeHighCooling": "냉장(강냉0℃)",
+              "fridgeLowCooling": "냉장(약냉5℃)",
+              "kimchiStorageMediumCooling": "표준김치",
+              "kimchiStorageHighCooling": "강냉김치",
+              "kimchiStorageLowCooling": "약냉김치",
+              "kimchiStorageLowSalt": "저염김치",
+              "kimchiStorageCrunch": "아삭김치",
+              "kimchiStoragePurchased": "구입김치",
+              "kimchiRipeLowTemp": "저온쿨링숙성",
+              "kimchiRipeRoomTemp": "상온숙성",
+              "kimchiRipeDongchimi": "동치미숙성",
+              "kimchiRipeKkakdugi": "깍두기숙성",
+            },
+          ]
+      - name: middle state
+        capability: samsungce.kimchiRefrigeratorOperatingState
+        component: middle
+        state:
+          attribute: operatingState
+          key: mode
+        s2h_state_mapping:
+          [
+            {
+              "fridgeMediumCooling": "냉장(표준-2℃)",
+              "fridgeHighCooling": "냉장(강냉0℃)",
+              "fridgeLowCooling": "냉장(약냉5℃)",
+              "kimchiStorageMediumCooling": "표준김치",
+              "kimchiStorageHighCooling": "강냉김치",
+              "kimchiStorageLowCooling": "약냉김치",
+              "kimchiStorageLowSalt": "저염김치",
+              "kimchiStorageCrunch": "아삭김치",
+              "kimchiStoragePurchased": "구입김치",
+              "kimchiRipeLowTemp": "저온쿨링숙성",
+              "kimchiRipeRoomTemp": "상온숙성",
+              "kimchiRipeDongchimi": "동치미숙성",
+              "kimchiRipeKkakdugi": "깍두기숙성",
+              "storageMeat": "육류/생선",
+              "meatRipeNormal": "참맛육류",
+              "storageVegetables": "채소/과일",
+              "fridgeDrink": "음료",
+              "freshGrain": "곡류",
+              "freshWine": "쌀/와인",
+              "freshPotatoBanana": "감자/바나나",
+            },
+          ]
+      - name: bottom state
+        capability: samsungce.kimchiRefrigeratorOperatingState
+        component: bottom
+        state:
+          attribute: operatingState
+          key: mode
+        s2h_state_mapping:
+          [
+            {
+              "freezerMediumCooling": "냉동(표준-19℃)",
+              "freezerHighCooling": "냉동(강냉-21℃)",
+              "freezerLowCooling": "냉동(약냉-17℃)",
+            },
+          ]

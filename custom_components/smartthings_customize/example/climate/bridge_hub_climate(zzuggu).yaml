@@ -1,0 +1,43 @@
+# 브릿지 허브 연동 난방기
+devices:
+  - device_id: d8824158-6cd5-328a-b168-5008e3ccc610
+    climate:
+      - name: 서재난방
+        capability: thermostatMode
+        component: main
+        capabilities:
+          - switch:
+            capability: switch
+            component: main
+            command:
+              "on": "on"
+              "off": "off"
+            state:
+              attribute: switch
+            on_state: ["on"]
+          - mode:
+            capability: thermostatMode
+            options: ["heat","off"]
+            command: setThermostatMode
+            state:
+              attribute: thermostatMode
+          - target_temp:
+            capability: thermostatHeatingSetpoint
+            min: 10
+            max: 40
+            step: 1
+            command: setHeatingSetpoint
+            state:
+              attribute: heatingSetpoint
+          - current_temperature:
+            capability: temperatureMeasurement
+            state:
+            attribute: temperature
+
+    sensor:
+      - name: 현재온도
+        capability: temperatureMeasurement
+        component: main
+        state:
+          attribute: temperature
+
