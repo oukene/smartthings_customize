@@ -27,10 +27,11 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
         self._ext_attr[attr][mode] = capa
 
     def assign_ext_attr(self, attr):
-        if ext := self._ext_attr.get(attr, {}).get(self.preset_mode) is None:
-            ext = self._ext_attr.get(attr, {}).get(self.hvac_mode)
+        if self._capability.get(attr):
+            if ext := self._ext_attr.get(attr, {}).get(self.preset_mode) is None:
+                ext = self._ext_attr.get(attr, {}).get(self.hvac_mode)
 
-        self._capability[attr] = self._ext_attr.get(attr, {}).get(DEFAULT) if ext is None else ext
+            self._capability[attr] = self._ext_attr.get(attr, {}).get(DEFAULT) if ext is None else ext
 
     def __init__(self, hass, setting) -> None:
         super().__init__(hass, platform=Platform.CLIMATE, setting=setting)
