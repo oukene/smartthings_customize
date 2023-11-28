@@ -61,6 +61,8 @@ CAPA_SWITCH = "switch"
 
 ATTR_SYNTAX = "syntax"
 
+ON_STATE = "on_state"
+
 # Ordered 'specific to least-specific platform' in order for capabilities
 # to be drawn-down and represented by the most appropriate platform.
 PLATFORMS = [

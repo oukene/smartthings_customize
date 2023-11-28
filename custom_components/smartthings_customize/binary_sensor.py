@@ -129,7 +129,7 @@ class SmartThingsBinarySensor_custom(SmartThingsEntity_custom, BinarySensorEntit
     @property
     def is_on(self):
         value = self.get_attr_value(Platform.BINARY_SENSOR, CONF_STATE)
-        on_state = self.get_attr_value(Platform.BINARY_SENSOR, "on_state")
+        on_state = self.get_attr_value(Platform.BINARY_SENSOR, ON_STATE)
         return value in on_state
             
         #if self._attribute not in ATTRIBUTE_ON_VALUES:

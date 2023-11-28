@@ -194,7 +194,7 @@ class SmartThingsEntity_custom(Entity):
                         arg = str(arg)
                     elif arg_type == "int":
                         arg = int(arg)
-
+        
         await self._device.command(self.get_component(platform), self.get_capability(platform), command, arg)
         self.async_write_ha_state()
 
@@ -249,9 +249,9 @@ class SmartThingsEntity_custom(Entity):
 
     def get_attr_value(self, platform, attr, default = None):
         try:
-            _LOGGER.debug("extra capa : " + str(self._capability[platform]))
+            #_LOGGER.debug("extra capa : " + str(self._capability[platform]))
             value = self._capability[platform].get(attr, default)
-            _LOGGER.debug("platform : " + str(platform) + ", attr : " + str(attr) + ", value: " + str(value) + ", type : " + str(type(value)))
+            #_LOGGER.debug("platform : " + str(platform) + ", attr : " + str(attr) + ", value: " + str(value) + ", type : " + str(type(value)))
             if isinstance(value, dict):
                 # if status := self.get_attr_status(value, platform, default):
                 #     _LOGGER.error("set status value: " + str(status.value))
@@ -263,7 +263,7 @@ class SmartThingsEntity_custom(Entity):
                 else:
                     component = value.get(CONF_COMPONENT, self.get_component(platform))
                     capa = value.get(CONF_CAPABILITY, self.get_capability(platform))
-                    _LOGGER.debug("get dict attr - platform : " + str(platform) + ", component : " + str(component) + ", capa : " + str(capa) + ", default : " + str(default))
+                    #_LOGGER.debug("get dict attr - platform : " + str(platform) + ", component : " + str(component) + ", capa : " + str(capa) + ", default : " + str(default))
                     value = self._get_attr_status_value(component, capa, value.get(CONF_ATTRIBUTE), default=default)
             return value
         except Exception as e:
