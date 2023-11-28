@@ -86,6 +86,7 @@ globals:
     # - waterSensor
     # - windowShade
 
+
   lock:
     - name: "door lock"
       component: main
@@ -96,7 +97,7 @@ globals:
         "lock": "on"
         "unlock": "off"
       lock_state: ["on"]
-
+      
   switch:
     - name: "power cool"
       capability: refrigeration
@@ -240,7 +241,7 @@ globals:
 # (if you add them here they will be ignored in the global settings).
 # parent_entity_id - Included in the same device as the specified entity ID
 devices:
-  # 김치냉장고
+  # kimchi refrigerator example
   - device_id: bc98a847-3fbb-e0fa-96f9-e9a8157c16ae
     binary_sensor:
       - name: top contact
@@ -272,31 +273,37 @@ devices:
         state:
           attribute: operatingState
           key: mode
-
-  # 로봇청소기
+  # vacuum example
   - device_id: "46955634-09e8-6bc7-0167-a73b2e9182e6"
-    sensor:
-      - name: "clean extent"
-        component: main
-        capability: samsungce.robotCleanerMapCleaningInfo
-        state:
-          attribute: cleanedExtent
-      - name: "Dust bag state"
-        component: station
-        capability: samsungce.robotCleanerDustBag
-        state:
-          attribute: status
-        s2h_state_mapping: [{ "normal": "정상", "full": "가득참" }]
-        icon: mdi:delete
-    select:
-      - name: "operating"
+    vacuum:
+      - name: "robot vacuum test"
         component: main
         capability: samsungce.robotCleanerOperatingState
-        options:
-          attribute: supportedOperatingState
-        command: setOperatingState
-        state:
-          attribute: operatingState
+        capabilities:
+          - commands:
+            capability: samsungce.robotCleanerOperatingState
+            command: setOperatingState
+            argument:
+              "return": ["homing"]
+              "start": ["cleaning"]
+              "stop": ["paused"]
+            state:
+              attribute: operatingState
+            s2h_state_mapping:
+              [
+                {
+                  "charging": "docked",
+                  "charged": "docked",
+                  "returning": "homing",
+                },
+              ]
+          - fan_speed:
+            capability: robotCleanerTurboMode
+            options: ["on", "off"]
+            command: setRobotCleanerTurboMode
+            s2h_fan_speed_mapping: [{ "on": "turbo", "off": "normal" }]
+            state:
+              attribute: robotCleanerTurboMode
 
   - device_id: b065a858-1927-fd98-a374-7fc1498e8c76
     type: ocf
@@ -372,7 +379,24 @@ devices:
             options: ["cool", "off"]
             s2h_mode_mapping: [{ "on": "cool" }]
             s2h_action_mapping: [{ "on": "cooling", "off": "off" }]
+
           - target_temp:
+            apply_mode: "cool"
+            capability: thermostatCoolingSetpoint
+            min:
+              capability: custom.thermostatSetpointControl
+              attribute: minimumSetpoint
+            max:
+              capability: custom.thermostatSetpointControl
+              attribute: maximumSetpoint
+            step: 1
+            command: setCoolingSetpoint
+            state:
+              attribute: coolingSetpoint
+            argument:
+              type: float
+          - target_temp:
+            apply_mode: "off"
             capability: thermostatCoolingSetpoint
             min:
               capability: custom.thermostatSetpointControl
@@ -404,8 +428,8 @@ devices:
               "on": "on"
               "off": "off"
             argument:
-              "on": ["on"]
-              "off": ["off"]
+              "on": []
+              "off": []
           - preset_mode:
             capability: airConditionerFanMode
             options:
@@ -440,11 +464,11 @@ devices:
             command:
               "on": "on"
               "off": "off"
-            argument:
-              "on": ["on"]
-              "off": ["off"]
             state:
               attribute: switch
+            argument:
+              "on": []
+              "off": []
           - mode:
             capability: airConditionerMode
             options:

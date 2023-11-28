@@ -410,6 +410,22 @@ devices:
             s2h_action_mapping: [{ "on": "cooling", "off": "off" }]
 
           - target_temp:
+            apply_mode: "cool"
+            capability: thermostatCoolingSetpoint
+            min:
+              capability: custom.thermostatSetpointControl
+              attribute: minimumSetpoint
+            max:
+              capability: custom.thermostatSetpointControl
+              attribute: maximumSetpoint
+            step: 1
+            command: setCoolingSetpoint
+            state:
+              attribute: coolingSetpoint
+            argument:
+              type: float
+          - target_temp:
+            apply_mode: "off"
             capability: thermostatCoolingSetpoint
             min:
               capability: custom.thermostatSetpointControl
@@ -581,3 +597,4 @@ default_entity_id_format: "st_custom_%{device_id}_%{device_type}_%{label}_%{comp
 - climate
 - fan
 - lock 
+- vacuum
