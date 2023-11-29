@@ -85,7 +85,7 @@ class SmartThingsVacuum_custom(SmartThingsEntity_custom, StateVacuumEntity):
     def state(self) -> str | None:
         """Return the state of the vacuum cleaner."""
         mode = self.get_attr_value(CONF_COMMANDS, CONF_STATE)
-        state_modes = self.get_attr_value(CONF_COMMANDS, "s2h_fan_speed_mapping", [{}])
+        state_modes = self.get_attr_value(CONF_COMMANDS, CONF_STATE_MAPPING, [{}])
         return state_modes[0].get(mode, mode)
 
 

@@ -63,6 +63,10 @@ ATTR_SYNTAX = "syntax"
 
 ON_STATE = "on_state"
 
+CONF_STATE_MAPPING = "s2h_state_mapping"
+CONF_MODE_MAPPING = "s2h_mode_mapping"
+CONF_ACTION_MAPPING = "s2h_action_mapping"
+
 DEFAULT = "default"
 
 # Ordered 'specific to least-specific platform' in order for capabilities
