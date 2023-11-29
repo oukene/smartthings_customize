@@ -22,13 +22,13 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
     def set_ext_attr(self, attr, capa):
         if self._ext_attr.get(attr) is None:
             self._ext_attr[attr] = {}
-        mode = capa.get(ATTR_APPLY_MODE, DEFAULT)
-        self._capability[attr] = capa
+        if (mode := capa.get(ATTR_APPLY_MODE, DEFAULT)) == DEFAULT:
+            self._capability[attr] = capa
         self._ext_attr[attr][mode] = capa
-
+            
     def assign_ext_attr(self, attr):
         if self._capability.get(attr):
-            if ext := self._ext_attr.get(attr, {}).get(self.preset_mode) is None:
+            if (ext := self._ext_attr.get(attr, {}).get(self.preset_mode)) is None:
                 ext = self._ext_attr.get(attr, {}).get(self.hvac_mode)
 
             self._capability[attr] = self._ext_attr.get(attr, {}).get(DEFAULT) if ext is None else ext
@@ -238,6 +238,8 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
     @property
     def preset_mode(self) -> str | None:
         state = self.get_attr_value(ATTR_PRESET_MODE, CONF_STATE)
+        state = self.get_mapping_value(ATTR_PRESET_MODE, CONF_STATE_MAPPING, state)
+        _LOGGER.error("current preset mode : " + str(state))
         return self.get_mapping_value(ATTR_PRESET_MODE, CONF_STATE_MAPPING, state)
 
     @property
