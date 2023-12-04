@@ -28,8 +28,8 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
             
     def assign_ext_attr(self, attr):
         if self._capability.get(attr):
-            if (ext := self._ext_attr.get(attr, {}).get(self.preset_mode)) is None:
-                ext = self._ext_attr.get(attr, {}).get(self.hvac_mode)
+            if (ext := self._ext_attr.get(attr, {}).get(self._preset_mode)) is None:
+                ext = self._ext_attr.get(attr, {}).get(self._hvac_mode)
 
             self._capability[attr] = self._ext_attr.get(attr, {}).get(DEFAULT) if ext is None else ext
 
@@ -41,6 +41,11 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
         self._hvac_modes = []
         self._fan_modes = []
         self._ext_attr = {}
+        self._hvac_mode = None
+        self._preset_mode = None
+        self._fan_mode = None
+        self._swing_mode = None
+        self._hvac_action = None
         
         for capa in setting[1].get("capabilities", []):
             if ATTR_SWITCH in capa:
@@ -48,7 +53,7 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
             elif ATTR_MODE in capa:
                 self._capability[ATTR_MODE] = capa
             elif ATTR_FAN_MODE in capa:
-                self._capability[ATTR_FAN_MODE] = capa
+                self._capability[ATTR_FAN_MODE] = capaf
                 self._supported_features |= ClimateEntityFeature.FAN_MODE
             elif ATTR_TARGET_TEMP in capa:
                 self.set_ext_attr(ATTR_TARGET_TEMP, capa)
@@ -150,11 +155,12 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
     @property
     def hvac_mode(self):
         if not self.is_on:
-            return HVACMode.OFF
+            self._hvac_mode = HVACMode.OFF
+            return self._hvac_mode
         mode = self.get_attr_value(ATTR_MODE, CONF_STATE)
         #hvac_modes = self.get_attr_value(ATTR_MODE, CONF_MODE_MAPPING, [{}])
-
-        return self.get_mapping_value(ATTR_MODE, CONF_MODE_MAPPING, mode)
+        self._hvac_mode = self.get_mapping_value(ATTR_MODE, CONF_MODE_MAPPING, mode)
+        return self._hvac_mode
 
     @property
     def hvac_modes(self) -> list[HVACMode]:
@@ -163,7 +169,8 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
     @property
     def fan_mode(self) -> str | None:
         state = self.get_attr_value(ATTR_FAN_MODE, CONF_STATE)
-        return self.get_mapping_value(ATTR_FAN_MODE, CONF_STATE_MAPPING, state)
+        self._fan_mode = self.get_mapping_value(ATTR_FAN_MODE, CONF_STATE_MAPPING, state)
+        return self._fan_mode
     
     @property
     def fan_modes(self) -> list[str] | None:
@@ -238,9 +245,8 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
     @property
     def preset_mode(self) -> str | None:
         state = self.get_attr_value(ATTR_PRESET_MODE, CONF_STATE)
-        state = self.get_mapping_value(ATTR_PRESET_MODE, CONF_STATE_MAPPING, state)
-        _LOGGER.error("current preset mode : " + str(state))
-        return self.get_mapping_value(ATTR_PRESET_MODE, CONF_STATE_MAPPING, state)
+        self._preset_mode = self.get_mapping_value(ATTR_PRESET_MODE, CONF_STATE_MAPPING, state)
+        return self._preset_mode
 
     @property
     def preset_modes(self) -> list[str] | None:
@@ -249,7 +255,8 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
     @property
     def swing_mode(self) -> str | None:
         state = self.get_attr_value(ATTR_SWING_MODE, CONF_STATE)
-        return self.get_mapping_value(ATTR_SWING_MODE, CONF_STATE_MAPPING, state)
+        self._swing_mode = self.get_mapping_value(ATTR_SWING_MODE, CONF_STATE_MAPPING, state)
+        return self._swing_mode
 
     @property
     def swing_modes(self) -> list[str] | None:
@@ -261,7 +268,8 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
         if not self.is_on:
             mode = STATE_OFF
         #actions = self.get_attr_value(ATTR_MODE, CONF_ACTION_MAPPING, [{}])
-        return self.get_mapping_value(ATTR_MODE, CONF_ACTION_MAPPING, mode)
+        self._hvac_action = self.get_mapping_value(ATTR_MODE, CONF_ACTION_MAPPING, mode)
+        return self._hvac_action
         
     @property
     def is_aux_heat(self) -> bool | None:
