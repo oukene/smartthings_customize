@@ -53,7 +53,7 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
             elif ATTR_MODE in capa:
                 self._capability[ATTR_MODE] = capa
             elif ATTR_FAN_MODE in capa:
-                self._capability[ATTR_FAN_MODE] = capaf
+                self._capability[ATTR_FAN_MODE] = capa
                 self._supported_features |= ClimateEntityFeature.FAN_MODE
             elif ATTR_TARGET_TEMP in capa:
                 self.set_ext_attr(ATTR_TARGET_TEMP, capa)
