@@ -296,7 +296,19 @@ class SmartThingsEntity_custom(Entity):
         except:
             _LOGGER.debug("not found capabilities : " + traceback.format_exc())
             return default
-    
+
+    def get_mapping_value(self, attr, mapping_option, key):
+        data = self.get_attr_value(attr, mapping_option, [{}])
+        return data[0].get(key, key)
+
+    def get_mapping_key(self, attr, mapping_option, value):
+        data = self.get_attr_value(attr, mapping_option, [{}])
+        key = value
+        for k, v in data[0].items():
+            if eq(v, value):
+                key = k
+                break;
+        return key
 
 class SettingManager(object):
     def __new__(cls, *args, **kwargs):

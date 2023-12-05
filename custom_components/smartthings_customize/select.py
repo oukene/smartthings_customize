@@ -43,9 +43,11 @@ class SmartThingsSelect_custom(SmartThingsEntity_custom, SelectEntity):
 
     @property
     def current_option(self) -> str | None:
-        return self.get_attr_value(Platform.SELECT, CONF_STATE)
+        state = self.get_attr_value(Platform.SELECT, CONF_STATE)
+        return self.get_mapping_value(Platform.SELECT, CONF_STATE_MAPPING, state)
 
     async def async_select_option(self, option: str) -> None:
+        option = self.get_mapping_key(Platform.SELECT, CONF_STATE_MAPPING, option)
         arg = [option]
         await self.send_command(Platform.SELECT, self.get_command(Platform.SELECT), arg)
         
