@@ -67,6 +67,8 @@ CONF_STATE_MAPPING = "s2h_state_mapping"
 CONF_MODE_MAPPING = "s2h_mode_mapping"
 CONF_ACTION_MAPPING = "s2h_action_mapping"
 
+CONF_SPEED_LIST = "speed_list"
+
 DEFAULT = "default"
 
 # Ordered 'specific to least-specific platform' in order for capabilities

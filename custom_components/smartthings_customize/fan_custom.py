@@ -1,8 +1,14 @@
-from . import SmartThingsEntity
+from homeassistant.const import MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION
+from homeassistant.util.percentage import ordered_list_item_to_percentage, percentage_to_ordered_list_item, ranged_value_to_percentage, percentage_to_ranged_value
+
+if int(MAJOR_VERSION) >= 2023 and int(MINOR_VERSION) > 12 and int(PATCH_VERSION) > 2:
+    from homeassistant.util.scaling import int_states_in_range
+else:
+    from homeassistant.util.percentage import (
+        int_states_in_range,
+    )
+
 from homeassistant.components.fan import *
-
-from homeassistant.helpers.event import async_track_state_change
-
 from .const import *
 from .common import *
 
@@ -16,7 +22,6 @@ class SmartThingsFan_custom(SmartThingsEntity_custom, FanEntity):
     def __init__(self, hass, setting) -> None:
         super().__init__(hass, platform=Platform.CLIMATE, setting=setting)
         _LOGGER.debug("climate settings : " + str(setting[1]))
-
         self._supported_features = 0
         
         for capa in setting[1]["capabilities"]:
@@ -33,7 +38,10 @@ class SmartThingsFan_custom(SmartThingsEntity_custom, FanEntity):
             elif ATTR_PERCENTAGE in capa:
                 self._capability[ATTR_PERCENTAGE] = capa
                 self._supported_features |= FanEntityFeature.SET_SPEED
-            
+        
+        self._speed_list = self.get_attr_value(ATTR_PERCENTAGE, CONF_SPEED_LIST, None)
+        self._speed_range = (self.get_attr_value(ATTR_PERCENTAGE, "min", 0), self.get_attr_value(ATTR_PERCENTAGE, "max", 100))
+
         # external_entity
         # if entity_id := self.get_attr_value(ATTR_SWITCH, CONF_ENTITY_ID):
         #     self._hass.data[DOMAIN]["listener"].append(async_track_state_change(
@@ -61,7 +69,18 @@ class SmartThingsFan_custom(SmartThingsEntity_custom, FanEntity):
 
     @property
     def percentage(self) -> int | None:
-        return self.get_attr_value(ATTR_PERCENTAGE, CONF_STATE)
+        current_speed = self.get_attr_value(ATTR_PERCENTAGE, CONF_STATE, 0)
+        if self._speed_list is None:
+            return ranged_value_to_percentage(self._speed_range, current_speed)
+
+        return ordered_list_item_to_percentage(self._speed_list, current_speed)
+
+    @property
+    def speed_count(self) -> int:
+        if self._speed_list is None:
+            return int_states_in_range(self._speed_range)
+
+        return len(self._speed_list)
 
     @property
     def percentage_step(self) -> float:
@@ -78,7 +97,6 @@ class SmartThingsFan_custom(SmartThingsEntity_custom, FanEntity):
     @property
     def supported_features(self) -> int | None:
         return self._supported_features
-
     
     # method ########################################################################################
     async def async_turn_on(self, percentage: int | None = None, preset_mode: str | None = None, **kwargs: Any) -> None:
