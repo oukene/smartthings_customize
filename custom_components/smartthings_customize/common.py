@@ -23,7 +23,7 @@ from homeassistant.helpers.entity import DeviceInfo, Entity
 import string
 import logging
 from time import time
-from operator import eq
+from operator import *
 _LOGGER = logging.getLogger(__name__)
 
 
