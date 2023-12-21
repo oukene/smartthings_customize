@@ -1,9 +1,9 @@
 from homeassistant.const import MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION
 from homeassistant.util.percentage import ordered_list_item_to_percentage, percentage_to_ordered_list_item, ranged_value_to_percentage, percentage_to_ranged_value
 
-if int(MAJOR_VERSION) >= 2023 and int(MINOR_VERSION) >= 12 and int(PATCH_VERSION) >= 2:
+try:
     from homeassistant.util.scaling import int_states_in_range
-else:
+except ImportError:
     from homeassistant.util.percentage import int_states_in_range
 
 from homeassistant.components.fan import *
