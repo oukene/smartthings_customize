@@ -39,19 +39,19 @@ class SmartThingsNumber_custom(SmartThingsEntity_custom, NumberEntity):
 
     @property
     def mode(self) -> NumberMode:
-        return self.get_attr_value(Platform.NUMBER, "mode")
+        return self.get_attr_value(Platform.NUMBER, ATTR_MODE)
 
     @property
     def native_min_value(self) -> float:
-        return self.get_attr_value(Platform.NUMBER, "min")
+        return self.get_attr_value(Platform.NUMBER, ATTR_MIN, DEFAULT_MIN_VALUE)
 
     @property
     def native_max_value(self) -> float:
-        return self.get_attr_value(Platform.NUMBER, "max")
+        return self.get_attr_value(Platform.NUMBER, ATTR_MAX, DEFAULT_MAX_VALUE)
 
     @property
     def native_step(self) -> float | None:
-        return self.get_attr_value(Platform.NUMBER, "step")
+        return self.get_attr_value(Platform.NUMBER, ATTR_STEP, DEFAULT_STEP)
 
     @property
     def native_value(self) -> float | None:
