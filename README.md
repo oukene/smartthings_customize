@@ -336,6 +336,31 @@ devices:
 
   - device_id: b065a858-1927-fd98-a374-7fc1498e8c76
     type: ocf
+    fan:
+      - name: fan_test
+        capability: thermostatCoolingSetpoint
+        component: cooler
+        capabilities:
+          - switch:
+            capability: refrigeration
+            component: main
+            command:
+              "on": "setRapidCooling"
+              "off": "setRapidCooling"
+            argument:
+              "on": ["on"]
+              "off": ["off"]
+            state:
+              attribute: rapidCooling
+            on_state: ["on"]
+          - percentage:
+            capability: thermostatCoolingSetpoint
+            min: 1
+            max: 3
+            step: 33
+            command: setCoolingSetpoint
+            state:
+              attribute: coolingSetpoint
     sensor:
       - name: power cool activate
         capability: refrigeration
