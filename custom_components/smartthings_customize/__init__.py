@@ -222,7 +222,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.config_entries.async_update_entry(
             entry,
-            options={CONF_ENABLE_DEFAULT_ENTITIES:entry.options.get(CONF_ENABLE_DEFAULT_ENTITIES, False),
+            options={
+                    #CONF_ENABLE_DEFAULT_ENTITIES:entry.options.get(CONF_ENABLE_DEFAULT_ENTITIES, False),
                     CONF_ENABLE_SYNTAX_PROPERTY:entry.options.get(CONF_ENABLE_SYNTAX_PROPERTY, False),
                     CONF_RESETTING_ENTITIES:False,
                     }

@@ -452,7 +452,8 @@ class SettingManager(object):
 
     @staticmethod
     def enable_default_entities() -> bool:
-        return SettingManager()._options.get(CONF_ENABLE_DEFAULT_ENTITIES, False)
+        return False
+        #return SettingManager()._options.get(CONF_ENABLE_DEFAULT_ENTITIES, False)
 
     @staticmethod
     def resetting_entities() -> bool:
