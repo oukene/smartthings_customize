@@ -21,6 +21,8 @@ class SmartThingsFan_custom(SmartThingsEntity_custom, FanEntity):
         super().__init__(hass, platform=Platform.CLIMATE, setting=setting)
         _LOGGER.debug("fan settings : " + str(setting[1]))
         self._supported_features = 0
+        self._speed_list = None
+        self._speed_range = (1, 100)
         
         for capa in setting[1]["capabilities"]:
             if ATTR_SWITCH in capa:
@@ -36,9 +38,8 @@ class SmartThingsFan_custom(SmartThingsEntity_custom, FanEntity):
             elif ATTR_PERCENTAGE in capa:
                 self._capability[ATTR_PERCENTAGE] = capa
                 self._supported_features |= FanEntityFeature.SET_SPEED
-        
-        self._speed_list = self.get_attr_value(ATTR_PERCENTAGE, CONF_SPEED_LIST, None)
-        self._speed_range = (float(self.get_attr_value(ATTR_PERCENTAGE, "min", 1)), float(self.get_attr_value(ATTR_PERCENTAGE, "max", 100)))
+                self._speed_list = self.get_attr_value(ATTR_PERCENTAGE, CONF_SPEED_LIST, None)
+                self._speed_range = (float(self.get_attr_value(ATTR_PERCENTAGE, "min", 1)), float(self.get_attr_value(ATTR_PERCENTAGE, "max", 100)))
 
         # external_entity
         # if entity_id := self.get_attr_value(ATTR_SWITCH, CONF_ENTITY_ID):
@@ -67,6 +68,8 @@ class SmartThingsFan_custom(SmartThingsEntity_custom, FanEntity):
 
     @property
     def percentage(self) -> int | None:
+        if not self._capability.get(ATTR_PERCENTAGE):
+            return None
         current_speed = self.get_attr_value(ATTR_PERCENTAGE, CONF_STATE, 0)
         if self._speed_list is not None:
             return ordered_list_item_to_percentage(self._speed_list, current_speed)
@@ -77,6 +80,9 @@ class SmartThingsFan_custom(SmartThingsEntity_custom, FanEntity):
 
     @property
     def speed_count(self) -> int:
+        if not self._capability.get(ATTR_PERCENTAGE):
+            return 1
+
         if self._speed_list is not None:
             return len(self._speed_list)
             
