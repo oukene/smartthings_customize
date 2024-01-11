@@ -179,22 +179,23 @@ class SmartThingsEntity_custom(Entity):
 
     async def send_command(self, platform, command, arg):
         if arg_setting := self.get_argument(platform):
-            if arg_type := arg_setting.get(CONF_TYPE):
-                if str(type(arg)) == "<class 'list'>":
-                    if arg_type == "float":
-                        arg = list(map(float, arg))
-                    elif arg_type == "str":
-                        arg = list(map(str, arg))
-                    elif arg_type == "int":
-                        arg = list(map(int, arg))
-                else:
-                    if arg_type == "float":
-                        arg = float(arg)
-                    elif arg_type == "str":
-                        arg = str(arg)
-                    elif arg_type == "int":
-                        arg = int(arg)
-        
+            if isinstance(arg_setting, dict):
+                if arg_type := arg_setting.get(CONF_TYPE):
+                    if isinstance(arg, list):
+                        if arg_type == "float":
+                            arg = list(map(float, arg))
+                        elif arg_type == "str":
+                            arg = list(map(str, arg))
+                        elif arg_type == "int":
+                            arg = list(map(int, arg))
+                    else:
+                        if arg_type == "float":
+                            arg = float(arg)
+                        elif arg_type == "str":
+                            arg = str(arg)
+                        elif arg_type == "int":
+                            arg = int(arg)
+            
         await self._device.command(self.get_component(platform), self.get_capability(platform), command, arg)
         self.async_write_ha_state()
 

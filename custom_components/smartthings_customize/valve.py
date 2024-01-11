@@ -2,10 +2,6 @@
 from __future__ import annotations
 from .common import *
 
-from collections.abc import Sequence
-from typing import Any
-
-from pysmartthings import Capability
 import math
 
 from homeassistant.components.valve import *
@@ -13,10 +9,9 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from homeassistant.const import STATE_ON, STATE_OFF
-from homeassistant.util.percentage import ordered_list_item_to_percentage, percentage_to_ordered_list_item, ranged_value_to_percentage, percentage_to_ranged_value
+from homeassistant.const import STATE_CLOSED, STATE_OPEN, STATE_CLOSING
+from homeassistant.util.percentage import ranged_value_to_percentage, percentage_to_ranged_value
 
-from . import SmartThingsEntity
 from .const import *
 
 import logging
@@ -49,20 +44,22 @@ class SmartThingsValve_custom(SmartThingsEntity_custom, ValveEntity):
         self._prev_position = None
         self._attr_reports_position = False
         self._percent_range = (0, 100)
-        self._attr_device_class = setting[1].get("device_class")
+        self._attr_device_class = setting[1].get(CONF_DEVICE_CLASS)
         self._target_position = None
 
         for capa in setting[1]["capabilities"]:
             if ATTR_VALVE in capa:
                 self._capability[ATTR_VALVE] = capa
-                self._attr_supported_features |= ValveEntityFeature.OPEN
-                self._attr_supported_features |= ValveEntityFeature.CLOSE
+                if capa.get(CONF_COMMAND, {}).get(STATE_OPEN):
+                    self._attr_supported_features |= ValveEntityFeature.OPEN
+                if capa.get(CONF_COMMAND, {}).get(STATE_CLOSED):
+                    self._attr_supported_features |= ValveEntityFeature.CLOSE
             elif ATTR_POSITION in capa:
                 self._capability[ATTR_POSITION] = capa
                 self._attr_supported_features |= ValveEntityFeature.SET_POSITION
                 self._attr_reports_position = True
-                open = float(self.get_attr_value(ATTR_POSITION, "open", 100))
-                close = float(self.get_attr_value(ATTR_POSITION, "close", 0))
+                open = float(self.get_attr_value(ATTR_POSITION, STATE_OPEN, 100))
+                close = float(self.get_attr_value(ATTR_POSITION, STATE_CLOSED, 0))
                 close = (close + 1 if open > close else close - 1)
                 self._percent_range = (close, open)
             elif ATTR_STOP in capa:
@@ -88,10 +85,10 @@ class SmartThingsValve_custom(SmartThingsEntity_custom, ValveEntity):
 
     @property
     def current_valve_position(self) -> int | None:
-        self._attr_current_valve_position = self.get_attr_value(ATTR_POSITION, CONF_STATE, self.get_attr_value(ATTR_POSITION, "close"))
+        self._attr_current_valve_position = self.get_attr_value(ATTR_POSITION, CONF_STATE, self.get_attr_value(ATTR_POSITION, STATE_CLOSED))
 
-        open = self.get_attr_value(ATTR_POSITION, "open")
-        close = self.get_attr_value(ATTR_POSITION, "close")
+        open = self.get_attr_value(ATTR_POSITION, STATE_OPEN)
+        close = self.get_attr_value(ATTR_POSITION, STATE_CLOSED)
         self._attr_is_closed = True
 
         if eq(self._attr_current_valve_position, close):
@@ -128,12 +125,18 @@ class SmartThingsValve_custom(SmartThingsEntity_custom, ValveEntity):
         await self.send_command(ATTR_VALVE, self.get_command(ATTR_VALVE, {STATE_OPEN: STATE_OPEN}).get(STATE_OPEN), self.get_argument(ATTR_VALVE, {STATE_OPEN: []}).get(STATE_OPEN, []))
 
     async def async_set_valve_position(self, position: int) -> None:
-        position = int(math.ceil(percentage_to_ranged_value(self._percent_range, position)))
+        value = int(math.ceil(percentage_to_ranged_value(self._percent_range, position)))
         #_LOGGER.error("async_set_position : " + str(position))
-        self._target_position = position
-        await self.send_command(ATTR_POSITION, self.get_command(ATTR_POSITION), [position])
+        self._target_position = value
+        await self.send_command(ATTR_POSITION, self.get_command(ATTR_POSITION), [value])
+
+        if self._capability.get(ATTR_VALVE):
+            if eq(value, self.get_attr_value(ATTR_POSITION, STATE_CLOSED, 0)):
+                await self.async_close_valve()
+            else:
+                await self.async_open_valve()
 
     async def async_stop_valve(self) -> None:
         self._target_position = None
-        await self.send_command(ATTR_STOP, self.get_command(ATTR_STOP), [])
+        await self.send_command(ATTR_STOP, self.get_command(ATTR_STOP), self.get_argument(ATTR_STOP))
 
