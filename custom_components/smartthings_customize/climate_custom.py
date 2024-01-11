@@ -37,7 +37,7 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
         super().__init__(hass, platform=Platform.CLIMATE, setting=setting)
         _LOGGER.debug("climate settings : " + str(setting[1]))
 
-        self._supported_features = 0
+        self._supported_features = ClimateEntityFeature(0)
         self._hvac_modes = []
         self._fan_modes = []
         self._ext_attr = {}

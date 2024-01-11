@@ -88,6 +88,7 @@ PLATFORMS = [
     Platform.BUTTON,
     Platform.TEXT,
     Platform.VACUUM,
+    Platform.VALVE,
 ]
 
 IGNORED_CAPABILITIES = [

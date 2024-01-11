@@ -111,7 +111,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     api = SmartThings_custom(async_get_clientsession(hass), entry.data[CONF_ACCESS_TOKEN])
 
-    settings = SettingManager(await api.location(entry.data[CONF_LOCATION_ID]))
+    settings = SettingManager()
+    settings.set_location(await api.location(entry.data[CONF_LOCATION_ID]))
     settings.load_setting()
     SettingManager().set_options(entry.options)
 
