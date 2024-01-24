@@ -288,8 +288,9 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
         if self._capability.get(ATTR_SWITCH) and not self.is_on:
             await self.async_turn_on()
 
-        if mode != self.get_attr_value(ATTR_MODE, CONF_STATE):
-            await self.send_command(ATTR_MODE, self.get_command(ATTR_MODE), [mode])
+        if ATTR_SWITCH != self.get_capability(ATTR_MODE):
+            if mode != self.get_attr_value(ATTR_MODE, CONF_STATE):
+                await self.send_command(ATTR_MODE, self.get_command(ATTR_MODE), [mode])
     
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         preset_mode = self.get_mapping_key(ATTR_PRESET_MODE, CONF_STATE_MAPPING, preset_mode)
