@@ -20,7 +20,7 @@ class SmartThingsFan_custom(SmartThingsEntity_custom, FanEntity):
     def __init__(self, hass, setting) -> None:
         super().__init__(hass, platform=Platform.CLIMATE, setting=setting)
         _LOGGER.debug("fan settings : " + str(setting[1]))
-        self._supported_features = 0
+        self._supported_features = FanEntityFeature(0)
         self._speed_list = None
         self._speed_range = (1, 100)
         
