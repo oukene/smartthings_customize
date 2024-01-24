@@ -31,91 +31,6 @@ example) entity_id_format: st_custom_%{device_id}_%{device_type}_%{label}_%{comp
 # After identifying the information of the device from the above site, modify the setting file
 
 globals:
-  ignore_capabilities:
-    # - healthCheck
-    # - accelerationSensor
-    # - activityLightingMode
-    # - airConditionerFanMode
-    # - airConditionerMode
-    # - airFlowDirection
-    # - airQualitySensor
-    # - alarm
-    # - audioMute
-    # - audioVolume
-    # - battery
-    # - bodyMassIndexMeasurement
-    # - bodyWeightMeasurement
-    # - button
-    # - carbonDioxideMeasurement
-    # - carbonMonoxideDetector
-    # - carbonMonoxideMeasurement
-    # - colorControl
-    # - colorTemperature
-    # - contactSensor
-    # - demandResponseLoadControl
-    # - dishwasherMode
-    # - dishwasherOperatingState
-    # - doorControl
-    # - dryerMode
-    # - dryerOperatingState
-    # - dustSensor
-    # - energyMeter
-    # - equivalentCarbonDioxideMeasurement
-    # - execute
-    # - fanSpeed
-    # - filterStatus
-    # - formaldehydeMeasurement
-    # - garageDoorControl
-    # - gasMeter
-    # - illuminanceMeasurement
-    # - infraredLevel
-    # - lock
-    # - mediaInputSource
-    # - mediaPlayback
-    # - mediaPlaybackRepeat
-    # - mediaPlaybackShuffle
-    # - motionSensor
-    # - ocf
-    # - odorSensor
-    # - ovenMode
-    # - ovenOperatingState
-    # - ovenSetpoint
-    # - powerConsumptionReport
-    # - powerMeter
-    # - powerSource
-    # - presenceSensor
-    # - rapidCooling
-    # - refrigerationSetpoint
-    # - relativeHumidityMeasurement
-    # - robotCleanerCleaningMode
-    # - robotCleanerMovement
-    # - robotCleanerTurboMode
-    # - signalStrength
-    # - smokeDetector
-    # - soundSensor
-    # - switch
-    # - switchLevel
-    # - tamperAlert
-    # - temperatureMeasurement
-    # - thermostat
-    # - thermostatCoolingSetpoint
-    # - thermostatFanMode
-    # - thermostatHeatingSetpoint
-    # - thermostatMode
-    # - thermostatOperatingState
-    # - thermostatSetpoint
-    # - threeAxis
-    # - tvChannel
-    # - tvocMeasurement
-    # - ultravioletIndex
-    # - valve
-    # - voltageMeasurement
-    # - washerMode
-    # - washerOperatingState
-    # - waterSensor
-    # - windowShade
-
-
   lock:
     - name: "door lock"
       component: main
@@ -336,31 +251,6 @@ devices:
 
   - device_id: b065a858-1927-fd98-a374-7fc1498e8c76
     type: ocf
-    fan:
-      - name: fan_test
-        capability: thermostatCoolingSetpoint
-        component: cooler
-        capabilities:
-          - switch:
-            capability: refrigeration
-            component: main
-            command:
-              "on": "setRapidCooling"
-              "off": "setRapidCooling"
-            argument:
-              "on": ["on"]
-              "off": ["off"]
-            state:
-              attribute: rapidCooling
-            on_state: ["on"]
-          - percentage:
-            capability: thermostatCoolingSetpoint
-            min: 1
-            max: 3
-            step: 33
-            command: setCoolingSetpoint
-            state:
-              attribute: coolingSetpoint
     sensor:
       - name: power cool activate
         capability: refrigeration
@@ -468,6 +358,36 @@ devices:
             capability: temperatureMeasurement
             state:
               attribute: temperature
+    valve:
+      - name: valve test
+        capability: thermostatCoolingSetpoint
+        component: freezer
+        device_class: water
+        capabilities:
+          - valve:
+            capability: refrigeration
+            component: main
+            command:
+              "open": "setRapidFreezing"
+              "closed": "setRapidFreezing"
+            argument:
+              "open": ["on"]
+              "closed": ["off"]
+            state:
+              attribute: rapidFreezing
+            open_state: ["on"]
+          - position:
+            capability: thermostatCoolingSetpoint
+            command: setCoolingSetpoint
+            state:
+              attribute: coolingSetpoint
+            open: -17
+            closed: -23
+          - stop:
+            capability: refrigeration
+            component: main
+            command: "setRapidFreezing"
+            argument: ["off"]
 
   - device_id: 53eade61-7950-4b89-868b-60ee53e49248
     fan:
@@ -607,6 +527,7 @@ ignore_platforms:
 default_entity_id_format: "st_custom_%{device_id}_%{device_type}_%{label}_%{component}_%{capability}_%{attribute}_%{command}_%{name}"
 
 
+
   ```
 
 
@@ -623,3 +544,4 @@ default_entity_id_format: "st_custom_%{device_id}_%{device_type}_%{label}_%{comp
 - fan
 - lock 
 - vacuum
+- valve
