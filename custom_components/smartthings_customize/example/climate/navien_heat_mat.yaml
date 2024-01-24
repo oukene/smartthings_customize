@@ -1,0 +1,69 @@
+# 나비엔 온수매트
+devices:
+  - device_id: d8824158-6cd5-328a-b168-5008e3ccc610
+    switch:
+      - name: "메인 전원"
+        capability: switch
+        component: main
+        state:
+          attribute: switch
+        on_state: ["on"]
+    climate:
+      - name: 좌측
+        capability: thermostatHeatingSetpoint
+        component: Left
+        capabilities:
+          - switch:
+            capability: switch
+            state:
+              attribute: switch
+            on_state: ["on"]
+          - mode:
+            capability: switch
+            state:
+              attribute: switch
+            options: ["on", "off"]
+            s2h_mode_mapping: [{ "on": "heat" }]
+            s2h_action_mapping: [{ "on": "heating", "off": "off" }]
+          - target_temp:
+            capability: thermostatHeatingSetpoint
+            min: 28
+            max: 45
+            step: 0.5
+            command: setHeatingSetpoint
+            state:
+              attribute: heatingSetpoint
+          - current_temperature:
+            capability: temperatureMeasurement
+            state:
+              attribute: temperature
+      - name: 우측
+        capability: thermostatHeatingSetpoint
+        component: Right
+        capabilities:
+          - switch:
+            capability: switch
+            state:
+              attribute: switch
+            on_state: ["on"]
+          - mode:
+            capability: switch
+            state:
+              attribute: switch
+            options: ["on", "off"]
+            s2h_mode_mapping: [{ "on": "heat" }]
+            s2h_action_mapping: [{ "on": "heating", "off": "off" }]
+          - target_temp:
+            capability: thermostatHeatingSetpoint
+            min: 28
+            max: 45
+            step: 0.5
+            command: setHeatingSetpoint
+            state:
+              attribute: heatingSetpoint
+          - current_temperature:
+            capability: temperatureMeasurement
+            state:
+              attribute: temperature
+
+
