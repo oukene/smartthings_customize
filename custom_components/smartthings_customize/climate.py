@@ -23,8 +23,6 @@ from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import SmartThingsEntity
-from .const import DATA_BROKERS, DOMAIN
 from .common import *
 from .climate_custom import SmartThingsClimate_custom
 from homeassistant.const import Platform

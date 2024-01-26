@@ -6,11 +6,9 @@ try:
 except ImportError:
     from homeassistant.util.percentage import int_states_in_range
 
-from homeassistant.components.fan import *
-from .const import *
+from homeassistant.components.fan import FanEntityFeature, ATTR_PRESET_MODE, ATTR_DIRECTION, ATTR_PERCENTAGE, STATE_ON, FanEntity, Any, math
 from .common import *
-
-from homeassistant.const import *
+from homeassistant.const import STATE_OFF
 import logging
 _LOGGER = logging.getLogger(__name__)
 

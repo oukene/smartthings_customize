@@ -17,9 +17,7 @@ from homeassistant.util.percentage import (
     ranged_value_to_percentage,
 )
 
-from . import SmartThingsEntity
-from .const import *
-from .common import SettingManager
+from .common import *
 from .fan_custom import SmartThingsFan_custom
 
 import logging

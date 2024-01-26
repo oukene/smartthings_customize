@@ -11,11 +11,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import SmartThingsEntity
-from .common import SettingManager
-
-from . import SmartThingsEntity
-from .const import *
+from .common import *
 
 import logging
 _LOGGER = logging.getLogger(__name__)

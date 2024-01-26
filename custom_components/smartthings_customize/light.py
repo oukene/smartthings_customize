@@ -22,9 +22,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 import homeassistant.util.color as color_util
 
-from . import SmartThingsEntity
-from .const import DATA_BROKERS, DOMAIN
-from .common import SettingManager
+from .common import *
 
 async def async_setup_entry(
     hass: HomeAssistant,

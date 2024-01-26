@@ -8,12 +8,10 @@ from pysmartthings import Capability
 
 from homeassistant.components.vacuum import *
 from homeassistant.components.vacuum import VacuumEntity as v
-from homeassistant.const import *
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import *
 from .common import *
 
 import logging

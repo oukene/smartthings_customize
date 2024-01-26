@@ -16,7 +16,6 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 ST_CMD_LOCK = "lock"
 ST_CMD_UNLOCK = "unlock"
 
-from .const import *
 from .common import *
 
 from .lock import ST_LOCK_ATTR_MAP

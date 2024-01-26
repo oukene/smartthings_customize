@@ -7,6 +7,8 @@ from homeassistant.const import (
     STATE_UNKNOWN, STATE_UNAVAILABLE, CONF_ICON, CONF_VALUE_TEMPLATE,
 )
 import homeassistant.helpers.config_validation as cv
+from pysmartthings.device import DeviceEntity
+from .const import *
 
 from homeassistant.helpers.dispatcher import (
     async_dispatcher_connect,
@@ -537,3 +539,53 @@ class SettingManager(object):
     def ignore_capability(capability):
         return capability in SettingManager().ignore_capabilities()
 
+
+class SmartThingsEntity(Entity):
+    """Defines a SmartThings entity."""
+
+    _attr_should_poll = False
+
+    def __init__(self, device: DeviceEntity) -> None:
+        """Initialize the instance."""
+        self._device = device
+        self._dispatcher_remove = None
+
+    async def async_added_to_hass(self):
+        """Device added to hass."""
+
+        async def async_update_state(devices):
+            """Update device state."""
+            if self._device.device_id in devices:
+                await self.async_update_ha_state(True)
+
+        self._dispatcher_remove = async_dispatcher_connect(
+            self.hass, SIGNAL_SMARTTHINGS_UPDATE, async_update_state
+        )
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Disconnect the device when removed."""
+        if self._dispatcher_remove:
+            self._dispatcher_remove()
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Get attributes about the device."""
+        return DeviceInfo(
+            configuration_url="https://account.smartthings.com",
+            identifiers={(DOMAIN, self._device.device_id)},
+            manufacturer=self._device.status.ocf_manufacturer_name,
+            model=self._device.status.ocf_model_number,
+            name=self._device.label,
+            hw_version=self._device.status.ocf_hardware_version,
+            sw_version=self._device.status.ocf_firmware_version,
+        )
+
+    @property
+    def name(self) -> str:
+        """Return the name of the device."""
+        return self._device.label
+
+    @property
+    def unique_id(self) -> str:
+        """Return a unique ID."""
+        return self._device.device_id

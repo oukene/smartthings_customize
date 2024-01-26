@@ -1,12 +1,17 @@
-from . import SmartThingsEntity
-from homeassistant.components.climate import *
+from homeassistant.components.climate import (
+    ClimateEntity, 
+    ClimateEntityFeature, 
+    ATTR_FAN_MODE, 
+    ATTR_TARGET_TEMP_LOW, 
+    ATTR_TARGET_TEMP_HIGH, ATTR_CURRENT_HUMIDITY, ATTR_CURRENT_TEMPERATURE,ATTR_PRESET_MODE,
+    ATTR_SWING_MODE, ATTR_AUX_HEAT, HVACMode, HVACAction, DEFAULT_MAX_TEMP, DEFAULT_MIN_TEMP, DEFAULT_MIN_HUMIDITY
+)
 
 from homeassistant.helpers.event import async_track_state_change
 
-from .const import *
 from .common import *
 
-from homeassistant.const import *
+from homeassistant.const import STATE_OFF, STATE_ON, UnitOfTemperature, PRECISION_TENTHS, PRECISION_WHOLE
 import asyncio
 import logging
 _LOGGER = logging.getLogger(__name__)

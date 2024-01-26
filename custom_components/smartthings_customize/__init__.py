@@ -11,7 +11,6 @@ import homeassistant
 from aiohttp.client_exceptions import ClientConnectionError, ClientResponseError
 from pysmartapp.event import EVENT_TYPE_DEVICE
 from pysmartthings import Attribute, Capability, SmartThings
-from pysmartthings.device import DeviceEntity
 
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.const import CONF_ACCESS_TOKEN, CONF_CLIENT_ID, CONF_CLIENT_SECRET, Platform
@@ -28,7 +27,7 @@ from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers.entity import async_generate_entity_id
 
-from .common import SettingManager
+from .common import *
 from .device import SmartThings_custom
 
 from homeassistant import config_entries, core
@@ -486,54 +485,3 @@ class DeviceBroker:
             updated_devices.add(device.device_id)
 
         async_dispatcher_send(self._hass, SIGNAL_SMARTTHINGS_UPDATE, updated_devices, evt)
-
-class SmartThingsEntity(Entity):
-    """Defines a SmartThings entity."""
-
-    _attr_should_poll = False
-
-    def __init__(self, device: DeviceEntity) -> None:
-        """Initialize the instance."""
-        self._device = device
-        self._dispatcher_remove = None
-
-    async def async_added_to_hass(self):
-        """Device added to hass."""
-
-        async def async_update_state(devices):
-            """Update device state."""
-            if self._device.device_id in devices:
-                await self.async_update_ha_state(True)
-
-        self._dispatcher_remove = async_dispatcher_connect(
-            self.hass, SIGNAL_SMARTTHINGS_UPDATE, async_update_state
-        )
-
-    async def async_will_remove_from_hass(self) -> None:
-        """Disconnect the device when removed."""
-        if self._dispatcher_remove:
-            self._dispatcher_remove()
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Get attributes about the device."""
-        return DeviceInfo(
-            configuration_url="https://account.smartthings.com",
-            identifiers={(DOMAIN, self._device.device_id)},
-            manufacturer=self._device.status.ocf_manufacturer_name,
-            model=self._device.status.ocf_model_number,
-            name=self._device.label,
-            hw_version=self._device.status.ocf_hardware_version,
-            sw_version=self._device.status.ocf_firmware_version,
-        )
-
-    @property
-    def name(self) -> str:
-        """Return the name of the device."""
-        return self._device.label
-
-    @property
-    def unique_id(self) -> str:
-        """Return a unique ID."""
-        return self._device.device_id
-
