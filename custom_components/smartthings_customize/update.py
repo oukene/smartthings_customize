@@ -34,24 +34,40 @@ async def async_setup_entry(
     settings = SettingManager.get_capa_settings(broker, Platform.UPDATE)
     for s in settings:
         _LOGGER.debug("cap setting : " + str(s[1]))
-        entities.append(SmartThingsText_custom(hass=hass, setting=s))
+        entities.append(SmartThingsUpdate_custom(hass=hass, setting=s))
 
     async_add_entities(entities)
 
-class SmartThingsText_custom(SmartThingsEntity_custom, UpdateEntity):
+class SmartThingsUpdate_custom(SmartThingsEntity_custom, UpdateEntity):
     def __init__(self, hass, setting) -> None:
         super().__init__(hass, platform=Platform.UPDATE, setting=setting)
         self._attr_device_class = self.get_attr_value(Platform.UPDATE, ATTR_DEVICE_CLASS, UpdateDeviceClass.FIRMWARE)
         self._attr_auto_update = self.get_attr_value(Platform.UPDATE, ATTR_AUTO_UPDATE, False)
-        self._attr_supported_features = UpdateEntityFeature.INSTALL | UpdateEntityFeature.PROGRESS | UpdateEntityFeature.RELEASE_NOTES
+        self._new_version_available = self.get_attr_value(Platform.UPDATE, "update_available")
+
+        self._attr_supported_features = UpdateEntityFeature(0)
+        if self.get_command(Platform.UPDATE):
+            self._attr_supported_features |= UpdateEntityFeature.INSTALL
+
+        if self.get_attr_value(Platform.UPDATE, ATTR_IN_PROGRESS):
+            self._attr_supported_features |= UpdateEntityFeature.PROGRESS
+        
+        if self.get_attr_value(Platform.UPDATE, ATTR_RELEASE_SUMMARY) or self.get_attr_value(Platform.UPDATE, ATTR_RELEASE_URL) != None:
+            self._attr_supported_features |= UpdateEntityFeature.RELEASE_NOTES
 
     @cached_property
     def installed_version(self) -> str | None:
-        return self.get_attr_value(Platform.UPDATE, ATTR_INSTALLED_VERSION)
+        if self._new_version_available != None:
+            return False
+        else:
+            return self.get_attr_value(Platform.UPDATE, ATTR_INSTALLED_VERSION)
 
     @cached_property
     def latest_version(self) -> str | None:
-        return self.get_attr_value(Platform.UPDATE, ATTR_LATEST_VERSION)
+        if self._new_version_available != None:
+            return self._new_version_available
+        else:
+            return self.get_attr_value(Platform.UPDATE, ATTR_LATEST_VERSION)
 
     @cached_property
     def in_progress(self) -> bool | int | None:
