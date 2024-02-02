@@ -219,9 +219,32 @@ devices:
             s2h_fan_speed_mapping: [{ "on": "turbo", "off": "normal" }]
             state:
               attribute: robotCleanerTurboMode
+              
+  - device_id: be32cb64-a57d-4379-9599-294aa6776819
+    update:
+      - name: firmware update
+        component: main
+        capability: firmwareUpdate
+        command: updateFirmware
+        installed_version:
+          attribute: currentVersion
+        latest_version:
+          attribute: availableVersion
+        title: update test
+        device_class: firmware
 
   - device_id: b065a858-1927-fd98-a374-7fc1498e8c76
     type: ocf
+    update:
+      - name: firmware update
+        component: main
+        capability: samsungce.softwareUpdate
+        command: agreeUpdate
+        update_available:
+          attribute: newVersionAvailable
+        title: update test
+        device_class: firmware
+
     sensor:
       - name: power cool activate
         capability: refrigeration
