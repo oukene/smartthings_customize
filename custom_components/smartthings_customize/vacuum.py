@@ -6,8 +6,7 @@ from typing import Any
 
 from pysmartthings import Capability
 
-from homeassistant.components.vacuum import *
-from homeassistant.components.vacuum import VacuumEntity as v
+from homeassistant.components.vacuum import StateVacuumEntity, VacuumEntityFeature
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
