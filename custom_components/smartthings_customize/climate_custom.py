@@ -42,7 +42,7 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
         super().__init__(hass, platform=Platform.CLIMATE, setting=setting)
         _LOGGER.debug("climate settings : " + str(setting[1]))
 
-        self._supported_features = ClimateEntityFeature(0)
+        self._attr_supported_features = ClimateEntityFeature(0)
         self._hvac_modes = []
         self._fan_modes = []
         self._ext_attr = {}
@@ -55,37 +55,39 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
         for capa in setting[1].get("capabilities", []):
             if ATTR_SWITCH in capa:
                 self._capability[ATTR_SWITCH] = capa
+                self._attr_supported_features |= ClimateEntityFeature.TURN_OFF
+                self._attr_supported_features |= ClimateEntityFeature.TURN_ON
             elif ATTR_MODE in capa:
                 self._capability[ATTR_MODE] = capa
             elif ATTR_FAN_MODE in capa:
                 self._capability[ATTR_FAN_MODE] = capa
-                self._supported_features |= ClimateEntityFeature.FAN_MODE
+                self._attr_supported_features |= ClimateEntityFeature.FAN_MODE
             elif ATTR_TARGET_TEMP in capa:
                 self.set_ext_attr(ATTR_TARGET_TEMP, capa)
-                self._supported_features |= ClimateEntityFeature.TARGET_TEMPERATURE
+                self._attr_supported_features |= ClimateEntityFeature.TARGET_TEMPERATURE
             elif ATTR_TARGET_TEMP_LOW in capa:
                 self.set_ext_attr(ATTR_TARGET_TEMP_LOW, capa)
             elif ATTR_TARGET_TEMP_HIGH in capa:
                 self.set_ext_attr(ATTR_TARGET_TEMP_HIGH, capa)
             elif ATTR_TARGET_HUM in capa:
                 self.set_ext_attr(ATTR_TARGET_HUM, capa)
-                self._supported_features |= ClimateEntityFeature.TARGET_HUMIDITY
+                self._attr_supported_features |= ClimateEntityFeature.TARGET_HUMIDITY
             elif ATTR_CURRENT_TEMPERATURE in capa:
                 self.set_ext_attr(ATTR_CURRENT_TEMPERATURE, capa)
             elif ATTR_CURRENT_HUMIDITY in capa:
                 self.set_ext_attr(ATTR_CURRENT_HUMIDITY, capa)
             elif ATTR_PRESET_MODE in capa:
                 self._capability[ATTR_PRESET_MODE] = capa
-                self._supported_features |= ClimateEntityFeature.PRESET_MODE
+                self._attr_supported_features |= ClimateEntityFeature.PRESET_MODE
             elif ATTR_SWING_MODE in capa:
                 self._capability[ATTR_SWING_MODE] = capa
-                self._supported_features |= ClimateEntityFeature.SWING_MODE
+                self._attr_supported_features |= ClimateEntityFeature.SWING_MODE
             elif ATTR_AUX_HEAT in capa:
                 self._capability[ATTR_AUX_HEAT] = capa
-                self._supported_features |= ClimateEntityFeature.AUX_HEAT
+                self._attr_supported_features |= ClimateEntityFeature.AUX_HEAT
 
         if self._capability.get(ATTR_TARGET_TEMP_HIGH) and self._capability.get(ATTR_TARGET_TEMP_LOW):
-            self._supported_features |= ClimateEntityFeature.TARGET_TEMPERATURE_RANGE
+            self._attr_supported_features |= ClimateEntityFeature.TARGET_TEMPERATURE_RANGE
 
         # external_entity
         # if entity_id := self.get_attr_value(ATTR_SWITCH, CONF_ENTITY_ID):
@@ -152,10 +154,6 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
         if self.hass.config.units.temperature_unit == UnitOfTemperature.CELSIUS:
             return PRECISION_TENTHS
         return PRECISION_WHOLE
-
-    @property
-    def supported_features(self) -> int | None:
-        return self._supported_features
 
     @property
     def hvac_mode(self):
