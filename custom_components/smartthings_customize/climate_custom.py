@@ -55,6 +55,7 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
         for capa in setting[1].get("capabilities", []):
             if ATTR_SWITCH in capa:
                 self._capability[ATTR_SWITCH] = capa
+                self._enable_turn_on_off_backwards_compatibility = False
                 self._attr_supported_features |= ClimateEntityFeature.TURN_OFF
                 self._attr_supported_features |= ClimateEntityFeature.TURN_ON
             elif ATTR_MODE in capa:
@@ -177,7 +178,7 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
     
     @property
     def fan_modes(self) -> list[str] | None:
-        return self._fan_modes
+        return self.get_attr_value(ATTR_FAN_MODE, CONF_OPTIONS)
 
     @property
     def target_temperature(self) -> float | None:

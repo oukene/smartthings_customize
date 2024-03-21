@@ -461,7 +461,7 @@ devices:
             command: setFanMode
             state:
               attribute: fanMode
-            s2h_fan_mode_mapping: [{}]
+            s2h_state_mapping: [{}]
           - preset_mode:
             capability: airConditionerFanMode
             options:
