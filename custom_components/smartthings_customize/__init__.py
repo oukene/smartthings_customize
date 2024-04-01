@@ -13,7 +13,7 @@ from pysmartapp.event import EVENT_TYPE_DEVICE
 from pysmartthings import Attribute, Capability, SmartThings
 
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
-from homeassistant.const import CONF_ACCESS_TOKEN, CONF_CLIENT_ID, CONF_CLIENT_SECRET, Platform
+from homeassistant.const import CONF_ACCESS_TOKEN, CONF_CLIENT_ID, CONF_CLIENT_SECRET, SERVICE_RELOAD
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
@@ -58,13 +58,25 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 ENTITY_ID_FORMAT = DOMAIN + ".{}"
 
-
-
  
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Initialize the SmartThings platform."""
     await setup_smartapp_endpoint(hass)
+
+    async def _handle_reload(service):
+        """Handle reload service call."""
+        entries = hass.config_entries.async_entries(DOMAIN)
+        for entry in entries:
+            config_entry = hass.config_entries.async_get_entry(entry.entry_id)
+            await update_listener(hass, config_entry)
+
+    hass.helpers.service.async_register_admin_service(
+        DOMAIN,
+        SERVICE_RELOAD,
+        _handle_reload,
+    )
+
     return True
 
 
