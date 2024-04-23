@@ -64,18 +64,30 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Initialize the SmartThings platform."""
     await setup_smartapp_endpoint(hass)
 
-    async def _handle_reload(service):
-        """Handle reload service call."""
-        entries = hass.config_entries.async_entries(DOMAIN)
-        for entry in entries:
-            config_entry = hass.config_entries.async_get_entry(entry.entry_id)
-            await update_listener(hass, config_entry)
+    # async def _handle_reload(service):
+    #     """Handle reload service call."""
 
-    hass.helpers.service.async_register_admin_service(
-        DOMAIN,
-        SERVICE_RELOAD,
-        _handle_reload,
-    )
+    #     current_entries = hass.config_entries.async_entries(DOMAIN)
+
+    #     reload_tasks = [
+    #         hass.config_entries.async_reload(entry.entry_id)
+    #         for entry in current_entries
+    #     ]
+
+    #     await asyncio.gather(*reload_tasks)
+
+        # entries = hass.config_entries.async_entries(DOMAIN)
+        # for entry in entries:
+        #     _LOGGER.error("_handle_reload entry id : " + str(entry.entry_id))
+        #     config_entry = hass.config_entries.async_get_entry(entry.entry_id)
+        #     _LOGGER.error("config entry : " + str(config_entry))
+        #     await update_listener(hass, config_entry)
+
+    # hass.helpers.service.async_register_admin_service(
+    #     DOMAIN,
+    #     SERVICE_RELOAD,
+    #     _handle_reload,
+    # )
 
     return True
 
