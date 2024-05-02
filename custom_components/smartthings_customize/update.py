@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from homeassistant.components.update import (
-    UpdateEntity, TYPE_CHECKING, UpdateEntityFeature, ATTR_INSTALLED_VERSION, ATTR_LATEST_VERSION,
+    UpdateEntity, UpdateEntityFeature, ATTR_INSTALLED_VERSION, ATTR_LATEST_VERSION,
     ATTR_RELEASE_SUMMARY, ATTR_RELEASE_URL, ATTR_TITLE, ATTR_AUTO_UPDATE, UpdateDeviceClass, ATTR_IN_PROGRESS
 )
 from typing import Any
