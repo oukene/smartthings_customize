@@ -26,6 +26,8 @@ from homeassistant.helpers.entity import DeviceInfo, Entity
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers.entity import async_generate_entity_id
+from homeassistant.loader import async_get_loaded_integration
+from homeassistant.setup import SetupPhases, async_pause_setup
 
 from .common import *
 from .device import SmartThings_custom
@@ -134,6 +136,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     api = SmartThings_custom(async_get_clientsession(hass), entry.data[CONF_ACCESS_TOKEN])
 
+    # Ensure platform modules are loaded since the DeviceBroker will
+    # import them below and we want them to be cached ahead of time
+    # so the integration does not do blocking I/O in the event loop
+    # to import the modules.
+    await async_get_loaded_integration(hass, DOMAIN).async_get_platforms(PLATFORMS)
+
     settings = SettingManager()
     settings.set_location(await api.location(entry.data[CONF_LOCATION_ID]))
     settings.load_setting()
@@ -198,7 +206,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
 
         # Setup device broker
-        broker = DeviceBroker(hass, entry, token, smart_app, devices, scenes)
+        #broker = DeviceBroker(hass, entry, token, smart_app, devices, scenes)
+        with async_pause_setup(hass, SetupPhases.WAIT_IMPORT_PLATFORMS):
+            # DeviceBroker has a side effect of importing platform
+            # modules when its created. In the future this should be
+            # refactored to not do this.
+            broker = await hass.async_add_import_executor_job(
+                DeviceBroker, hass, entry, token, smart_app, devices, scenes
+            )
         broker.connect()
         hass.data[DOMAIN][DATA_BROKERS][entry.entry_id] = broker
 

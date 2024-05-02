@@ -13,10 +13,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.const import ATTR_DEVICE_CLASS
 from .common import *
 
-if TYPE_CHECKING:
-    from functools import cached_property
-else:
-    from homeassistant.backports.functools import cached_property
+from functools import cached_property
 
 
 import logging
