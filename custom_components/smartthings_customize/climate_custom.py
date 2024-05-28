@@ -7,8 +7,6 @@ from homeassistant.components.climate import (
     ATTR_SWING_MODE, ATTR_AUX_HEAT, HVACMode, HVACAction, DEFAULT_MAX_TEMP, DEFAULT_MIN_TEMP, DEFAULT_MIN_HUMIDITY
 )
 
-from homeassistant.helpers.event import async_track_state_change
-
 from .common import *
 
 from homeassistant.const import STATE_OFF, STATE_ON, UnitOfTemperature, PRECISION_TENTHS, PRECISION_WHOLE
