@@ -143,7 +143,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await async_get_loaded_integration(hass, DOMAIN).async_get_platforms(PLATFORMS)
 
     settings = SettingManager()
-    settings.set_location(await api.location(entry.data[CONF_LOCATION_ID]))
+    settings.init(hass, await api.location(entry.data[CONF_LOCATION_ID]))
     settings.load_setting()
     SettingManager().set_options(entry.options)
 
