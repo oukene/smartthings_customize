@@ -337,23 +337,20 @@ class SettingManager(object):
 
     def load_setting(self):
         # 셋팅을 로드
-        def _load_setting():
-            filepath = DOMAIN + "/" + self._location.name + ".yaml"
-            if os.path.isdir(DOMAIN) == False:
-                os.makedirs(DOMAIN)
-            if os.path.isfile(filepath) == False:
-                with open(filepath, "w") as f:
-                    f.write("globals:\n\n")
-                    f.write("devices:\n\n")
-                    f.write("ignore_platforms: []\n\n")
-                    f.write("default_entity_id_format: '"'st_custom_%{device_id}_%{label}_%{component}_%{capability}_%{attribute}_%{command}_%{name}'"'\n\n")
-                    pass
-            
-            with open(filepath, "r") as fp:
-                self._settings = yaml.load(fp, Loader=yaml.FullLoader)
-                _LOGGER.debug("full settings error : " + str(self._settings))
-
-        self.hass.add_job(_load_setting)
+        filepath = DOMAIN + "/" + self._location.name + ".yaml"
+        if os.path.isdir(DOMAIN) == False:
+            os.makedirs(DOMAIN)
+        if os.path.isfile(filepath) == False:
+            with open(filepath, "w") as f:
+                f.write("globals:\n\n")
+                f.write("devices:\n\n")
+                f.write("ignore_platforms: []\n\n")
+                f.write("default_entity_id_format: '"'st_custom_%{device_id}_%{label}_%{component}_%{capability}_%{attribute}_%{command}_%{name}'"'\n\n")
+                pass
+        
+        with open(filepath, "r") as fp:
+            self._settings = yaml.load(fp, Loader=yaml.FullLoader)
+            _LOGGER.debug("full settings error : " + str(self._settings))
 
         self.build_platform()
 

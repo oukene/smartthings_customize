@@ -144,7 +144,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     settings = SettingManager()
     settings.init(hass, await api.location(entry.data[CONF_LOCATION_ID]))
-    settings.load_setting()
+    await hass.async_add_executor_job(settings.load_setting)
     SettingManager().set_options(entry.options)
 
     remove_entry = False
