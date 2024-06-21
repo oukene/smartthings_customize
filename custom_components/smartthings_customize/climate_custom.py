@@ -299,11 +299,11 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
         await self.send_command(ATTR_PRESET_MODE, self.get_command(ATTR_PRESET_MODE), [preset_mode])
 
     async def async_set_fan_mode(self, fan_mode: str) -> None:
-        fan_mode = self.get_mapping_key(ATTR_PRESET_MODE, CONF_STATE_MAPPING, fan_mode)
+        fan_mode = self.get_mapping_key(ATTR_FAN_MODE, CONF_STATE_MAPPING, fan_mode)
         await self.send_command(ATTR_FAN_MODE, self.get_command(ATTR_FAN_MODE), [fan_mode])
 
     async def async_set_swing_mode(self, swing_mode: str) -> None:
-        swing_mode = self.get_mapping_key(ATTR_PRESET_MODE, CONF_STATE_MAPPING, swing_mode)
+        swing_mode = self.get_mapping_key(ATTR_SWING_MODE, CONF_STATE_MAPPING, swing_mode)
         await self.send_command(ATTR_SWING_MODE, self.get_command(ATTR_SWING_MODE), [swing_mode])
         
     async def async_set_humidity(self, humidity: int) -> None:
