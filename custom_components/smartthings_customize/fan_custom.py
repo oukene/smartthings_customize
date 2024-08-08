@@ -18,24 +18,26 @@ class SmartThingsFan_custom(SmartThingsEntity_custom, FanEntity):
     def __init__(self, hass, setting) -> None:
         super().__init__(hass, platform=Platform.CLIMATE, setting=setting)
         _LOGGER.debug("fan settings : " + str(setting[1]))
-        self._supported_features = FanEntityFeature(0)
+        self._attr_supported_features = FanEntityFeature(0)
         self._speed_list = None
         self._speed_range = (1, 100)
         
         for capa in setting[1]["capabilities"]:
             if ATTR_SWITCH in capa:
                 self._capability[ATTR_SWITCH] = capa
+                self._attr_supported_features |= FanEntityFeature.TURN_OFF
+                self._attr_supported_features |= FanEntityFeature.TURN_ON
             elif ATTR_PRESET_MODE in capa:
                 self._capability[ATTR_PRESET_MODE] = capa
-                self._supported_features |= FanEntityFeature.PRESET_MODE
+                self._attr_supported_features |= FanEntityFeature.PRESET_MODE
             elif ATTR_DIRECTION in capa:
                 self._capability[ATTR_DIRECTION] = capa
-                self._supported_features |= FanEntityFeature.DIRECTION
+                self._attr_supported_features |= FanEntityFeature.DIRECTION
                 if self.get_attr_value(ATTR_DIRECTION, "oscillate_modes"):
-                    self._supported_features |= FanEntityFeature.OSCILLATE
+                    self._attr_supported_features |= FanEntityFeature.OSCILLATE
             elif ATTR_PERCENTAGE in capa:
                 self._capability[ATTR_PERCENTAGE] = capa
-                self._supported_features |= FanEntityFeature.SET_SPEED
+                self._attr_supported_features |= FanEntityFeature.SET_SPEED
                 self._speed_list = self.get_attr_value(ATTR_PERCENTAGE, CONF_SPEED_LIST, None)
                 self._speed_range = (float(self.get_attr_value(ATTR_PERCENTAGE, "min", 1)), float(self.get_attr_value(ATTR_PERCENTAGE, "max", 100)))
 
@@ -97,10 +99,6 @@ class SmartThingsFan_custom(SmartThingsEntity_custom, FanEntity):
     @property
     def preset_modes(self) -> list[str] | None:
         return self.get_attr_value(ATTR_PRESET_MODE, CONF_OPTIONS)
-
-    @property
-    def supported_features(self) -> int | None:
-        return self._supported_features
     
     # method ########################################################################################
     async def async_turn_on(self, percentage: int | None = None, preset_mode: str | None = None, **kwargs: Any) -> None:
