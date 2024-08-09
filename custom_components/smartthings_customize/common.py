@@ -123,7 +123,7 @@ class SmartThingsEntity_custom(Entity):
 
     async def async_added_to_hass(self):
         """Device added to hass."""
-        #self.set_timestamp()
+        self.set_timestamp()
         async def async_update_state(devices, evt):
             """Update device state."""
             if self._device.device_id in devices:
