@@ -723,14 +723,21 @@ class SmartThingsSensor_custom(SmartThingsEntity_custom, SensorEntity):
             return dt_util.parse_datetime(value)
         
         mapping_states = self.get_attr_value(Platform.SENSOR, "s2h_state_mapping", [{}])
+
+        conf = self._capability[Platform.SENSOR].get(CONF_STATE, [])
         
+        if isinstance(value, list):
+            if conf.get("index") is not None:
+                value = value[int(conf.get("index"))]
+            
         if isinstance(value, dict):
             conf = self._capability[Platform.SENSOR].get(CONF_STATE, [])
             key = conf.get("key")
-            for k, v in value.items():
-                self._extra_state_attributes[k] = v.get("value", v) if isinstance(v, dict) else v
-                if key == k:
-                    value = v
+            if key is not None:
+                for k, v in value.items():
+                    self._extra_state_attributes[k] = v.get("value", v) if isinstance(v, dict) else v
+                    if key == k:
+                        value = v
                     
         return mapping_states[0].get(value, value)
 
