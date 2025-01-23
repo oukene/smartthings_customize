@@ -498,6 +498,9 @@ class DeviceBroker:
                     CONF_REFRESH_TOKEN: self._token.refresh_token,
                 },
             )
+            for device in self.devices:
+                device._api._token = self._token.access_token
+                
             _LOGGER.debug(
                 "Regenerated refresh token for installed app: %s",
                 self._installed_app_id,
