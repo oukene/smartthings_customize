@@ -99,7 +99,7 @@ IGNORED_CAPABILITIES = [
     "ocf",
 ]
 
-TOKEN_REFRESH_INTERVAL = timedelta(days=14)
+TOKEN_REFRESH_INTERVAL = timedelta(hours=12)
 
 VAL_UID = "^(?:([0-9a-fA-F]{32})|([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}))$"
 VAL_UID_MATCHER = re.compile(VAL_UID)
