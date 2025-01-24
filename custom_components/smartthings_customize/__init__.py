@@ -162,7 +162,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # smart_app = None
         def load_smartapp():
             try:
-                with open("custom_components/smartthings/smartapp.p", "rb") as fr:
+                with open("custom_components/smartthings_customize/smartapp.p", "rb") as fr:
                     return pickle.load(fr)
             except:
                 """"""
@@ -191,7 +191,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
         def save_smartapp(app):
             try:
-                with open("custom_components/smartthings/smartapp.p", "wb") as fw:
+                with open("custom_components/smartthings_customize/smartapp.p", "wb") as fw:
                     pickle.dump(app, fw)
             except:
                 """"""
