@@ -34,6 +34,8 @@ from .device import SmartThings_custom
 
 from homeassistant import config_entries, core
 
+from .custom_api import async_get_app_info, async_remove_app_info
+
 import yaml
 
 from .config_flow import SmartThingsFlowHandler  # noqa: F401
@@ -148,6 +150,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     SettingManager().set_options(entry.options)
 
     remove_entry = False
+
+    app = await async_get_app_info(hass, entry.data[CONF_APP_ID], entry.data[CONF_ACCESS_TOKEN])
+    
     try:
         # See if the app is already setup. This occurs when there are
         # installs in multiple SmartThings locations (valid use-case)
@@ -155,7 +160,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         smart_app = manager.smartapps.get(entry.data[CONF_APP_ID])
         if not smart_app:
             # Validate and setup the app.
-            app = await api.app(entry.data[CONF_APP_ID])
+            #app = await api.app(entry.data[CONF_APP_ID])
             smart_app = setup_smartapp(hass, app)
 
         # Validate and retrieve the installed app.
@@ -173,8 +178,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             entry.data[CONF_REFRESH_TOKEN],
         )
         hass.config_entries.async_update_entry(
-            entry, data={**entry.data, CONF_REFRESH_TOKEN: token.refresh_token}
+            entry, data={**entry.data, 
+            CONF_ACCESS_TOKEN: token.access_token,
+            CONF_REFRESH_TOKEN: token.refresh_token
+            }
         )
+
+        api = SmartThings(async_get_clientsession(hass), entry.data[CONF_ACCESS_TOKEN])
 
         # Get devices and their current status
         devices = await api.devices(location_ids=[installed_app.location_id])
@@ -441,9 +451,13 @@ class DeviceBroker:
                 self._entry,
                 data={
                     **self._entry.data,
+                    CONF_ACCESS_TOKEN: self._token.access_token,
                     CONF_REFRESH_TOKEN: self._token.refresh_token,
                 },
             )
+            for id, device in self.devices.items():
+                device.status._api._token = self._token.access_token
+
             _LOGGER.debug(
                 "Regenerated refresh token for installed app: %s",
                 self._installed_app_id,
