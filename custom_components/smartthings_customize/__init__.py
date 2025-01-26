@@ -160,13 +160,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # See if the app is already setup. This occurs when there are
         # installs in multiple SmartThings locations (valid use-case)
         # smart_app = None
-        def load_smartapp():
-            try:
-                with open("custom_components/smartthings/smartapp.p", "rb") as fr:
-                    return pickle.load(fr)
-            except:
-                """"""
-        app = await hass.async_add_executor_job(load_smartapp)
+        try:
+            with open("custom_components/smartthings_customize/smartapp.p", "rb") as fr:
+                app = pickle.load(fr)
+        except:
+            """"""
         
         manager = hass.data[DOMAIN][DATA_MANAGER]
         smart_app = manager.smartapps.get(entry.data[CONF_APP_ID])
@@ -189,13 +187,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             
             smart_app = setup_smartapp(hass, app)
 
-        def save_smartapp(app):
-            try:
-                with open("custom_components/smartthings/smartapp.p", "wb") as fw:
-                    pickle.dump(app, fw)
-            except:
-                """"""
-        await hass.async_add_executor_job(save_smartapp, app)
+        try:
+            with open("custom_components/smartthings_customize/smartapp.p", "wb") as fw:
+                pickle.dump(app, fw)
+        except:
+            """"""
 
         # Validate and retrieve the installed app.
         try:
@@ -502,9 +498,9 @@ class DeviceBroker:
                     CONF_REFRESH_TOKEN: self._token.refresh_token,
                 },
             )
-            for id, device in self.devices.items():
-                device.status._api._token = self._token.access_token
-
+            for device in self.devices:
+                device._api._token = self._token.access_token
+                
             _LOGGER.debug(
                 "Regenerated refresh token for installed app: %s",
                 self._installed_app_id,
