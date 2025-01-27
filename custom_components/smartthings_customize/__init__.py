@@ -184,7 +184,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             }
         )
 
-        api = SmartThings(async_get_clientsession(hass), entry.data[CONF_ACCESS_TOKEN])
+        api = SmartThings_custom(async_get_clientsession(hass), entry.data[CONF_ACCESS_TOKEN])
 
         # Get devices and their current status
         devices = await api.devices(location_ids=[installed_app.location_id])
