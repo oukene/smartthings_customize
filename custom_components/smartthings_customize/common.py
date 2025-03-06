@@ -7,7 +7,7 @@ from homeassistant.const import (
     STATE_UNKNOWN, STATE_UNAVAILABLE, CONF_ICON, CONF_VALUE_TEMPLATE,
 )
 import homeassistant.helpers.config_validation as cv
-from pysmartthings.device import DeviceEntity
+from .pysmartthings.device import DeviceEntity
 from .const import *
 
 from homeassistant.helpers.dispatcher import (

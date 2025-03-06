@@ -4,7 +4,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
-from pysmartthings import Capability
+from .pysmartthings import Capability
 
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry

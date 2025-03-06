@@ -6,8 +6,8 @@ _LOGGER = logging.getLogger(__name__)
 from collections import namedtuple
 from collections.abc import Sequence
 
-from pysmartthings import Attribute, Capability
-from pysmartthings.device import DeviceEntity
+from .pysmartthings import Attribute, Capability
+from .pysmartthings.device import DeviceEntity
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,

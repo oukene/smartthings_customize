@@ -4,7 +4,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
-from pysmartthings import Capability
+from .pysmartthings import Capability
 
 from homeassistant.components.number import NumberEntity, NumberMode, DEFAULT_MAX_VALUE, DEFAULT_MIN_VALUE, DEFAULT_STEP, ATTR_MIN, ATTR_MAX, ATTR_MODE, ATTR_STEP
 from homeassistant.config_entries import ConfigEntry

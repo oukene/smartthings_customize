@@ -7,7 +7,7 @@ import traceback
 import json
 import os
 
-from pysmartthings import App
+from .pysmartthings import App
 
 import traceback
 from .const import DOMAIN

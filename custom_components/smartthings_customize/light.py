@@ -5,7 +5,7 @@ import asyncio
 from collections.abc import Sequence
 from typing import Any
 
-from pysmartthings import Capability
+from .pysmartthings import Capability
 
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,

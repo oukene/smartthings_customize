@@ -6,7 +6,7 @@ from collections.abc import Iterable, Sequence
 import logging
 from typing import Any
 
-from pysmartthings import Attribute, Capability
+from .pysmartthings import Attribute, Capability
 
 from homeassistant.components.climate import (
     ATTR_HVAC_MODE,

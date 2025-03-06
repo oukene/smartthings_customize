@@ -4,8 +4,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
-from pysmartthings import Capability
-from pysmartthings.device import Status
+from .pysmartthings import Capability
+from .pysmartthings.device import Status
 
 from homeassistant.components.text import TextEntity, TextMode, MAX_LENGTH_STATE_STATE, ATTR_MAX, ATTR_MIN, ATTR_MODE, ATTR_PATTERN
 from homeassistant.config_entries import ConfigEntry

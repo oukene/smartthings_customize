@@ -3,9 +3,9 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from pysmartthings import Attribute, Capability
-from pysmartthings.device import DeviceEntity
-from pysmartthings.capability import ATTRIBUTE_ON_VALUES
+from .pysmartthings import Attribute, Capability
+from .pysmartthings.device import DeviceEntity
+from .pysmartthings.capability import ATTRIBUTE_ON_VALUES
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
