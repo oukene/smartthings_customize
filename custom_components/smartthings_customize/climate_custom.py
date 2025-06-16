@@ -4,7 +4,7 @@ from homeassistant.components.climate import (
     ATTR_FAN_MODE, 
     ATTR_TARGET_TEMP_LOW, 
     ATTR_TARGET_TEMP_HIGH, ATTR_CURRENT_HUMIDITY, ATTR_CURRENT_TEMPERATURE,ATTR_PRESET_MODE,
-    ATTR_SWING_MODE, ATTR_AUX_HEAT, HVACMode, HVACAction, DEFAULT_MAX_TEMP, DEFAULT_MIN_TEMP, DEFAULT_MIN_HUMIDITY
+    ATTR_SWING_MODE, HVACMode, HVACAction, DEFAULT_MAX_TEMP, DEFAULT_MIN_TEMP, DEFAULT_MIN_HUMIDITY
 )
 
 from .common import *
@@ -81,9 +81,9 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
             elif ATTR_SWING_MODE in capa:
                 self._capability[ATTR_SWING_MODE] = capa
                 self._attr_supported_features |= ClimateEntityFeature.SWING_MODE
-            elif ATTR_AUX_HEAT in capa:
-                self._capability[ATTR_AUX_HEAT] = capa
-                self._attr_supported_features |= ClimateEntityFeature.AUX_HEAT
+            # elif ATTR_AUX_HEAT in capa:
+            #     self._capability[ATTR_AUX_HEAT] = capa
+            #     self._attr_supported_features |= ClimateEntityFeature.AUX_HEAT
 
         if self._capability.get(ATTR_TARGET_TEMP_HIGH) and self._capability.get(ATTR_TARGET_TEMP_LOW):
             self._attr_supported_features |= ClimateEntityFeature.TARGET_TEMPERATURE_RANGE
@@ -273,11 +273,11 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
         self._hvac_action = self.get_mapping_value(ATTR_MODE, CONF_ACTION_MAPPING, mode)
         return self._hvac_action
         
-    @property
-    def is_aux_heat(self) -> bool | None:
-        mode = self.get_attr_value(ATTR_AUX_HEAT, CONF_STATE)
-        aux_heat_modes = self.get_attr_value(ATTR_AUX_HEAT, "aux_heat_modes", {})
-        return mode in (aux_heat_modes)
+    # @property
+    # def is_aux_heat(self) -> bool | None:
+    #     mode = self.get_attr_value(ATTR_AUX_HEAT, CONF_STATE)
+    #     aux_heat_modes = self.get_attr_value(ATTR_AUX_HEAT, "aux_heat_modes", {})
+    #     return mode in (aux_heat_modes)
     
 
     # # method ########################################################################################
@@ -321,8 +321,8 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
     async def async_turn_off(self) -> None:
         await self.send_command(ATTR_SWITCH, self.get_command(ATTR_SWITCH, {STATE_OFF: STATE_OFF}).get(STATE_OFF), self.get_argument(ATTR_SWITCH, {STATE_OFF: []}).get(STATE_OFF, []))
     
-    async def async_turn_aux_heat_off(self) -> None:
-        await self.send_command(ATTR_AUX_HEAT, self.get_command(ATTR_AUX_HEAT).get(STATE_OFF), self.get_argument(ATTR_AUX_HEAT).get(STATE_OFF, []))
+    # async def async_turn_aux_heat_off(self) -> None:
+    #     await self.send_command(ATTR_AUX_HEAT, self.get_command(ATTR_AUX_HEAT).get(STATE_OFF), self.get_argument(ATTR_AUX_HEAT).get(STATE_OFF, []))
         
-    async def async_turn_aux_heat_on(self) -> None:
-        await self.send_command(ATTR_AUX_HEAT, self.get_command(ATTR_AUX_HEAT).get(STATE_ON), self.get_argument(ATTR_AUX_HEAT).get(STATE_ON, []))
+    # async def async_turn_aux_heat_on(self) -> None:
+    #     await self.send_command(ATTR_AUX_HEAT, self.get_command(ATTR_AUX_HEAT).get(STATE_ON), self.get_argument(ATTR_AUX_HEAT).get(STATE_ON, []))

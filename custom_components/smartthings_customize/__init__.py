@@ -66,7 +66,7 @@ ENTITY_ID_FORMAT = DOMAIN + ".{}"
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Initialize the SmartThings platform."""
-    await setup_smartapp_endpoint(hass)
+    await setup_smartapp_endpoint(hass, False)
 
     # async def _handle_reload(service):
     #     """Handle reload service call."""
