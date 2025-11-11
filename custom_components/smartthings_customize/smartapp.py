@@ -424,7 +424,7 @@ async def smartapp_sync_subscriptions(
             capability_count,
             SUBSCRIPTION_WARNING_LIMIT,
         )
-    _LOGGER.debug(
+    _LOGGER.error(
         "Synchronizing subscriptions for %s capabilities under app '%s': %s",
         capability_count,
         installed_app_id,

@@ -380,24 +380,29 @@ class SettingManager(object):
             return None
 
     @staticmethod
+    def parse_capability(setting):
+        capabilities = []
+        for platform in PLATFORMS:
+            if setting.get(platform):
+                for cap in setting.get(platform):
+                    capabilities.append(cap.get("capability")) 
+                    if state := cap.get("state", []):
+                        if state.get("capability"):
+                            capabilities.append(state.get("capability"))
+                    for sub_cap in cap.get("capabilities", []):
+                        capabilities.append(sub_cap.get("capability"))
+        return capabilities
+
+
+    @staticmethod
     def get_capabilities() -> list[str]:
-        setting = SettingManager()
+        inst = SettingManager()
         capabilities = []
         try:
             if default_setting := SettingManager.get_default_setting():
-                for platform in PLATFORMS:
-                    if default_setting.get(platform):
-                        for cap in default_setting.get(platform):
-                            capabilities.append(cap.get("capability")) 
-                            for sub_cap in cap.get("capabilities", []):
-                                capabilities.append(sub_cap.get("capability"))
+                capabilities.extend(inst.parse_capability(default_setting))
             for setting in SettingManager().get_device_setting():
-                for platform in PLATFORMS:
-                    if setting.get(platform):
-                        for cap in setting[platform]:
-                            capabilities.append(cap.get("capability"))
-                            for sub_cap in cap.get("capabilities", []):
-                                capabilities.append(sub_cap.get("capability"))
+                capabilities.extend(inst.parse_capability(setting))
 
             #capabilities.extend(mgr.subscribe_capabilities())
             _LOGGER.debug("get_capabilities : " + str(capabilities))
