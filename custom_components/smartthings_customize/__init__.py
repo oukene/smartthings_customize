@@ -496,8 +496,15 @@ class DeviceBroker:
         async def poll_device_status(now):
             try:
                  _LOGGER.debug("Polling device status...")
+                 updated_devices = set()
                  for device in self.devices.values():
                       await device.status.refresh()
+                      updated_devices.add(device.device_id)
+                 
+                 if updated_devices:
+                      async_dispatcher_send(
+                          self._hass, SIGNAL_SMARTTHINGS_UPDATE, updated_devices, None
+                      )
                  _LOGGER.debug("Device status polled.")
             except Exception as err:
                 _LOGGER.error("Failed to poll device status: %s", err)
