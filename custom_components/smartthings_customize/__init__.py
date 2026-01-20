@@ -245,6 +245,7 @@ class DeviceBroker:
         self._entry = entry
         self._session = session
         self._token_refresh_remove = None
+        self._poll_remove = None
         self._assignments = self._assign_capabilities(devices)
         self.devices = {device.device_id: device for device in devices}
         self.scenes = {scene.scene_id: scene for scene in scenes}
@@ -290,7 +291,7 @@ class DeviceBroker:
         return assignments
 
     def connect(self):
-        """Connect handlers/listeners for token refresh."""
+        """Connect handlers/listeners for token refresh and state polling."""
         
         async def refresh_token_and_update(now):
             """Refresh OAuth2 token and update device API tokens."""
@@ -310,11 +311,38 @@ class DeviceBroker:
         self._token_refresh_remove = async_track_time_interval(
             self._hass, refresh_token_and_update, TOKEN_REFRESH_INTERVAL
         )
+        
+        # Polling for device state updates (every 30 seconds)
+        async def poll_device_status(now):
+            """Poll device status from SmartThings."""
+            updated_devices = set()
+            try:
+                for device_id, device in self.devices.items():
+                    try:
+                        await device.status.refresh()
+                        updated_devices.add(device_id)
+                    except Exception as err:
+                        _LOGGER.debug("Failed to refresh device %s: %s", device_id, err)
+                
+                if updated_devices:
+                    async_dispatcher_send(
+                        self._hass, SIGNAL_SMARTTHINGS_UPDATE, updated_devices, None
+                    )
+                    _LOGGER.debug("Polled status for %d devices", len(updated_devices))
+            except Exception as err:
+                _LOGGER.error("Failed to poll device status: %s", err)
+        
+        # Poll every 30 seconds
+        self._poll_remove = async_track_time_interval(
+            self._hass, poll_device_status, timedelta(seconds=30)
+        )
 
     def disconnect(self):
         """Disconnect handlers/listeners."""
         if self._token_refresh_remove:
             self._token_refresh_remove()
+        if self._poll_remove:
+            self._poll_remove()
 
     def get_assigned(self, device_id: str, platform: str):
         """Get the capabilities assigned to the platform."""

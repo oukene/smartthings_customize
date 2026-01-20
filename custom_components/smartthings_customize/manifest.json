@@ -4,7 +4,8 @@
   "config_flow": true,
   "documentation": "https://github.com/oukene/smartthings_customize",
   "requirements": [
-    "pysmartthings==3.5.1"
+    "pysmartthings==3.5.1",
+    "aiohttp_sse_client2==0.3.0"
   ],
   "ssdp": [],
   "zeroconf": [],
@@ -16,5 +17,5 @@
     "@oukene"
   ],
   "iot_class": "cloud_push",
-  "version": "2026.1.1"
+  "version": "2026.1.2"
 }
