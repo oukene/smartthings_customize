@@ -439,22 +439,33 @@ class Api:
         self, installed_app_id: str, location_id: str
     ) -> dict:
         """
-        Create a subscription for SSE events.
+        Create a subscription for SSE events using the global endpoint.
 
-        https://developer.smartthings.com/docs/api/public#operation/saveSubscription
+        This mimics the behavior of the official integration/external library
+        to allow subscribing to all device events in a location.
         """
         data = {
-            "sourceType": "DEVICE",
-            "device": {"deviceSubscriptionDetail": {"locationId": location_id}},
+            "name": "SmartThings Customize SSE",
+            "version": "1",
+            "clientDeviceId": f"iapp_{installed_app_id}",
+            "subscriptionFilters": [
+                {
+                    "type": "LOCATIONIDS",
+                    "value": [location_id],
+                    "eventType": [
+                        "DEVICE_EVENT",
+                        "DEVICE_LIFECYCLE_EVENT",
+                        "DEVICE_HEALTH_EVENT",
+                    ],
+                }
+            ],
         }
-        return await self.post(
-            API_SUBSCRIPTIONS.format(installed_app_id=installed_app_id), data
-        )
+        # Use the global subscriptions endpoint, not nested under installedapps
+        return await self.post("subscriptions", data)
 
     async def subscribe_sse(
         self,
-        installed_app_id: str,
-        subscription_id: str,
+        sse_url: str,
         event_callback,
         error_callback=None,
     ):
@@ -468,8 +479,6 @@ class Api:
             from aiohttp_sse_client2 import client as sse_client
         except ImportError:
             raise ImportError("aiohttp_sse_client2 is required for SSE support")
-
-        sse_url = f"https://api.smartthings.com/v1/installedapps/{installed_app_id}/subscriptions/{subscription_id}/events"
 
         headers = {"Authorization": f"Bearer {self._token}"}
 

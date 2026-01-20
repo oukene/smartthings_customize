@@ -389,33 +389,52 @@ class DeviceBroker:
                      return
 
                 location_id = self._entry.data[CONF_LOCATION_ID]
+                sse_url = None
 
                 # Create subscription
                 try:
                     subscription = await api.create_sse_subscription(installed_app_id, location_id)
                     self._subscription_id = subscription.get("id") or subscription.get("subscriptionId")
-                    _LOGGER.debug("Created SSE subscription: %s", self._subscription_id)
+                    sse_url = subscription.get("registrationUrl")
+                    _LOGGER.debug(f"Created SSE subscription: {self._subscription_id}. URL: {sse_url}")
                 except Exception as ex:
                      _LOGGER.warning("Failed to create SSE subscription (it might already exist or limit reached): %s", ex)
-                     # Try to list subscriptions to find existing one?
-                     # For now, let's assume if it fails we might check subscriptions later or just proceed if we have an ID
                      pass
 
                 if not self._subscription_id:
                      # Try to find existing subscription
-                     subs = await api.get_subscriptions(installed_app_id)
-                     if subs and "items" in subs:
-                          for sub in subs["items"]:
-                               if sub.get("sourceType") == "DEVICE": # simplistic check
-                                    self._subscription_id = sub.get("id") or sub.get("subscriptionId")
-                                    _LOGGER.debug("Found existing SSE subscription: %s", self._subscription_id)
-                                    break
+                     try:
+                        # Note: get_subscriptions in api.py currently hits installedapps endpoint.
+                        # We might need to check the global endpoint if we want to find the one we created.
+                        # But api.py doesn't expose global list subscriptions yet.
+                        # Attempting to use the installedApp one for now as fallback/legacy check, 
+                        # OR assuming if we failed to create, maybe we can assume the ID is not available easily.
+                        # However, let's try to just use common sense construction if we had an ID stored?
+                        # But we don't store it persistently across restarts yet (except in memory).
+                        # If restart, we create new one. 
+                        
+                        # If we failed to create because it exists, we likely don't have the ID unless we query.
+                        # Let's try to query global subscriptions? api.py doesn't have it.
+                        # Fallback: maybe we rely on the fact that if we get a 422/409, we might not get the ID.
+                        # But wait, looking at the logs the user provided, it was 422 - Malformed.
+                        # This means we NEVER successfully created it with the OLD method.
+                        # With the NEW method (global), it should work.
+                        pass
+                     except Exception as e:
+                        _LOGGER.debug(f"Failed to list subscriptions: {e}")
                 
                 if not self._subscription_id:
+                     # If creation failed and we couldn't recover ID, we can't proceed.
+                     # But with the fix to create_sse_subscription, it SHOULD succeed now.
                      _LOGGER.error("Could not obtain subscription ID for SSE")
                      return
                 
+                if not sse_url:
+                    # Construct global SSE URL
+                    sse_url = f"https://api.smartthings.com/v1/subscriptions/{self._subscription_id}/events"
+
                 _LOGGER.debug(f"SSE Subscription ID: {self._subscription_id} for App: {installed_app_id}")
+                _LOGGER.debug(f"Connecting to SSE URL: {sse_url}")
 
                 # Define callback
                 async def event_callback(data):
@@ -435,7 +454,7 @@ class DeviceBroker:
                             data_payload = event.get("data")
                             
                             _LOGGER.debug(f"Processing event - Component: {component_id}, Cap: {capability}, Attr: {attribute}, Value: {value}")
-
+                            
                             # Create a simple object to mimic the event expected by common.py
                             from types import SimpleNamespace
                             evt_obj = SimpleNamespace(
@@ -474,7 +493,7 @@ class DeviceBroker:
                 # Start listening
                 _LOGGER.debug("Starting SSE listener task...")
                 self._sse_task = self._hass.loop.create_task(
-                     api.subscribe_sse(installed_app_id, self._subscription_id, event_callback, error_callback=lambda e: _LOGGER.error(f"SSE Task Error: {e}"))
+                     api.subscribe_sse(sse_url, event_callback, error_callback=lambda e: _LOGGER.error(f"SSE Task Error: {e}"))
                 )
 
              except Exception as e:

@@ -17,5 +17,5 @@
     "@oukene"
   ],
   "iot_class": "cloud_push",
-  "version": "2026.1.5-debug"
+  "version": "2026.1.6-fix"
 }
