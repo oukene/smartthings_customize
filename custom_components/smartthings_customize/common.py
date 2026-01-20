@@ -127,7 +127,7 @@ class SmartThingsEntity_custom(Entity):
         async def async_update_state(devices, evt):
             """Update device state."""
             if self._device.device_id in devices:
-                if eq(self._device.device_id, evt.device_id):
+                if evt and eq(self._device.device_id, evt.device_id):
                     for key, cap in self._capability.items():
                         if eq(self.get_component(key), evt.component_id) and eq(self.get_capability(key), evt.capability):
                             self.set_timestamp()
@@ -561,7 +561,7 @@ class SmartThingsEntity(Entity):
     async def async_added_to_hass(self):
         """Device added to hass."""
 
-        async def async_update_state(devices):
+        async def async_update_state(devices, evt=None):
             """Update device state."""
             if self._device.device_id in devices:
                 await self.async_update_ha_state(True)

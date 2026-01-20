@@ -430,6 +430,17 @@ class DeviceBroker:
                             value = event.get("value")
                             data_payload = event.get("data")
                             
+                            # Create a simple object to mimic the event expected by common.py
+                            from types import SimpleNamespace
+                            evt_obj = SimpleNamespace(
+                                device_id=device_id,
+                                component_id=component_id,
+                                capability=capability,
+                                attribute=attribute,
+                                value=value,
+                                data=data_payload
+                            )
+
                             # Update status object
                             if hasattr(device, 'status') and hasattr(device.status, 'components'):
                                 if component_id in device.status.components:
@@ -441,7 +452,7 @@ class DeviceBroker:
                                                cap_status[attribute].data = data_payload
                                                
                                                async_dispatcher_send(
-                                                   self._hass, SIGNAL_SMARTTHINGS_UPDATE, [device_id], None
+                                                   self._hass, SIGNAL_SMARTTHINGS_UPDATE, [device_id], evt_obj
                                                )
 
                 # Start listening
@@ -450,7 +461,7 @@ class DeviceBroker:
                 )
 
              except Exception as e:
-                _LOGGER.error("Failed to setup SSE subscription: %s", e)
+                _LOGGER.error("Failed to setup SSE subscription: %s", e, exc_info=True)
 
         self._hass.loop.create_task(setup_sse())
         
