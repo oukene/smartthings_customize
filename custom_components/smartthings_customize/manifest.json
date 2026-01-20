@@ -3,14 +3,18 @@
   "name": "SmartThings Customize",
   "config_flow": true,
   "documentation": "https://github.com/oukene/smartthings_customize",
-  "requirements": [],
+  "requirements": [
+    "pysmartthings==3.5.1"
+  ],
   "ssdp": [],
   "zeroconf": [],
   "homekit": {},
-  "dependencies": [],
+  "dependencies": [
+    "application_credentials"
+  ],
   "codeowners": [
     "@oukene"
   ],
   "iot_class": "cloud_push",
-  "version": "2025.11.3"
+  "version": "2026.1.20"
 }
