@@ -89,9 +89,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if CONF_TOKEN not in entry.data:
         raise ConfigEntryAuthFailed("Config entry missing token - please reauthenticate")
     
+    # Use original SmartThings OAuth implementation
+    from homeassistant.helpers.config_entry_oauth2_flow import async_get_implementations
+    SMARTTHINGS_DOMAIN = "smartthings"
+    
     try:
-        implementation = await async_get_config_entry_implementation(hass, entry)
-    except ImplementationUnavailableError as err:
+        implementations = await async_get_implementations(hass, SMARTTHINGS_DOMAIN)
+        if not implementations:
+            raise ImplementationUnavailableError("No OAuth implementation available")
+        
+        # Get the implementation that was used (stored in entry.data)
+        impl_key = entry.data.get("auth_implementation")
+        if impl_key and impl_key in implementations:
+            implementation = implementations[impl_key]
+        else:
+            # Use the first available implementation
+            implementation = list(implementations.values())[0]
+            
+    except Exception as err:
         raise ConfigEntryNotReady(
             translation_domain=DOMAIN,
             translation_key="oauth2_implementation_unavailable",
