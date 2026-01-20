@@ -1,4 +1,7 @@
-"""Config flow to configure SmartThings Customize."""
+"""Config flow to configure SmartThings Customize.
+
+Uses the original SmartThings OAuth credentials from Home Assistant Cloud (Nabu Casa).
+"""
 
 from collections.abc import Mapping
 import logging
@@ -9,7 +12,10 @@ from pysmartthings import SmartThings
 from homeassistant.config_entries import SOURCE_REAUTH, ConfigFlowResult, OptionsFlow
 from homeassistant.const import CONF_ACCESS_TOKEN, CONF_TOKEN
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.config_entry_oauth2_flow import AbstractOAuth2FlowHandler
+from homeassistant.helpers.config_entry_oauth2_flow import (
+    AbstractOAuth2FlowHandler,
+    async_get_implementations,
+)
 from homeassistant.core import callback
 
 import voluptuous as vol
@@ -17,7 +23,6 @@ import homeassistant.helpers.config_validation as cv
 
 from .const import (
     CONF_LOCATION_ID,
-    CONF_INSTALLED_APP_ID,
     DOMAIN,
     OLD_DATA,
     REQUESTED_SCOPES,
@@ -27,6 +32,9 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+# Use original SmartThings domain for OAuth credentials
+SMARTTHINGS_DOMAIN = "smartthings"
 
 
 class SmartThingsFlowHandler(AbstractOAuth2FlowHandler, domain=DOMAIN):
@@ -49,13 +57,36 @@ class SmartThingsFlowHandler(AbstractOAuth2FlowHandler, domain=DOMAIN):
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Check we have the cloud integration set up."""
+        """Check we have the cloud integration set up and use original SmartThings OAuth."""
         if "cloud" not in self.hass.config.components:
             return self.async_abort(
                 reason="cloud_not_enabled",
                 description_placeholders={"default_config": "default_config"},
             )
-        return await super().async_step_user(user_input)
+        
+        # Get OAuth implementations from original SmartThings domain
+        implementations = await async_get_implementations(self.hass, SMARTTHINGS_DOMAIN)
+        
+        if not implementations:
+            # Fallback to our own domain if original not available
+            return await super().async_step_user(user_input)
+        
+        # Use the first available implementation from original SmartThings
+        if len(implementations) == 1:
+            self.flow_impl = list(implementations.values())[0]
+            return await self.async_step_auth()
+        
+        # If multiple implementations, let user choose
+        if user_input is not None and "implementation" in user_input:
+            self.flow_impl = implementations[user_input["implementation"]]
+            return await self.async_step_auth()
+        
+        return self.async_show_form(
+            step_id="user",
+            data_schema=vol.Schema(
+                {vol.Required("implementation"): vol.In(list(implementations.keys()))}
+            ),
+        )
 
     async def async_oauth_create_entry(self, data: dict[str, Any]) -> ConfigFlowResult:
         """Create an entry for SmartThings Customize."""
@@ -67,9 +98,7 @@ class SmartThingsFlowHandler(AbstractOAuth2FlowHandler, domain=DOMAIN):
         locations = await client.get_locations()
         location = locations[0]
         
-        # We pick to use the location id as unique id rather than the installed app id
-        # as the installed app id could change with the right settings in the SmartApp
-        # or the app used to sign in changed for any reason.
+        # Use location_id as unique id
         await self.async_set_unique_id(location.location_id)
         if self.source != SOURCE_REAUTH:
             self._abort_if_unique_id_configured()
@@ -123,7 +152,7 @@ class OptionsFlowHandler(OptionsFlow):
 
     def __init__(self, config_entry) -> None:
         """Initialize options flow."""
-        # config_entry is stored automatically by parent class
+        pass
 
     async def async_step_init(self, user_input: dict[str, Any] = None) -> dict[str, Any]:
         """Handle options flow."""
