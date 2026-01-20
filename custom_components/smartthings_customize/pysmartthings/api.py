@@ -435,34 +435,32 @@ class Api:
         return next_link.get("href")
 
     # SSE Subscription methods
-    async def create_sse_subscription(self, installed_app_id: str, location_id: str) -> dict:
+    async def create_sse_subscription(
+        self, installed_app_id: str, location_id: str
+    ) -> dict:
         """
         Create a subscription for SSE events.
-        
+
         https://developer.smartthings.com/docs/api/public#operation/saveSubscription
         """
         data = {
             "sourceType": "DEVICE",
-            "device": {
-                "deviceSubscriptionDetail": {
-                    "locationId": location_id
-                }
-            }
+            "device": {"deviceSubscriptionDetail": {"locationId": location_id}},
         }
         return await self.post(
             API_SUBSCRIPTIONS.format(installed_app_id=installed_app_id), data
         )
 
     async def subscribe_sse(
-        self, 
+        self,
         installed_app_id: str,
         subscription_id: str,
         event_callback,
-        error_callback=None
+        error_callback=None,
     ):
         """
         Subscribe to SSE events from SmartThings.
-        
+
         This method connects to the SmartThings SSE endpoint and calls
         event_callback for each received event.
         """
@@ -470,11 +468,11 @@ class Api:
             from aiohttp_sse_client2 import client as sse_client
         except ImportError:
             raise ImportError("aiohttp_sse_client2 is required for SSE support")
-        
+
         sse_url = f"https://api.smartthings.com/v1/installedapps/{installed_app_id}/subscriptions/{subscription_id}/events"
-        
+
         headers = {"Authorization": f"Bearer {self._token}"}
-        
+
         try:
             async with sse_client.EventSource(
                 sse_url,
@@ -484,6 +482,7 @@ class Api:
                 async for event in event_source:
                     if event.data:
                         import json
+
                         try:
                             data = json.loads(event.data)
                             await event_callback(data)
@@ -493,3 +492,5 @@ class Api:
             if error_callback:
                 await error_callback(err)
             raise
+
+

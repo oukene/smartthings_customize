@@ -250,6 +250,49 @@ class DeviceBroker:
         self.devices = {device.device_id: device for device in devices}
         self.scenes = {scene.scene_id: scene for scene in scenes}
         self._created_entities = []
+        self._sse_task = None
+        self._subscription_id = None
+
+    async def _cleanup_sse(self):
+        """Cleanup SSE subscription."""
+        if self._sse_task:
+            self._sse_task.cancel()
+            try:
+                await self._sse_task
+            except asyncio.CancelledError:
+                pass
+            self._sse_task = None
+
+        if self._subscription_id:
+             try:
+                # We need to get the installed_app_id.
+                # In config_flow, it is stored in token response under 'installed_app_id'
+                # but here we might need to fetch it or finding it in entry data.
+                # entry.data[CONF_TOKEN] usually contains the token response.
+                if CONF_INSTALLED_APP_ID in self._entry.data:
+                     installed_app_id = self._entry.data[CONF_INSTALLED_APP_ID]
+                elif CONF_TOKEN in self._entry.data and CONF_INSTALLED_APP_ID in self._entry.data[CONF_TOKEN]:
+                     installed_app_id = self._entry.data[CONF_TOKEN][CONF_INSTALLED_APP_ID]
+                else:
+                     _LOGGER.warning("Could not find installed_app_id for cleaning up SSE subscription")
+                     return
+
+                # Create a temporary API instance to delete subscription as the main one might be closed or we want to be safe
+                # Actually we can use one of the device's api instance if valid, or creates new one.
+                # But here we don't have direct access to api instance easily broadly.
+                # Let's try to use the one from the first device if available
+                api = None
+                if self.devices:
+                     device = next(iter(self.devices.values()))
+                     if hasattr(device, 'status') and hasattr(device.status, '_api'):
+                          api = device.status._api
+                
+                if api:
+                     await api.delete_subscription(installed_app_id, self._subscription_id)
+                     _LOGGER.debug("Deleted SSE subscription %s", self._subscription_id)
+             except Exception as ex:
+                 _LOGGER.warning("Failed to delete SSE subscription: %s", ex)
+             self._subscription_id = None
 
     def add_valid_entity(self, entity_id):
         """Track created entity."""
@@ -290,6 +333,14 @@ class DeviceBroker:
             assignments[device.device_id] = slots
         return assignments
 
+    async def disconnect(self):
+        """Disconnect handlers/listeners."""
+        if self._token_refresh_remove:
+            self._token_refresh_remove()
+        if self._poll_remove:
+            self._poll_remove()
+        await self._cleanup_sse()
+
     def connect(self):
         """Connect handlers/listeners for token refresh and state polling."""
         
@@ -311,6 +362,97 @@ class DeviceBroker:
         self._token_refresh_remove = async_track_time_interval(
             self._hass, refresh_token_and_update, TOKEN_REFRESH_INTERVAL
         )
+
+        # Setup SSE Subscription
+        async def setup_sse():
+             try:
+                # Get installed_app_id
+                installed_app_id = None
+                if CONF_INSTALLED_APP_ID in self._entry.data:
+                     installed_app_id = self._entry.data[CONF_INSTALLED_APP_ID]
+                elif CONF_TOKEN in self._entry.data and CONF_INSTALLED_APP_ID in self._entry.data[CONF_TOKEN]:
+                     installed_app_id = self._entry.data[CONF_TOKEN][CONF_INSTALLED_APP_ID]
+                
+                if not installed_app_id:
+                     _LOGGER.error("No installed_app_id found for SSE subscription")
+                     return
+
+                # Get API instance (use first device's api)
+                api = None
+                if self.devices:
+                     device = next(iter(self.devices.values()))
+                     if hasattr(device, 'status') and hasattr(device.status, '_api'):
+                          api = device.status._api
+                
+                if not api:
+                     _LOGGER.error("No API instance found for SSE subscription")
+                     return
+
+                location_id = self._entry.data[CONF_LOCATION_ID]
+
+                # Create subscription
+                try:
+                    subscription = await api.create_sse_subscription(installed_app_id, location_id)
+                    self._subscription_id = subscription.get("id") or subscription.get("subscriptionId")
+                    _LOGGER.debug("Created SSE subscription: %s", self._subscription_id)
+                except Exception as ex:
+                     _LOGGER.warning("Failed to create SSE subscription (it might already exist or limit reached): %s", ex)
+                     # Try to list subscriptions to find existing one?
+                     # For now, let's assume if it fails we might check subscriptions later or just proceed if we have an ID
+                     pass
+
+                if not self._subscription_id:
+                     # Try to find existing subscription
+                     subs = await api.get_subscriptions(installed_app_id)
+                     if subs and "items" in subs:
+                          for sub in subs["items"]:
+                               if sub.get("sourceType") == "DEVICE": # simplistic check
+                                    self._subscription_id = sub.get("id") or sub.get("subscriptionId")
+                                    _LOGGER.debug("Found existing SSE subscription: %s", self._subscription_id)
+                                    break
+                
+                if not self._subscription_id:
+                     _LOGGER.error("Could not obtain subscription ID for SSE")
+                     return
+
+                # Define callback
+                async def event_callback(data):
+                    # _LOGGER.debug("Received SSE event: %s", data)
+                    # Process event to update devices
+                    if "deviceEvent" in data:
+                        event = data["deviceEvent"]
+                        device_id = event.get("deviceId")
+                        if device_id in self.devices:
+                            device = self.devices[device_id]
+                            component_id = event.get("componentId", "main")
+                            capability = event.get("capability")
+                            attribute = event.get("attribute")
+                            value = event.get("value")
+                            data_payload = event.get("data")
+                            
+                            # Update status object
+                            if hasattr(device, 'status') and hasattr(device.status, 'components'):
+                                if component_id in device.status.components:
+                                     component_status = device.status.components[component_id]
+                                     if capability in component_status:
+                                          cap_status = component_status[capability]
+                                          if attribute in cap_status:
+                                               cap_status[attribute].value = value
+                                               cap_status[attribute].data = data_payload
+                                               
+                                               async_dispatcher_send(
+                                                   self._hass, SIGNAL_SMARTTHINGS_UPDATE, [device_id], None
+                                               )
+
+                # Start listening
+                self._sse_task = self._hass.loop.create_task(
+                     api.subscribe_sse(installed_app_id, self._subscription_id, event_callback)
+                )
+
+             except Exception as e:
+                _LOGGER.error("Failed to setup SSE subscription: %s", e)
+
+        self._hass.loop.create_task(setup_sse())
         
         # Polling for device state updates (every 30 seconds)
         async def poll_device_status(now):
@@ -336,14 +478,6 @@ class DeviceBroker:
         self._poll_remove = async_track_time_interval(
             self._hass, poll_device_status, timedelta(seconds=30)
         )
-
-    def disconnect(self):
-        """Disconnect handlers/listeners."""
-        if self._token_refresh_remove:
-            self._token_refresh_remove()
-        if self._poll_remove:
-            self._poll_remove()
-
     def get_assigned(self, device_id: str, platform: str):
         """Get the capabilities assigned to the platform."""
         slots = self._assignments.get(device_id, {})
