@@ -10,41 +10,13 @@ APP_OAUTH_CLIENT_NAME = "HA Customize"
 APP_OAUTH_SCOPES = ["r:devices:*", "r:devices:*","w:devices:*","x:devices:*","l:devices","r:locations:*", "w:locations:*", "x:locations:*","r:scenes:*", "x:scenes:*", "r:installedapps:*", "l:installedapps", "w:installedapps"]
 APP_NAME_PREFIX = "ha_customize."
 
-# OAuth2 Scopes for new authentication method
-SCOPES = [
-    "r:devices:*",
-    "w:devices:*",
-    "x:devices:*",
-    "r:hubs:*",
-    "r:locations:*",
-    "w:locations:*",
-    "x:locations:*",
-    "r:scenes:*",
-    "x:scenes:*",
-    "r:rules:*",
-    "w:rules:*",
-    "sse",
-]
-
-REQUESTED_SCOPES = [
-    *SCOPES,
-    "r:installedapps",
-    "w:installedapps",
-]
-
-# Config entry data keys
-CONF_TOKEN = "token"
-OLD_DATA = "old_data"
-CONF_SUBSCRIPTION_ID = "subscription_id"
-MAIN = "main"
-
-
 CONF_APP_ID = "app_id"
 CONF_CLOUDHOOK_URL = "cloudhook_url"
 CONF_INSTALLED_APP_ID = "installed_app_id"
 CONF_INSTANCE_ID = "instance_id"
 CONF_LOCATION_ID = "location_id"
 CONF_REFRESH_TOKEN = "refresh_token"
+CONF_TOKEN = "token"
 
 CONF_RESETTING_ENTITIES = "resetting_entities"
 #CONF_ENABLE_DEFAULT_ENTITIES = "enable_default_entities"

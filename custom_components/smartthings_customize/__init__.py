@@ -1,4 +1,4 @@
-"""Support for SmartThings Cloud Customize."""
+"""Support for SmartThings Cloud Customize with OAuth2."""
 from __future__ import annotations
 
 import asyncio
@@ -6,47 +6,44 @@ from collections.abc import Iterable
 from http import HTTPStatus
 import importlib
 import logging
-from typing import TYPE_CHECKING, Any
 
 import homeassistant
 from aiohttp.client_exceptions import ClientConnectionError, ClientResponseError
-from pysmartthings import SmartThings
+from .pysmartapp.event import EVENT_TYPE_DEVICE
+from .pysmartthings import Attribute, Capability, SmartThings
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_ACCESS_TOKEN, CONF_TOKEN
+from homeassistant.const import CONF_ACCESS_TOKEN
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.config_entry_oauth2_flow import (
-    ImplementationUnavailableError,
     OAuth2Session,
-    async_get_config_entry_implementation,
+    async_get_implementations,
 )
 from homeassistant.helpers.dispatcher import (
+    async_dispatcher_connect,
     async_dispatcher_send,
 )
+from homeassistant.helpers.entity import DeviceInfo, Entity
+from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.typing import ConfigType
+from homeassistant.helpers.entity import async_generate_entity_id
 from homeassistant.loader import async_get_loaded_integration
 from homeassistant.setup import SetupPhases, async_pause_setup
+
+from .common import *
+from .device import SmartThings_custom
+
 from homeassistant import config_entries, core
 
-from .common import SettingManager
 from .config_flow import SmartThingsFlowHandler  # noqa: F401
-from .const import (
-    CONF_LOCATION_ID,
-    CONF_TOKEN,
-    CONF_RESETTING_ENTITIES,
-    CONF_ENABLE_SYNTAX_PROPERTY,
-    DATA_BROKERS,
-    DOMAIN,
-    EVENT_BUTTON,
-    PLATFORMS,
-    SIGNAL_SMARTTHINGS_UPDATE,
-)
+from .const import *
 
 from homeassistant.helpers import (
     device_registry as dr,
+    entity_platform,
     entity_registry as er,
 )
 
@@ -55,6 +52,12 @@ _LOGGER = logging.getLogger(__name__)
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 ENTITY_ID_FORMAT = DOMAIN + ".{}"
+
+# Original SmartThings domain for OAuth credentials
+SMARTTHINGS_DOMAIN = "smartthings"
+
+# Token refresh interval (12 hours)
+TOKEN_REFRESH_INTERVAL = timedelta(hours=12)
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
@@ -66,51 +69,34 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Handle migration of a previous version config entry."""
     if entry.version < 3:
-        # Old PAT-based entries need reauthentication
         _LOGGER.info(
-            "Migrating SmartThings Customize entry from version %s to 3",
+            "Migrating SmartThings Customize entry from version %s to 3 - reconfiguration required",
             entry.version
         )
-        hass.config_entries.async_update_entry(
-            entry,
-            version=3,
-            minor_version=1,
-        )
-        raise ConfigEntryAuthFailed("Config entry requires reauthentication for OAuth2")
+        raise ConfigEntryAuthFailed("Config entry requires reconfiguration for OAuth2")
     
     return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Initialize config entry which represents an installed SmartApp."""
+    """Initialize config entry with OAuth2 authentication."""
     entry.update_listeners.clear()
     
-    # Ensure we have the new OAuth2 token format
+    # Ensure we have the OAuth2 token
     if CONF_TOKEN not in entry.data:
-        raise ConfigEntryAuthFailed("Config entry missing token - please reauthenticate")
+        raise ConfigEntryAuthFailed("Config entry missing token - please reconfigure")
     
-    # Use original SmartThings OAuth implementation
-    from homeassistant.helpers.config_entry_oauth2_flow import async_get_implementations
-    SMARTTHINGS_DOMAIN = "smartthings"
-    
+    # Get OAuth implementation from original SmartThings domain
     try:
         implementations = await async_get_implementations(hass, SMARTTHINGS_DOMAIN)
         if not implementations:
-            raise ImplementationUnavailableError("No OAuth implementation available")
+            raise ConfigEntryNotReady("No OAuth implementation available")
         
-        # Get the implementation that was used (stored in entry.data)
-        impl_key = entry.data.get("auth_implementation")
-        if impl_key and impl_key in implementations:
-            implementation = implementations[impl_key]
-        else:
-            # Use the first available implementation
-            implementation = list(implementations.values())[0]
-            
+        # Use the first available implementation
+        implementation = list(implementations.values())[0]
     except Exception as err:
-        raise ConfigEntryNotReady(
-            translation_domain=DOMAIN,
-            translation_key="oauth2_implementation_unavailable",
-        ) from err
+        _LOGGER.error("Failed to get OAuth implementation: %s", err)
+        raise ConfigEntryNotReady("OAuth implementation unavailable") from err
     
     session = OAuth2Session(hass, entry, implementation)
     
@@ -120,45 +106,30 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if err.status == HTTPStatus.BAD_REQUEST:
             raise ConfigEntryAuthFailed("Token not valid, trigger renewal") from err
         raise ConfigEntryNotReady from err
-
-    client = SmartThings(session=async_get_clientsession(hass))
     
-    async def _refresh_token() -> str:
-        await session.async_ensure_token_valid()
-        token = session.token[CONF_ACCESS_TOKEN]
-        if TYPE_CHECKING:
-            assert isinstance(token, str)
-        return token
+    # Get current access token
+    access_token = session.token[CONF_ACCESS_TOKEN]
     
-    client.refresh_token_function = _refresh_token
+    # Create API client with OAuth2 token
+    api = SmartThings_custom(async_get_clientsession(hass), access_token)
     
     # Ensure platform modules are loaded
     await async_get_loaded_integration(hass, DOMAIN).async_get_platforms(PLATFORMS)
     
     # Initialize settings
-    location = await client.get_location(entry.data[CONF_LOCATION_ID])
+    location_id = entry.data[CONF_LOCATION_ID]
     settings = SettingManager()
-    settings.init(hass, location)
+    settings.init(hass, await api.location(location_id))
     await hass.async_add_executor_job(settings.load_setting)
-    settings.set_options(entry.options)
+    SettingManager().set_options(entry.options)
     
     try:
-        # Get devices
-        devices = await client.get_devices()
-        location_devices = [
-            d for d in devices 
-            if hasattr(d, 'location_id') and d.location_id == entry.data[CONF_LOCATION_ID]
-        ]
+        # Get devices and their current status
+        devices = await api.devices(location_ids=[location_id])
         
-        # Get device status
-        device_status = {}
-        for device in location_devices:
+        async def retrieve_device_status(device):
             try:
-                status = await client.get_device_status(device.device_id)
-                device_status[device.device_id] = {
-                    "device": device,
-                    "status": status,
-                }
+                await device.status.refresh()
             except ClientResponseError:
                 _LOGGER.debug(
                     "Unable to update status for device: %s (%s), the device will be excluded",
@@ -166,16 +137,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     device.device_id,
                     exc_info=True,
                 )
+                devices.remove(device)
+        
+        await asyncio.gather(*(retrieve_device_status(d) for d in devices.copy()))
         
         # Get scenes
-        scenes = await client.get_scenes(location_id=entry.data[CONF_LOCATION_ID])
+        scenes = await async_get_entry_scenes(entry, api)
         
-        # Setup device broker
+        # Setup device broker with OAuth2 session
         with async_pause_setup(hass, SetupPhases.WAIT_IMPORT_PLATFORMS):
             broker = await hass.async_add_import_executor_job(
-                DeviceBroker, hass, entry, client, session, device_status, scenes
+                DeviceBroker, hass, entry, session, devices, scenes
             )
-        
+        broker.connect()
         hass.data[DOMAIN][DATA_BROKERS][entry.entry_id] = broker
         
     except ClientResponseError as ex:
@@ -199,7 +173,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         for d in device_entries:
             device_registry.async_update_device(d.id, remove_config_entry_id=entry.entry_id)
     
-    # Update options to reset the resetting flag
     hass.config_entries.async_update_entry(
         entry,
         options={
@@ -210,9 +183,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     
     entry.async_on_unload(entry.add_update_listener(update_listener))
     
+    hass.data[DOMAIN]["listener"] = []
     _LOGGER.debug("Enable platforms: %s", SettingManager().get_enable_platforms())
     await hass.config_entries.async_forward_entry_setups(entry, SettingManager().get_enable_platforms())
-    
     return True
 
 
@@ -220,7 +193,23 @@ async def update_listener(
     hass: core.HomeAssistant, config_entry: config_entries.ConfigEntry
 ):
     """Handle options update."""
+    config_entry.update_listeners.clear()
     await hass.config_entries.async_reload(config_entry.entry_id)
+
+
+async def async_get_entry_scenes(entry: ConfigEntry, api):
+    """Get the scenes within an integration."""
+    try:
+        return await api.scenes(location_id=entry.data[CONF_LOCATION_ID])
+    except ClientResponseError as ex:
+        if ex.status == HTTPStatus.FORBIDDEN:
+            _LOGGER.exception(
+                "Unable to load scenes for configuration entry '%s' because the access token does not have the required access",
+                entry.title,
+            )
+        else:
+            raise
+    return []
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -232,14 +221,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if broker:
         broker.disconnect()
     
-    return await hass.config_entries.async_unload_platforms(
-        entry, SettingManager().get_enable_platforms()
-    )
+    return await hass.config_entries.async_unload_platforms(entry, SettingManager().get_enable_platforms())
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Perform clean-up when entry is being removed."""
-    # With OAuth2, we don't have a SmartApp to clean up
     _LOGGER.debug("Removed SmartThings Customize entry: %s", entry.title)
 
 
@@ -250,49 +236,49 @@ class DeviceBroker:
         self,
         hass: HomeAssistant,
         entry: ConfigEntry,
-        client: SmartThings,
         session: OAuth2Session,
-        device_status: dict,
+        devices: Iterable,
         scenes: Iterable,
     ) -> None:
         """Create a new instance of the DeviceBroker."""
         self._hass = hass
         self._entry = entry
-        self._client = client
         self._session = session
-        self._disconnect_callbacks = []
-        
-        # Build device and scene dictionaries
-        self.devices = {}
-        for device_id, data in device_status.items():
-            self.devices[device_id] = data["device"]
-        
-        self.device_status = device_status
+        self._token_refresh_remove = None
+        self._assignments = self._assign_capabilities(devices)
+        self.devices = {device.device_id: device for device in devices}
         self.scenes = {scene.scene_id: scene for scene in scenes}
         self._created_entities = []
-        
-        # Assign capabilities to platforms
-        self._assignments = self._assign_capabilities(list(self.devices.values()))
 
     def add_valid_entity(self, entity_id):
-        """Track a created entity."""
+        """Track created entity."""
         self._created_entities.append(entity_id)
 
     def is_valid_entity(self, entity_id):
         """Check if entity was created."""
         return entity_id in self._created_entities
 
+    def build_capability(self, device) -> dict:
+        """Build capability dictionary for device."""
+        capabilities = {}
+        capabilities["main"] = device.capabilities
+        for key, value in device.components.items():
+            capabilities[key] = value
+        return capabilities
+
     def _assign_capabilities(self, devices: Iterable):
         """Assign platforms to capabilities."""
         assignments = {}
         for device in devices:
-            capabilities = list(device.capabilities) if hasattr(device, 'capabilities') else []
+            capabilities = device.capabilities.copy()
             slots = {}
             for platform in PLATFORMS:
-                platform_module = importlib.import_module(f".{platform}", self.__module__)
+                platform_module = importlib.import_module(
+                    f".{platform}", self.__module__
+                )
                 if not hasattr(platform_module, "get_capabilities"):
                     continue
-                assigned = platform_module.get_capabilities(capabilities.copy())
+                assigned = platform_module.get_capabilities(capabilities)
                 if not assigned:
                     continue
                 for capability in assigned:
@@ -304,16 +290,31 @@ class DeviceBroker:
         return assignments
 
     def connect(self):
-        """Connect handlers/listeners for device/lifecycle events."""
-        # OAuth2 uses different subscription mechanism
-        # For now, we'll rely on polling or SSE if available
-        pass
+        """Connect handlers/listeners for token refresh."""
+        
+        async def refresh_token_and_update(now):
+            """Refresh OAuth2 token and update device API tokens."""
+            try:
+                await self._session.async_ensure_token_valid()
+                new_token = self._session.token[CONF_ACCESS_TOKEN]
+                
+                # Update all device API tokens
+                for device in self.devices.values():
+                    if hasattr(device, 'status') and hasattr(device.status, '_api'):
+                        device.status._api._token = new_token
+                
+                _LOGGER.debug("Refreshed OAuth2 token for entry: %s", self._entry.title)
+            except Exception as err:
+                _LOGGER.error("Failed to refresh OAuth2 token: %s", err)
+        
+        self._token_refresh_remove = async_track_time_interval(
+            self._hass, refresh_token_and_update, TOKEN_REFRESH_INTERVAL
+        )
 
     def disconnect(self):
-        """Disconnect handlers/listeners for device/lifecycle events."""
-        for callback in self._disconnect_callbacks:
-            callback()
-        self._disconnect_callbacks.clear()
+        """Disconnect handlers/listeners."""
+        if self._token_refresh_remove:
+            self._token_refresh_remove()
 
     def get_assigned(self, device_id: str, platform: str):
         """Get the capabilities assigned to the platform."""
@@ -324,3 +325,54 @@ class DeviceBroker:
         """Return True if the platform has any assigned capabilities."""
         slots = self._assignments.get(device_id, {})
         return any(value for value in slots.values() if value == platform)
+
+
+class SmartThingsEntity(Entity):
+    """Defines a SmartThings entity."""
+
+    _attr_should_poll = False
+
+    def __init__(self, device) -> None:
+        """Initialize the instance."""
+        self._device = device
+        self._dispatcher_remove = None
+
+    async def async_added_to_hass(self):
+        """Device added to hass."""
+
+        async def async_update_state(devices, evt=None):
+            """Update device state."""
+            if self._device.device_id in devices:
+                self.async_write_ha_state()
+
+        self._dispatcher_remove = async_dispatcher_connect(
+            self.hass, SIGNAL_SMARTTHINGS_UPDATE, async_update_state
+        )
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Disconnect the device when removed."""
+        if self._dispatcher_remove:
+            self._dispatcher_remove()
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Get attributes about the device."""
+        return DeviceInfo(
+            configuration_url="https://account.smartthings.com",
+            identifiers={(DOMAIN, self._device.device_id)},
+            manufacturer=self._device.status.ocf_manufacturer_name,
+            model=self._device.status.ocf_model_number,
+            name=self._device.label,
+            hw_version=self._device.status.ocf_hardware_version,
+            sw_version=self._device.status.ocf_firmware_version,
+        )
+
+    @property
+    def name(self) -> str:
+        """Return the name of the device."""
+        return self._device.label
+
+    @property
+    def unique_id(self) -> str:
+        """Return a unique ID."""
+        return self._device.device_id

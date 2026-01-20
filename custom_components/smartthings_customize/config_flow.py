@@ -1,16 +1,11 @@
-"""Config flow to configure SmartThings Customize.
-
-Uses the original SmartThings OAuth credentials from Home Assistant Cloud (Nabu Casa).
-"""
+"""Config flow to configure SmartThings Customize with OAuth2."""
 
 from collections.abc import Mapping
 import logging
 from typing import Any
 
-from pysmartthings import SmartThings
-
 from homeassistant.config_entries import SOURCE_REAUTH, ConfigFlowResult, OptionsFlow
-from homeassistant.const import CONF_ACCESS_TOKEN, CONF_TOKEN
+from homeassistant.const import CONF_ACCESS_TOKEN
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.config_entry_oauth2_flow import (
     AbstractOAuth2FlowHandler,
@@ -21,20 +16,42 @@ from homeassistant.core import callback
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
 
+from .pysmartthings import SmartThings
+
 from .const import (
     CONF_LOCATION_ID,
     DOMAIN,
-    OLD_DATA,
-    REQUESTED_SCOPES,
-    SCOPES,
+    CONF_TOKEN,
     CONF_RESETTING_ENTITIES,
     CONF_ENABLE_SYNTAX_PROPERTY,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
-# Use original SmartThings domain for OAuth credentials
+# Use original SmartThings domain for OAuth credentials (Nabu Casa)
 SMARTTHINGS_DOMAIN = "smartthings"
+
+# OAuth2 scopes required
+SCOPES = [
+    "r:devices:*",
+    "w:devices:*",
+    "x:devices:*",
+    "r:hubs:*",
+    "r:locations:*",
+    "w:locations:*",
+    "x:locations:*",
+    "r:scenes:*",
+    "x:scenes:*",
+    "r:rules:*",
+    "w:rules:*",
+    "sse",
+]
+
+REQUESTED_SCOPES = [
+    *SCOPES,
+    "r:installedapps",
+    "w:installedapps",
+]
 
 
 class SmartThingsFlowHandler(AbstractOAuth2FlowHandler, domain=DOMAIN):
@@ -57,7 +74,7 @@ class SmartThingsFlowHandler(AbstractOAuth2FlowHandler, domain=DOMAIN):
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Check we have the cloud integration set up and use original SmartThings OAuth."""
+        """Handle user step - use original SmartThings OAuth credentials."""
         if "cloud" not in self.hass.config.components:
             return self.async_abort(
                 reason="cloud_not_enabled",
@@ -68,10 +85,9 @@ class SmartThingsFlowHandler(AbstractOAuth2FlowHandler, domain=DOMAIN):
         implementations = await async_get_implementations(self.hass, SMARTTHINGS_DOMAIN)
         
         if not implementations:
-            # Fallback to our own domain if original not available
-            return await super().async_step_user(user_input)
+            return self.async_abort(reason="no_oauth_implementation")
         
-        # Use the first available implementation from original SmartThings
+        # Use the first available implementation
         if len(implementations) == 1:
             self.flow_impl = list(implementations.values())[0]
             return await self.async_step_auth()
@@ -90,35 +106,35 @@ class SmartThingsFlowHandler(AbstractOAuth2FlowHandler, domain=DOMAIN):
 
     async def async_oauth_create_entry(self, data: dict[str, Any]) -> ConfigFlowResult:
         """Create an entry for SmartThings Customize."""
-        if not set(data[CONF_TOKEN]["scope"].split()) >= set(SCOPES):
-            return self.async_abort(reason="missing_scopes")
+        # Verify we have required scopes
+        token_scopes = set(data.get(CONF_TOKEN, {}).get("scope", "").split())
+        if not token_scopes >= set(SCOPES):
+            _LOGGER.warning("Token missing required scopes. Got: %s", token_scopes)
         
-        client = SmartThings(session=async_get_clientsession(self.hass))
-        client.authenticate(data[CONF_TOKEN][CONF_ACCESS_TOKEN])
-        locations = await client.get_locations()
-        location = locations[0]
+        # Get location info
+        access_token = data[CONF_TOKEN][CONF_ACCESS_TOKEN]
+        api = SmartThings(async_get_clientsession(self.hass), access_token)
+        
+        try:
+            locations = await api.locations()
+            if not locations:
+                return self.async_abort(reason="no_locations")
+            location = locations[0]
+        except Exception as err:
+            _LOGGER.error("Failed to get locations: %s", err)
+            return self.async_abort(reason="cannot_connect")
         
         # Use location_id as unique id
         await self.async_set_unique_id(location.location_id)
+        
         if self.source != SOURCE_REAUTH:
             self._abort_if_unique_id_configured()
-
             return self.async_create_entry(
                 title=location.name,
                 data={**data, CONF_LOCATION_ID: location.location_id},
             )
-
-        if (entry := self._get_reauth_entry()) and CONF_TOKEN not in entry.data:
-            if entry.data[OLD_DATA][CONF_LOCATION_ID] != location.location_id:
-                return self.async_abort(reason="reauth_location_mismatch")
-            return self.async_update_reload_and_abort(
-                self._get_reauth_entry(),
-                data_updates={
-                    **data,
-                    CONF_LOCATION_ID: location.location_id,
-                },
-                unique_id=location.location_id,
-            )
+        
+        # Handle reauth
         self._abort_if_unique_id_mismatch(reason="reauth_account_mismatch")
         return self.async_update_reload_and_abort(
             self._get_reauth_entry(), data_updates=data
@@ -135,9 +151,7 @@ class SmartThingsFlowHandler(AbstractOAuth2FlowHandler, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Confirm reauth dialog."""
         if user_input is None:
-            return self.async_show_form(
-                step_id="reauth_confirm",
-            )
+            return self.async_show_form(step_id="reauth_confirm")
         return await self.async_step_user()
 
     @staticmethod
