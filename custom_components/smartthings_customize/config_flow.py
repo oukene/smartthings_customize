@@ -24,6 +24,8 @@ from .const import (
     CONF_TOKEN,
     CONF_RESETTING_ENTITIES,
     CONF_ENABLE_SYNTAX_PROPERTY,
+    CONF_SCAN_INTERVAL,
+    DEFAULT_SCAN_INTERVAL,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -188,6 +190,10 @@ class OptionsFlowHandler(OptionsFlow):
                         CONF_RESETTING_ENTITIES,
                         default=options.get(CONF_RESETTING_ENTITIES, False)
                     ): cv.boolean,
+                    vol.Optional(
+                        CONF_SCAN_INTERVAL,
+                        default=options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+                    ): vol.All(vol.Coerce(int), vol.Range(min=5, max=300)),
                 }
             ),
             errors=errors

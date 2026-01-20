@@ -36,7 +36,8 @@
         "title": "SmartThings Customize 설정",
         "data": {
           "enable_syntax_property": "구문 속성 활성화",
-          "resetting_entities": "모든 엔티티 초기화"
+          "resetting_entities": "모든 엔티티 초기화",
+          "scan_interval": "폴링 주기 (초)\n주의: API 제한은 분당 350회/(기기 수) 입니다. 너무 짧게 설정하면 업데이트가 제한될 수 있습니다."
         }
       }
     }

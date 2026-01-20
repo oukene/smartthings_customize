@@ -21,6 +21,8 @@ CONF_TOKEN = "token"
 CONF_RESETTING_ENTITIES = "resetting_entities"
 #CONF_ENABLE_DEFAULT_ENTITIES = "enable_default_entities"
 CONF_ENABLE_SYNTAX_PROPERTY = "enable_syntax_property"
+CONF_SCAN_INTERVAL = "scan_interval"
+DEFAULT_SCAN_INTERVAL = 5
 
 DATA_MANAGER = "manager"
 DATA_BROKERS = "brokers"

@@ -212,6 +212,10 @@ async def async_get_entry_scenes(entry: ConfigEntry, api):
     return []
 
 
+async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Update options."""
+    await hass.config_entries.async_reload(entry.entry_id)
+
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     for listener in hass.data[DOMAIN].get("listener", []):
@@ -494,22 +498,17 @@ class DeviceBroker:
             try:
                 for device_id, device in self.devices.items():
                     try:
-                        await device.status.refresh()
-                        updated_devices.add(device_id)
-                    except Exception as err:
-                        _LOGGER.debug("Failed to refresh device %s: %s", device_id, err)
-                
-                if updated_devices:
-                    async_dispatcher_send(
-                        self._hass, SIGNAL_SMARTTHINGS_UPDATE, updated_devices, None
-                    )
-                    _LOGGER.debug("Polled status for %d devices", len(updated_devices))
+            try:
+                 _LOGGER.debug("Polling device status...")
+                 for device in self.devices.values():
+                      await device.status.refresh()
+                 _LOGGER.debug("Device status polled.")
             except Exception as err:
                 _LOGGER.error("Failed to poll device status: %s", err)
         
-        # Poll every 5 seconds
+        # Poll using configured interval
         self._poll_remove = async_track_time_interval(
-            self._hass, poll_device_status, timedelta(seconds=5)
+            self._hass, poll_device_status, timedelta(seconds=scan_interval)
         )
     def get_assigned(self, device_id: str, platform: str):
         """Get the capabilities assigned to the platform."""
