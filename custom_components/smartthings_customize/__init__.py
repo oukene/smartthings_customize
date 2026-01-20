@@ -414,14 +414,18 @@ class DeviceBroker:
                 if not self._subscription_id:
                      _LOGGER.error("Could not obtain subscription ID for SSE")
                      return
+                
+                _LOGGER.debug(f"SSE Subscription ID: {self._subscription_id} for App: {installed_app_id}")
 
                 # Define callback
                 async def event_callback(data):
-                    # _LOGGER.debug("Received SSE event: %s", data)
+                    _LOGGER.debug(f"RAW SSE DATA: {data}") 
                     # Process event to update devices
                     if "deviceEvent" in data:
                         event = data["deviceEvent"]
                         device_id = event.get("deviceId")
+                        _LOGGER.debug(f"SSE Device Event for {device_id}: {event}")
+                        
                         if device_id in self.devices:
                             device = self.devices[device_id]
                             component_id = event.get("componentId", "main")
@@ -430,6 +434,8 @@ class DeviceBroker:
                             value = event.get("value")
                             data_payload = event.get("data")
                             
+                            _LOGGER.debug(f"Processing event - Component: {component_id}, Cap: {capability}, Attr: {attribute}, Value: {value}")
+
                             # Create a simple object to mimic the event expected by common.py
                             from types import SimpleNamespace
                             evt_obj = SimpleNamespace(
@@ -450,14 +456,25 @@ class DeviceBroker:
                                           if attribute in cap_status:
                                                cap_status[attribute].value = value
                                                cap_status[attribute].data = data_payload
-                                               
+                                               _LOGGER.debug(f"Updated local device status for {device_id}")
+
                                                async_dispatcher_send(
                                                    self._hass, SIGNAL_SMARTTHINGS_UPDATE, [device_id], evt_obj
                                                )
+                                               _LOGGER.debug(f"Dispatched signal for {device_id}")
+                                          else:
+                                               _LOGGER.debug(f"Attribute {attribute} not found in capability status")
+                                     else:
+                                          _LOGGER.debug(f"Capability {capability} not found in component status")
+                                else:
+                                     _LOGGER.debug(f"Component {component_id} not found in device status")
+                        else:
+                             _LOGGER.debug(f"Device {device_id} not found in known devices")
 
                 # Start listening
+                _LOGGER.debug("Starting SSE listener task...")
                 self._sse_task = self._hass.loop.create_task(
-                     api.subscribe_sse(installed_app_id, self._subscription_id, event_callback)
+                     api.subscribe_sse(installed_app_id, self._subscription_id, event_callback, error_callback=lambda e: _LOGGER.error(f"SSE Task Error: {e}"))
                 )
 
              except Exception as e:
