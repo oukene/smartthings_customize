@@ -404,28 +404,11 @@ class DeviceBroker:
                 if not self._subscription_id:
                      # Try to find existing subscription
                      try:
-                        # Note: get_subscriptions in api.py currently hits installedapps endpoint.
-                        # We might need to check the global endpoint if we want to find the one we created.
-                        # But api.py doesn't expose global list subscriptions yet.
-                        # Attempting to use the installedApp one for now as fallback/legacy check, 
-                        # OR assuming if we failed to create, maybe we can assume the ID is not available easily.
-                        # However, let's try to just use common sense construction if we had an ID stored?
-                        # But we don't store it persistently across restarts yet (except in memory).
-                        # If restart, we create new one. 
-                        
-                        # If we failed to create because it exists, we likely don't have the ID unless we query.
-                        # Let's try to query global subscriptions? api.py doesn't have it.
-                        # Fallback: maybe we rely on the fact that if we get a 422/409, we might not get the ID.
-                        # But wait, looking at the logs the user provided, it was 422 - Malformed.
-                        # This means we NEVER successfully created it with the OLD method.
-                        # With the NEW method (global), it should work.
                         pass
                      except Exception as e:
                         _LOGGER.debug(f"Failed to list subscriptions: {e}")
                 
                 if not self._subscription_id:
-                     # If creation failed and we couldn't recover ID, we can't proceed.
-                     # But with the fix to create_sse_subscription, it SHOULD succeed now.
                      _LOGGER.error("Could not obtain subscription ID for SSE")
                      return
                 
@@ -499,7 +482,10 @@ class DeviceBroker:
              except Exception as e:
                 _LOGGER.error("Failed to setup SSE subscription: %s", e, exc_info=True)
 
-        self._hass.loop.create_task(setup_sse())
+        # Disable SSE for now due to shared token limitations
+        # self._hass.loop.create_task(setup_sse())
+
+
         
         # Polling for device state updates (every 30 seconds)
         async def poll_device_status(now):
