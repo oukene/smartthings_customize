@@ -193,7 +193,7 @@ class OptionsFlowHandler(OptionsFlow):
                     vol.Optional(
                         CONF_SCAN_INTERVAL,
                         default=options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
-                    ): vol.All(vol.Coerce(int), vol.Range(min=5, max=300)),
+                    ): vol.All(vol.Coerce(int), vol.Range(min=1, max=300)),
                 }
             ),
             errors=errors

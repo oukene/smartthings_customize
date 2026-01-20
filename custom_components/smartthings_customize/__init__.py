@@ -491,13 +491,9 @@ class DeviceBroker:
 
 
         
-        # Polling for device state updates (every 30 seconds)
+        # Polling for device state updates
+        scan_interval = self._entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
         async def poll_device_status(now):
-            """Poll device status from SmartThings."""
-            updated_devices = set()
-            try:
-                for device_id, device in self.devices.items():
-                    try:
             try:
                  _LOGGER.debug("Polling device status...")
                  for device in self.devices.values():
