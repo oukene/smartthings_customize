@@ -521,9 +521,9 @@ class DeviceBroker:
             except Exception as err:
                 _LOGGER.error("Failed to poll device status: %s", err)
         
-        # Poll every 30 seconds
+        # Poll every 5 seconds
         self._poll_remove = async_track_time_interval(
-            self._hass, poll_device_status, timedelta(seconds=30)
+            self._hass, poll_device_status, timedelta(seconds=5)
         )
     def get_assigned(self, device_id: str, platform: str):
         """Get the capabilities assigned to the platform."""
