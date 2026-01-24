@@ -9,7 +9,7 @@ from .pysmartthings import Capability
 
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
-    ATTR_COLOR_TEMP,
+    ATTR_COLOR_TEMP_KELVIN,
     ATTR_HS_COLOR,
     ATTR_TRANSITION,
     ColorMode,
@@ -113,8 +113,8 @@ class SmartThingsLight(SmartThingsEntity, LightEntity):
         """Turn the light on."""
         tasks = []
         # Color temperature
-        if ATTR_COLOR_TEMP in kwargs:
-            tasks.append(self.async_set_color_temp(kwargs[ATTR_COLOR_TEMP]))
+        if ATTR_COLOR_TEMP_KELVIN in kwargs:
+            tasks.append(self.async_set_color_temp(kwargs[ATTR_COLOR_TEMP_KELVIN]))
         # Color
         if ATTR_HS_COLOR in kwargs:
             tasks.append(self.async_set_color(kwargs[ATTR_HS_COLOR]))
