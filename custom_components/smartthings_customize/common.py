@@ -26,6 +26,9 @@ import string
 import logging
 from time import time
 from operator import *
+
+from homeassistant.util import slugify
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -78,6 +81,8 @@ class SmartThingsEntity_custom(Entity):
         t = format_util(entity_id_format)
         entity_id_format = t.substitute(device_id=self._device.device_id, device_type=self._device.type, label=self._device.label, component=component,
                                         capability=capability, attribute=attribute, command=command, name=name)
+
+        entity_id_format = slugify(entity_id_format).replace("-", "_")            
         self.entity_id = "{}".format(platform + "." + entity_id_format)
 
         t = format_util(name)
