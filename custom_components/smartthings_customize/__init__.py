@@ -152,7 +152,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     remove_entry = False
 
     app = await async_get_app_info(hass, entry.data[CONF_APP_ID], entry.data[CONF_ACCESS_TOKEN])
-    
+    if app is None:
+        _LOGGER.warning("App info is None. Clearing cached app info and retrying. app_id=%s", entry.data[CONF_APP_ID])
+        # 캐시 지우고 다시 앱 정보 요청
+        await async_remove_app_info(hass, entry.data[CONF_APP_ID])
+        app = await async_get_app_info(hass, entry.data[CONF_APP_ID], entry.data[CONF_ACCESS_TOKEN])
+
+    # 그래도 앱 정보를 못 찾으면, SmartThings API로 직접 조회
+    if app is None:
+        try:
+            app = await api.app(entry.data[CONF_APP_ID])
+        except ClientResponseError as ex:
+            _LOGGER.exception("Failed to fetch app from API. status=%s", getattr(ex, "status", None))
+            raise ConfigEntryNotReady from ex
+
+    if app is None:
+        _LOGGER.error("Unable to load SmartApp info (app is None). app_id=%s", entry.data[CONF_APP_ID])
+        raise ConfigEntryNotReady
+
     try:
         # See if the app is already setup. This occurs when there are
         # installs in multiple SmartThings locations (valid use-case)
@@ -170,7 +187,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
         # Get scenes
         scenes = await async_get_entry_scenes(entry, api)
-
+        
         # Get SmartApp token to sync subscriptions
         token = await api.generate_tokens(
             entry.data[CONF_CLIENT_ID],
@@ -184,7 +201,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             }
         )
 
-        api = SmartThings_custom(async_get_clientsession(hass), entry.data[CONF_ACCESS_TOKEN])
+        api = SmartThings_custom(async_get_clientsession(hass), token.access_token)
 
         # Get devices and their current status
         devices = await api.devices(location_ids=[installed_app.location_id])
