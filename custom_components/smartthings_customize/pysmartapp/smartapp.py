@@ -148,6 +148,11 @@ class SmartApp(SmartAppBase):
         """Get the public key of the SmartApp used to verify events."""
         return self._public_key
 
+    @public_key.setter
+    def public_key(self, value):
+        """Set the public key of the SmartApp used to verify events."""
+        self._public_key = value
+
 
 class SmartAppManager(SmartAppBase):
     """Service to support multiple SmartApps at the same end-point."""

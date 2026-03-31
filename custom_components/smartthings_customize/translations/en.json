@@ -5,33 +5,42 @@
             "no_available_locations": "There are no available SmartThings Locations to setup in Home Assistant."
         },
         "error": {
+            "app_id_invalid_format": "The App ID must be in the UUID/GUID format.",
             "app_setup_error": "Unable to setup the SmartApp.  Please try again.",
-            "token_forbidden": "The token does not have the required OAuth scopes.",
-            "token_invalid_format": "The token must be in the UID/GUID format",
-            "token_unauthorized": "The token is invalid or no longer authorized.",
             "webhook_error": "SmartThings could not validate the webhook URL. Please ensure the webhook URL is reachable from the internet and try again."
         },
         "step": {
             "authorize": {
                 "title": "Authorize Home Assistant"
             },
-            "pat": {
+            "oauth_credentials": {
                 "data": {
-                    "access_token": "Access Token"
+                    "app_id": "App ID",
+                    "client_id": "OAuth Client ID",
+                    "client_secret": "OAuth Client Secret"
                 },
-                "description": "Please enter a SmartThings [Personal Access Token]({token_url}) that has been created per the [instructions]({component_url}).  This will be used to create the Home Assistant integration within your SmartThings account.",
-                "title": "Enter Personal Access Token"
+                "description": "Create a **WebHook SmartApp** in the [SmartThings Developer Portal]({developer_url}) with the following webhook URL:\n> {webhook_url}\n\nThen enter the **App ID**, **OAuth Client ID**, and **OAuth Client Secret** from the portal below.",
+                "title": "Enter SmartThings OAuth Credentials"
             },
-            "select_location": {
-                "data": {
-                    "location_id": "Location"
-                },
-                "description": "Please select the SmartThings Location you wish to add to Home Assistant.  We will then open a new window and ask you to login and authorize installation of the Home Assistant integration into the selected location.",
-                "title": "Select Location"
+            "reauth_confirm": {
+                "title": "Re-authorize Home Assistant",
+                "description": "SmartThings needs to be re-authorized. Click Submit to open the SmartThings authorization page."
             },
             "user": {
                 "description": "SmartThings will be configured to send push updates to Home Assistant at:\n> {webhook_url}\n\nIf this is not correct, please update your configuration, restart Home Assistant, and try again.",
                 "title": "Confirm Callback URL"
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "SmartThings Customize Configuration",
+                "data": {
+                    "enable_default_entities": "enable default entities",
+                    "enable_syntax_property": "enable syntax property",
+                    "resetting_entities": "resetting entities"
+                }
             }
         }
     }

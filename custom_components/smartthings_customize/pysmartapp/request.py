@@ -60,7 +60,7 @@ class Request:
     async def process(self, app, headers: list = None,
                       validate_signature: bool = True) -> Response:
         """Process the request with the SmartApp."""
-        if validate_signature and self._supports_validation:
+        if validate_signature and self._supports_validation and app.public_key:
             try:
                 verifier = HeaderVerifier(
                     headers=headers, secret=app.public_key, method='POST',

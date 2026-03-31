@@ -179,6 +179,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             # Validate and setup the app.
             #app = await api.app(entry.data[CONF_APP_ID])
             smart_app = setup_smartapp(hass, app)
+        elif not smart_app.public_key and app and app.webhook_public_key:
+            # The SmartApp was registered during the OAuth setup flow without a
+            # public key (no PAT available at that time).  Now that we have a
+            # valid access token and the full app info, apply the public key so
+            # that incoming webhook requests are properly signature-verified.
+            smart_app.public_key = app.webhook_public_key
 
         # Validate and retrieve the installed app.
         installed_app = await validate_installed_app(

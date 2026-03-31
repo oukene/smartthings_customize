@@ -2,15 +2,23 @@
 
 from enum import Enum
 from typing import Sequence
+from urllib.parse import quote
 
 from .api import Api
 from .entity import Entity
 from .subscription import SubscriptionEntity
 
 
-def format_install_url(app_id: str, location_id: str) -> str:
+def format_install_url(app_id: str, location_id: str = "") -> str:
     """Return a web-based URL to auth and install a SmartApp."""
-    return f"https://account.smartthings.com/login?redirect=https%3A%2F%2Fstrongman-regional.api.smartthings.com%2F%3FappId%3D{app_id}%26locationId%3D{location_id}%26appType%3DENDPOINTAPP%26language%3Den%26clientOS%3Dweb"
+    params = f"appId={app_id}"
+    if location_id:
+        params += f"&locationId={location_id}"
+    params += "&appType=ENDPOINTAPP&language=en&clientOS=web"
+    redirect = quote(
+        "https://strongman-regional.api.smartthings.com/?" + params, safe=""
+    )
+    return f"https://account.smartthings.com/login?redirect={redirect}"
 
 
 class InstalledAppType(Enum):

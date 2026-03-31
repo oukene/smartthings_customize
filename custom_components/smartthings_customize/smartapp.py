@@ -224,11 +224,32 @@ def setup_smartapp(hass, app):
     """
     manager = hass.data[DOMAIN][DATA_MANAGER]
     if smartapp := manager.smartapps.get(app.app_id):
-        # already setup
+        # Update the public key if it was previously registered without one
+        # (e.g., during OAuth-only setup before the app info was fetched).
+        if not smartapp.public_key and app.webhook_public_key:
+            smartapp.public_key = app.webhook_public_key
         return smartapp
     smartapp = manager.register(app.app_id, app.webhook_public_key)
     smartapp.name = app.display_name
     smartapp.description = app.description
+    smartapp.permissions.extend(APP_OAUTH_SCOPES)
+    return smartapp
+
+
+def setup_smartapp_for_oauth(hass: HomeAssistant, app_id: str):
+    """Register a SmartApp for an OAuth-only setup flow.
+
+    This registers the SmartApp with the manager using only the app_id so that
+    the installation webhook callback can be received and processed.  Signature
+    verification is intentionally skipped at this stage (public_key is None)
+    and the real public key is applied later in async_setup_entry once an OAuth
+    access token is available to fetch the full app details.
+    """
+    manager = hass.data[DOMAIN][DATA_MANAGER]
+    if smartapp := manager.smartapps.get(app_id):
+        return smartapp
+    smartapp = manager.register(app_id, None)
+    smartapp.name = APP_OAUTH_CLIENT_NAME
     smartapp.permissions.extend(APP_OAUTH_SCOPES)
     return smartapp
 
@@ -456,6 +477,8 @@ async def _find_and_continue_flow(
     refresh_token: str,
 ):
     """Continue a config flow if one is in progress for the specific installed app."""
+    # First, look for a flow that already has its unique_id set (PAT or reauth flows
+    # where the location was pre-selected before authorization).
     unique_id = format_unique_id(app_id, location_id)
     flow = next(
         (
@@ -467,6 +490,29 @@ async def _find_and_continue_flow(
     )
     if flow is not None:
         await _continue_flow(hass, app_id, installed_app_id, refresh_token, flow)
+        return
+
+    # Fall back to finding an OAuth flow that is waiting in the authorize step
+    # with a matching app_id but no location pre-selected (unique_id not yet set).
+    flow = next(
+        (
+            flow
+            for flow in hass.config_entries.flow.async_progress_by_handler(DOMAIN)
+            if flow["step_id"] == "authorize"
+            and flow["context"].get("app_id") == app_id
+        ),
+        None,
+    )
+    if flow is not None:
+        await _continue_flow(
+            hass, app_id, installed_app_id, refresh_token, flow, location_id
+        )
+        _LOGGER.debug(
+            "Continued OAuth config flow '%s' for SmartApp '%s' under parent app '%s'",
+            flow["flow_id"],
+            installed_app_id,
+            app_id,
+        )
 
 
 async def _continue_flow(
@@ -475,13 +521,17 @@ async def _continue_flow(
     installed_app_id: str,
     refresh_token: str,
     flow: ConfigFlowResult,
+    location_id: str | None = None,
 ) -> None:
+    data = {
+        CONF_INSTALLED_APP_ID: installed_app_id,
+        CONF_REFRESH_TOKEN: refresh_token,
+    }
+    if location_id is not None:
+        data[CONF_LOCATION_ID] = location_id
     await hass.config_entries.flow.async_configure(
         flow["flow_id"],
-        {
-            CONF_INSTALLED_APP_ID: installed_app_id,
-            CONF_REFRESH_TOKEN: refresh_token,
-        },
+        data,
     )
     _LOGGER.debug(
         "Continued config flow '%s' for SmartApp '%s' under parent app '%s'",
