@@ -1,7 +1,7 @@
 from homeassistant.components.climate import (
     ClimateEntity, 
     ClimateEntityFeature, 
-    ATTR_FAN_MODE, 
+    ATTR_FAN_MODE,
     ATTR_TARGET_TEMP_LOW, 
     ATTR_TARGET_TEMP_HIGH, ATTR_CURRENT_HUMIDITY, ATTR_CURRENT_TEMPERATURE,ATTR_PRESET_MODE,
     ATTR_SWING_MODE, HVACMode, HVACAction, DEFAULT_MAX_TEMP, DEFAULT_MIN_TEMP, DEFAULT_MIN_HUMIDITY
@@ -15,7 +15,6 @@ import logging
 _LOGGER = logging.getLogger(__name__)
 
 ATTR_SWITCH = "switch"
-ATTR_MODE = "mode"
 ATTR_TARGET_TEMP = "target_temp"
 ATTR_TARGET_HUM = "target_humidity"
 ATTR_APPLY_MODE = "apply_mode"
@@ -42,6 +41,7 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
 
         self._attr_supported_features = ClimateEntityFeature(0)
         self._hvac_modes = []
+        self._preset_modes = []
         self._fan_modes = []
         self._ext_attr = {}
         self._hvac_mode = None
@@ -101,19 +101,7 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
         #     self._hass.data[DOMAIN]["listener"].append(async_track_state_change(
         #         self._hass, entity_id, self.entity_listener))
 
-        # modes
-        if self.get_attr_value(ATTR_MODE, CONF_OPTIONS):
-            mode = self.get_attr_value(ATTR_MODE, CONF_OPTIONS)
-            # convert hvac_modes
-            modes = ["off"]
-            modes.extend(self.get_attr_value(ATTR_MODE, CONF_OPTIONS))
-            modes = list(set(modes))
-            #hvac_modes = self.get_attr_value(ATTR_MODE, CONF_MODE_MAPPING, [{}])
-            for mode in modes:
-                value = self.get_mapping_value(ATTR_MODE, CONF_MODE_MAPPING, mode)
-                self._hvac_modes.append(value)
-            self._hvac_modes = list(set(self._hvac_modes))
-
+        self.set_modes()
         
         # fan_modes
         # if self.get_attr_value(ATTR_FAN_MODE, CONF_OPTIONS):
@@ -247,17 +235,17 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
     @property
     def preset_mode(self) -> str | None:
         state = self.get_attr_value(ATTR_PRESET_MODE, CONF_STATE)
-        self._preset_mode = self.get_mapping_value(ATTR_PRESET_MODE, CONF_STATE_MAPPING, state)
+        self._preset_mode = self.get_mapping_value(ATTR_PRESET_MODE, CONF_MODE_MAPPING, state)
         return self._preset_mode
 
     @property
     def preset_modes(self) -> list[str] | None:
-        return self.get_attr_value(ATTR_PRESET_MODE, CONF_OPTIONS)
+        return self._preset_modes
 
     @property
     def swing_mode(self) -> str | None:
         state = self.get_attr_value(ATTR_SWING_MODE, CONF_STATE)
-        self._swing_mode = self.get_mapping_value(ATTR_SWING_MODE, CONF_STATE_MAPPING, state)
+        self._swing_mode = self.get_mapping_value(ATTR_SWING_MODE, CONF_MODE_MAPPING, state)
         return self._swing_mode
 
     @property
@@ -295,15 +283,15 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
                 await self.send_command(ATTR_MODE, self.get_command(ATTR_MODE), [mode])
     
     async def async_set_preset_mode(self, preset_mode: str) -> None:
-        preset_mode = self.get_mapping_key(ATTR_PRESET_MODE, CONF_STATE_MAPPING, preset_mode)
+        preset_mode = self.get_mapping_key(ATTR_PRESET_MODE, CONF_MODE_MAPPING, preset_mode)
         await self.send_command(ATTR_PRESET_MODE, self.get_command(ATTR_PRESET_MODE), [preset_mode])
 
     async def async_set_fan_mode(self, fan_mode: str) -> None:
-        fan_mode = self.get_mapping_key(ATTR_FAN_MODE, CONF_STATE_MAPPING, fan_mode)
+        fan_mode = self.get_mapping_key(ATTR_FAN_MODE, CONF_MODE_MAPPING, fan_mode)
         await self.send_command(ATTR_FAN_MODE, self.get_command(ATTR_FAN_MODE), [fan_mode])
 
     async def async_set_swing_mode(self, swing_mode: str) -> None:
-        swing_mode = self.get_mapping_key(ATTR_SWING_MODE, CONF_STATE_MAPPING, swing_mode)
+        swing_mode = self.get_mapping_key(ATTR_SWING_MODE, CONF_MODE_MAPPING, swing_mode)
         await self.send_command(ATTR_SWING_MODE, self.get_command(ATTR_SWING_MODE), [swing_mode])
         
     async def async_set_humidity(self, humidity: int) -> None:

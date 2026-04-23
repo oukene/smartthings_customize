@@ -41,6 +41,9 @@ class SmartThingsFan_custom(SmartThingsEntity_custom, FanEntity):
                 self._speed_list = self.get_attr_value(ATTR_PERCENTAGE, CONF_SPEED_LIST, None)
                 self._speed_range = (float(self.get_attr_value(ATTR_PERCENTAGE, "min", 1)), float(self.get_attr_value(ATTR_PERCENTAGE, "max", 100)))
 
+        # preset_modes
+        self.set_modes()
+
         # external_entity
         # if entity_id := self.get_attr_value(ATTR_SWITCH, CONF_ENTITY_ID):
         #     self._hass.data[DOMAIN]["listener"].append(async_track_state_change(
@@ -94,11 +97,13 @@ class SmartThingsFan_custom(SmartThingsEntity_custom, FanEntity):
 
     @property
     def preset_mode(self) -> str | None:
-        return self.get_attr_value(ATTR_PRESET_MODE, CONF_STATE)
-
+        state = self.get_attr_value(ATTR_PRESET_MODE, CONF_STATE)
+        self._preset_mode = self.get_mapping_value(ATTR_PRESET_MODE, CONF_MODE_MAPPING, state)
+        return self._preset_mode
+    
     @property
     def preset_modes(self) -> list[str] | None:
-        return self.get_attr_value(ATTR_PRESET_MODE, CONF_OPTIONS)
+        return self._preset_modes
     
     # method ########################################################################################
     async def async_turn_on(self, percentage: int | None = None, preset_mode: str | None = None, **kwargs: Any) -> None:
@@ -120,6 +125,7 @@ class SmartThingsFan_custom(SmartThingsEntity_custom, FanEntity):
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         if not self.is_on:
             await self.async_turn_on()
+        preset_mode = self.get_mapping_key(ATTR_PRESET_MODE, CONF_MODE_MAPPING, preset_mode)
         await self.send_command(ATTR_PRESET_MODE, self.get_command(ATTR_PRESET_MODE), [preset_mode])
         
     async def async_set_percentage(self, percentage: int) -> None:

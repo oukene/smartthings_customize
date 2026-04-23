@@ -69,6 +69,9 @@ CONF_ACTION_MAPPING = "s2h_action_mapping"
 
 CONF_SPEED_LIST = "speed_list"
 
+ATTR_MODE = "mode"
+ATTR_PRESET_MODE = "preset_mode"
+
 DEFAULT = "default"
 
 # Ordered 'specific to least-specific platform' in order for capabilities

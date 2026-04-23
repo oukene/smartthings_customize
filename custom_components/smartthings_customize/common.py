@@ -183,6 +183,31 @@ class SmartThingsEntity_custom(Entity):
     @property
     def icon(self) -> str | None:
         return self._icon
+    
+
+    def set_modes(self):
+        # modes
+        if self.get_attr_value(ATTR_MODE, CONF_OPTIONS):
+            mode = self.get_attr_value(ATTR_MODE, CONF_OPTIONS)
+            modes = ["off"]
+            modes.extend(self.get_attr_value(ATTR_MODE, CONF_OPTIONS))
+            modes = list(set(modes))
+            for mode in modes:
+                value = self.get_mapping_value(ATTR_MODE, CONF_MODE_MAPPING, mode)
+                self._hvac_modes.append(value)
+            self._hvac_modes = list(set(self._hvac_modes))
+
+        # preset_modes
+        if self.get_attr_value(ATTR_PRESET_MODE, CONF_OPTIONS):
+            mode = self.get_attr_value(ATTR_PRESET_MODE, CONF_OPTIONS)
+            modes = []
+            modes.extend(self.get_attr_value(ATTR_PRESET_MODE, CONF_OPTIONS))
+            modes = list(set(modes))
+            for mode in modes:
+                value = self.get_mapping_value(ATTR_PRESET_MODE, CONF_MODE_MAPPING, mode)
+                self._preset_modes.append(value)
+            self._preset_modes = list(set(self._preset_modes))
+
 
     async def send_command(self, platform, command, arg):
         if arg_setting := self.get_argument(platform):
