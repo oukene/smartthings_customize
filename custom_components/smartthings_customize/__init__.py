@@ -150,15 +150,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     SettingManager().set_options(entry.options)
 
     remove_entry = False
-
     app = await async_get_app_info(hass, entry.data[CONF_APP_ID], entry.data[CONF_ACCESS_TOKEN])
-    if app is None:
-        _LOGGER.warning("App info is None. Clearing cached app info and retrying. app_id=%s", entry.data[CONF_APP_ID])
-        # 캐시 지우고 다시 앱 정보 요청
-        await async_remove_app_info(hass, entry.data[CONF_APP_ID])
-        app = await async_get_app_info(hass, entry.data[CONF_APP_ID], entry.data[CONF_ACCESS_TOKEN])
 
-    # 그래도 앱 정보를 못 찾으면, SmartThings API로 직접 조회
     if app is None:
         try:
             app = await api.app(entry.data[CONF_APP_ID])
@@ -390,6 +383,9 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
     if len(all_entries) == 1:
         await unload_smartapp_endpoint(hass)
+
+    # Remove Info
+    await async_remove_app_info(hass,app_id)
 
 class DeviceBroker:
     """Manages an individual SmartThings config entry."""

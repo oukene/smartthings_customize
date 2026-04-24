@@ -14,14 +14,16 @@ from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
-BASE = "custom_components/" + DOMAIN + "/"
+BASE = DOMAIN + "/"
 
-async def async_remove_app_info(app_id):
+async def async_remove_app_info(hass, app_id):
     try:
         path = BASE + app_id + ".json"
-        os.remove(path)
+        def remove():
+            os.remove(path)
+        await hass.async_add_executor_job(remove)
     except:
-        """"""
+        pass
 
 async def async_get_app_info(hass, app_id, token):
 
