@@ -186,16 +186,9 @@ class SmartThingsEntity_custom(Entity):
     
 
     def set_preset_modes(self):
-        # preset_modes
-        if self.get_attr_value(ATTR_PRESET_MODE, CONF_OPTIONS):
-            mode = self.get_attr_value(ATTR_PRESET_MODE, CONF_OPTIONS)
-            modes = []
-            modes.extend(self.get_attr_value(ATTR_PRESET_MODE, CONF_OPTIONS))
-            modes = list(set(modes))
-            for mode in modes:
-                value = self.get_mapping_value(ATTR_PRESET_MODE, CONF_MODE_MAPPING, mode)
-                self._preset_modes.append(value)
-            self._preset_modes = list(set(self._preset_modes))
+        if options := self.get_attr_value(ATTR_PRESET_MODE, CONF_OPTIONS):
+            mapped = [self.get_mapping_value(ATTR_PRESET_MODE, CONF_MODE_MAPPING, m) for m in dict.fromkeys(options)]
+            self._preset_modes = list(dict.fromkeys(self._preset_modes + mapped))
 
 
     async def send_command(self, platform, command, arg):

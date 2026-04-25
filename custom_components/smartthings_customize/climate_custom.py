@@ -101,16 +101,10 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
         #     self._hass.data[DOMAIN]["listener"].append(async_track_state_change(
         #         self._hass, entity_id, self.entity_listener))
 
-       # modes
-        if self.get_attr_value(ATTR_MODE, CONF_OPTIONS):
-            mode = self.get_attr_value(ATTR_MODE, CONF_OPTIONS)
-            modes = ["off"]
-            modes.extend(self.get_attr_value(ATTR_MODE, CONF_OPTIONS))
-            modes = list(set(modes))
-            for mode in modes:
-                value = self.get_mapping_value(ATTR_MODE, CONF_MODE_MAPPING, mode)
-                self._hvac_modes.append(value)
-            self._hvac_modes = list(set(self._hvac_modes))
+        # modes
+        if options := self.get_attr_value(ATTR_MODE, CONF_OPTIONS):
+            mapped = [self.get_mapping_value(ATTR_MODE, CONF_MODE_MAPPING, m) for m in dict.fromkeys(["off"] + options)]
+            self._hvac_modes = list(dict.fromkeys(self._hvac_modes + mapped))
 
         self.set_preset_modes()
 
