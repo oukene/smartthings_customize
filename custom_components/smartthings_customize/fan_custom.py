@@ -22,7 +22,7 @@ class SmartThingsFan_custom(SmartThingsEntity_custom, FanEntity):
         self._speed_list = None
         self._speed_range = (1, 100)
         self._preset_mode = None
-        self._preset_modes = None
+        self._preset_modes = []
         
         for capa in setting[1]["capabilities"]:
             if ATTR_SWITCH in capa:
