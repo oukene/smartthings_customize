@@ -185,18 +185,7 @@ class SmartThingsEntity_custom(Entity):
         return self._icon
     
 
-    def set_modes(self):
-        # modes
-        if self.get_attr_value(ATTR_MODE, CONF_OPTIONS):
-            mode = self.get_attr_value(ATTR_MODE, CONF_OPTIONS)
-            modes = ["off"]
-            modes.extend(self.get_attr_value(ATTR_MODE, CONF_OPTIONS))
-            modes = list(set(modes))
-            for mode in modes:
-                value = self.get_mapping_value(ATTR_MODE, CONF_MODE_MAPPING, mode)
-                self._hvac_modes.append(value)
-            self._hvac_modes = list(set(self._hvac_modes))
-
+    def set_preset_modes(self):
         # preset_modes
         if self.get_attr_value(ATTR_PRESET_MODE, CONF_OPTIONS):
             mode = self.get_attr_value(ATTR_PRESET_MODE, CONF_OPTIONS)

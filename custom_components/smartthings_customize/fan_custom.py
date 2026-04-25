@@ -21,6 +21,8 @@ class SmartThingsFan_custom(SmartThingsEntity_custom, FanEntity):
         self._attr_supported_features = FanEntityFeature(0)
         self._speed_list = None
         self._speed_range = (1, 100)
+        self._preset_mode = None
+        self._preset_modes = None
         
         for capa in setting[1]["capabilities"]:
             if ATTR_SWITCH in capa:
@@ -42,7 +44,7 @@ class SmartThingsFan_custom(SmartThingsEntity_custom, FanEntity):
                 self._speed_range = (float(self.get_attr_value(ATTR_PERCENTAGE, "min", 1)), float(self.get_attr_value(ATTR_PERCENTAGE, "max", 100)))
 
         # preset_modes
-        self.set_modes()
+        self.set_preset_modes()
 
         # external_entity
         # if entity_id := self.get_attr_value(ATTR_SWITCH, CONF_ENTITY_ID):

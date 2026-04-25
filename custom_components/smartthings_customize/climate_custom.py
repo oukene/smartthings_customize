@@ -101,22 +101,19 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
         #     self._hass.data[DOMAIN]["listener"].append(async_track_state_change(
         #         self._hass, entity_id, self.entity_listener))
 
-        self.set_modes()
-        
-        # fan_modes
-        # if self.get_attr_value(ATTR_FAN_MODE, CONF_OPTIONS):
-        #     mode = self.get_attr_value(ATTR_FAN_MODE, CONF_OPTIONS)
-        #     # convert hvac_modes
-        #     modes = []
-        #     modes.extend(self.get_attr_value(ATTR_FAN_MODE, CONF_OPTIONS))
-        #     modes = list(set(modes))
-        #     fan_modes = self.get_attr_value(ATTR_FAN_MODE, "s2h_fan_mode_mapping", [{}])
-        #     for mode in modes:
-        #         self._fan_modes.append(fan_modes[0].get(mode, mode))
-        #     self._fan_modes = list(set(self._fan_modes))
-            
+       # modes
+        if self.get_attr_value(ATTR_MODE, CONF_OPTIONS):
+            mode = self.get_attr_value(ATTR_MODE, CONF_OPTIONS)
+            modes = ["off"]
+            modes.extend(self.get_attr_value(ATTR_MODE, CONF_OPTIONS))
+            modes = list(set(modes))
+            for mode in modes:
+                value = self.get_mapping_value(ATTR_MODE, CONF_MODE_MAPPING, mode)
+                self._hvac_modes.append(value)
+            self._hvac_modes = list(set(self._hvac_modes))
 
-        
+        self.set_preset_modes()
+
     def entity_listener(self, entity, old_state, new_state):
         self.schedule_update_ha_state(True)
 
