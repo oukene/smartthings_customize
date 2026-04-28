@@ -28,6 +28,7 @@ from time import time
 from operator import *
 
 from homeassistant.util import slugify
+from homeassistant.core import callback
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -126,20 +127,63 @@ class SmartThingsEntity_custom(Entity):
                 sw_version=self._device.status.ocf_firmware_version,
             )
 
+    @callback
+    def _check_and_broadcast_availability(self):
+        """가용성(available) 상태를 체크하고 변경 시 방송하는 헬퍼 함수"""
+        check_available = self.get_attr_value(Platform.BINARY_SENSOR, ATTR_TRACK_DEVICE_AVAILABLE)
+        # check_device_available 설정이 꺼져있으면 무시
+        if not check_available:
+            return
+        value = self.get_attr_value(Platform.BINARY_SENSOR, CONF_STATE)
+        on_state = self.get_attr_value(Platform.BINARY_SENSOR, ON_STATE)
+        new_available = (value in on_state)
+        
+        # 이전 available 상태와 달라졌을 때만 신호를 보냄
+        if self._device.status._available != new_available:
+            self._device.status._available = new_available
+            
+            signal_name = f"{SIGNAL_SMARTTHINGS_AVAILABLE_UPDATE}_{self._device.device_id}"
+            async_dispatcher_send(self.hass, signal_name)
+
     async def async_added_to_hass(self):
         """Device added to hass."""
         self.set_timestamp()
-        async def async_update_state(devices, evt):
+
+        # [해결 1] 초기 로드 시점에도 가용성 체크를 한 번 실행합니다.
+        self._check_and_broadcast_availability()
+
+        @callback
+        def async_update_state(devices, evt):
             """Update device state."""
             if self._device.device_id in devices:
                 if eq(self._device.device_id, evt.device_id):
                     for key, cap in self._capability.items():
                         if eq(self.get_component(key), evt.component_id) and eq(self.get_capability(key), evt.capability):
                             self.set_timestamp()
-                await self.async_update_ha_state(True)
+                
+                # 이벤트 수신 시 가용성 다시 체크
+                self._check_and_broadcast_availability()
+                
+                # 내 UI 상태 갱신
+                self.async_write_ha_state()
 
-        self._dispatcher_remove = async_dispatcher_connect(
-            self.hass, SIGNAL_SMARTTHINGS_UPDATE, async_update_state
+        # 외부 이벤트 수신 디스패처
+        self.async_on_remove(
+            async_dispatcher_connect(
+                self.hass, SIGNAL_SMARTTHINGS_UPDATE, async_update_state
+            )
+        )
+
+        # '나 자신' 혹은 '다른 엔티티'가 상태 변경을 방송했을 때 UI를 갱신하는 리스너
+        @callback
+        def handle_device_available_update():
+            self.async_write_ha_state()
+
+        signal_name = f"{SIGNAL_SMARTTHINGS_AVAILABLE_UPDATE}_{self._device.device_id}"
+        self.async_on_remove(
+            async_dispatcher_connect(
+                self.hass, signal_name, handle_device_available_update
+            )
         )
 
     async def async_will_remove_from_hass(self) -> None:
@@ -149,6 +193,10 @@ class SmartThingsEntity_custom(Entity):
 
     def set_timestamp(self):
         self._extra_state_attributes[CONF_LAST_TIMESTAMP] = time()
+
+    @property
+    def available(self) -> bool:
+        return self._device.status._available
 
     @property
     def has_entity_name(self) -> bool:
@@ -408,21 +456,20 @@ class SettingManager(object):
 
     @staticmethod
     def get_capabilities() -> list[str]:
-        inst = SettingManager()
         capabilities = []
         try:
-            if default_setting := SettingManager.get_default_setting():
+            inst = SettingManager()
+            
+            if default_setting := inst.get_default_setting():
                 capabilities.extend(inst.parse_capability(default_setting))
-            for setting in SettingManager().get_device_setting():
+                
+            for setting in inst.get_device_setting():
                 capabilities.extend(inst.parse_capability(setting))
-
-            #capabilities.extend(mgr.subscribe_capabilities())
-            _LOGGER.debug("get_capabilities : " + str(capabilities))
+            _LOGGER.debug("get_capabilities : %s", capabilities)
+            
         except Exception as e:
-            _LOGGER.debug("get_capabilities error : " + traceback.format_exc())
-            pass
-        finally:
-            return capabilities
+            _LOGGER.exception("get_capabilities error")
+        return capabilities
 
     @staticmethod
     def get_capa_settings(broker, platform):

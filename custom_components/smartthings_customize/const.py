@@ -26,6 +26,7 @@ DATA_BROKERS = "brokers"
 EVENT_BUTTON = "smartthings_customize.button"
 
 SIGNAL_SMARTTHINGS_UPDATE = "smartthings_customize_update"
+SIGNAL_SMARTTHINGS_AVAILABLE_UPDATE = "smartthings_customize_available_update"
 SIGNAL_SMARTAPP_PREFIX = "smartthings_customize_smartap_"
 
 SETTINGS_INSTANCE_ID = "hassInstanceId"
@@ -71,6 +72,10 @@ CONF_SPEED_LIST = "speed_list"
 
 ATTR_MODE = "mode"
 ATTR_PRESET_MODE = "preset_mode"
+
+ATTR_TRACK_DEVICE_AVAILABLE = "track_device_available"
+
+ATTR_AVAILABLE = "available"
 
 DEFAULT = "default"
 

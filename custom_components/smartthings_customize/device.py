@@ -17,6 +17,7 @@ class DeviceStatus_custom(DeviceStatus):
         self._device_id = device_id
         self._components = {}
         self._status = {}
+        self._available = True
         if data:
             self.apply_data(data)
 
