@@ -99,8 +99,8 @@ class SmartThingsFan_custom(SmartThingsEntity_custom, FanEntity):
 
     @property
     def preset_mode(self) -> str | None:
-        state = self.get_attr_value(ATTR_PRESET_MODE, CONF_STATE)
-        self._preset_mode = self.get_mapping_value(ATTR_PRESET_MODE, CONF_MODE_MAPPING, state)
+        if (state := self.get_attr_value(ATTR_PRESET_MODE, CONF_STATE)) is not None:
+            self._preset_mode = self.get_mapping_value(ATTR_PRESET_MODE, CONF_MODE_MAPPING, state)
         return self._preset_mode
     
     @property
