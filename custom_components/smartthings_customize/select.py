@@ -40,13 +40,21 @@ class SmartThingsSelect_custom(SmartThingsEntity_custom, SelectEntity):
     def options(self) -> list[str]:
         return self.get_attr_value(Platform.SELECT, CONF_OPTIONS, [])
 
+    def get_state_mapping_key(self) -> str:
+        # climate/fan capabilities use "s2h_mode_mapping" for the same purpose;
+        # accept either key so select entities aren't silently unmapped when a
+        # config follows that convention instead of "s2h_state_mapping".
+        if self.get_attr_value(Platform.SELECT, CONF_STATE_MAPPING):
+            return CONF_STATE_MAPPING
+        return CONF_MODE_MAPPING
+
     @property
     def current_option(self) -> str | None:
         state = self.get_attr_value(Platform.SELECT, CONF_STATE)
-        return self.get_mapping_value(Platform.SELECT, CONF_STATE_MAPPING, state)
+        return self.get_mapping_value(Platform.SELECT, self.get_state_mapping_key(), state)
 
     async def async_select_option(self, option: str) -> None:
-        option = self.get_mapping_key(Platform.SELECT, CONF_STATE_MAPPING, option)
+        option = self.get_mapping_key(Platform.SELECT, self.get_state_mapping_key(), option)
         arg = [option]
         await self.send_command(Platform.SELECT, self.get_command(Platform.SELECT), arg)
         
