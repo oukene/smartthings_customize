@@ -268,6 +268,10 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
         mode = self.get_mapping_key(ATTR_MODE, CONF_MODE_MAPPING, hvac_mode.value)
         if self._capability.get(ATTR_SWITCH) and not self.is_on:
             await self.async_turn_on()
+            # some cloud-executed AC units briefly reject (or bounce back off
+            # from) a mode command sent immediately after power-on; give the
+            # unit a moment to register power-on before changing mode.
+            await asyncio.sleep(1)
 
         if ATTR_SWITCH != self.get_capability(ATTR_MODE):
             if mode != self.get_attr_value(ATTR_MODE, CONF_STATE):
