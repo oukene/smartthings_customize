@@ -364,14 +364,28 @@ class SmartThingsEntity_custom(Entity):
 
     def get_mapping_value(self, attr, mapping_option, key):
         data = self.get_attr_value(attr, mapping_option, [{}])
-        return data[0].get(key, key)
+        if key in data[0]:
+            return data[0][key]
+        # fall back to a string-keyed match (e.g. a numeric SmartThings value
+        # like hoodFanSpeed: 14 mapped against a quoted YAML key "14")
+        if str(key) in data[0]:
+            return data[0][str(key)]
+        return key
 
     def get_mapping_key(self, attr, mapping_option, value):
         data = self.get_attr_value(attr, mapping_option, [{}])
         key = value
         for k, v in data[0].items():
-            if eq(v, value):
+            if eq(v, value) or str(v) == str(value):
                 key = k
+                # YAML mapping keys are often quoted (e.g. "14") to match a
+                # numeric SmartThings value; send them back as a number so
+                # the SmartThings API (which validates argument types)
+                # accepts them. Only applies to an actual mapping match —
+                # values with no configured mapping (e.g. plain pass-through
+                # fan speed strings like "3") must be left untouched.
+                if isinstance(key, str) and key.lstrip("-").isdigit():
+                    key = int(key)
                 break;
         return key
 

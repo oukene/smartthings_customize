@@ -18,6 +18,8 @@ ATTR_SWITCH = "switch"
 ATTR_TARGET_TEMP = "target_temp"
 ATTR_TARGET_HUM = "target_humidity"
 ATTR_APPLY_MODE = "apply_mode"
+ATTR_FAN_MODE_ALT = "fan_mode_alt"
+CONF_ALT_MODE = "alt_mode"
 
 class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
 
@@ -61,6 +63,13 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
             elif ATTR_FAN_MODE in capa:
                 self._capability[ATTR_FAN_MODE] = capa
                 self._attr_supported_features |= ClimateEntityFeature.FAN_MODE
+                # a fan_mode capability that is mutually exclusive with the
+                # device's own fan speed (e.g. Samsung windFree, which the
+                # device auto-cancels as soon as a normal fan speed is set,
+                # and vice versa) can be folded into the same fan_mode
+                # dropdown instead of a separate entity.
+                if alt_mode := capa.get(CONF_ALT_MODE):
+                    self._capability[ATTR_FAN_MODE_ALT] = alt_mode
             elif ATTR_TARGET_TEMP in capa:
                 self.set_ext_attr(ATTR_TARGET_TEMP, capa)
                 self._attr_supported_features |= ClimateEntityFeature.TARGET_TEMPERATURE
@@ -149,13 +158,21 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
 
     @property
     def fan_mode(self) -> str | None:
+        if alt := self._capability.get(ATTR_FAN_MODE_ALT):
+            alt_state = self.get_attr_value(ATTR_FAN_MODE_ALT, CONF_STATE)
+            if alt_state in self.get_attr_value(ATTR_FAN_MODE_ALT, ON_STATE, []):
+                self._fan_mode = alt.get(CONF_NAME)
+                return self._fan_mode
         state = self.get_attr_value(ATTR_FAN_MODE, CONF_STATE)
         self._fan_mode = self.get_mapping_value(ATTR_FAN_MODE, CONF_STATE_MAPPING, state)
         return self._fan_mode
-    
+
     @property
     def fan_modes(self) -> list[str] | None:
-        return self.get_attr_value(ATTR_FAN_MODE, CONF_OPTIONS)
+        modes = self.get_attr_value(ATTR_FAN_MODE, CONF_OPTIONS) or []
+        if alt := self._capability.get(ATTR_FAN_MODE_ALT):
+            modes = list(modes) + [alt.get(CONF_NAME)]
+        return modes
 
     @property
     def target_temperature(self) -> float | None:
@@ -268,6 +285,10 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
         mode = self.get_mapping_key(ATTR_MODE, CONF_MODE_MAPPING, hvac_mode.value)
         if self._capability.get(ATTR_SWITCH) and not self.is_on:
             await self.async_turn_on()
+            # some cloud-executed AC units briefly reject (or bounce back off
+            # from) a mode command sent immediately after power-on; give the
+            # unit a moment to register power-on before changing mode.
+            await asyncio.sleep(1)
 
         if ATTR_SWITCH != self.get_capability(ATTR_MODE):
             if mode != self.get_attr_value(ATTR_MODE, CONF_STATE):
@@ -278,6 +299,9 @@ class SmartThingsClimate_custom(SmartThingsEntity_custom, ClimateEntity):
         await self.send_command(ATTR_PRESET_MODE, self.get_command(ATTR_PRESET_MODE), [preset_mode])
 
     async def async_set_fan_mode(self, fan_mode: str) -> None:
+        if (alt := self._capability.get(ATTR_FAN_MODE_ALT)) and fan_mode == alt.get(CONF_NAME):
+            await self.send_command(ATTR_FAN_MODE_ALT, self.get_command(ATTR_FAN_MODE_ALT), self.get_argument(ATTR_FAN_MODE_ALT, []))
+            return
         fan_mode = self.get_mapping_key(ATTR_FAN_MODE, CONF_MODE_MAPPING, fan_mode)
         await self.send_command(ATTR_FAN_MODE, self.get_command(ATTR_FAN_MODE), [fan_mode])
 
