@@ -378,12 +378,15 @@ class SmartThingsEntity_custom(Entity):
         for k, v in data[0].items():
             if eq(v, value) or str(v) == str(value):
                 key = k
+                # YAML mapping keys are often quoted (e.g. "14") to match a
+                # numeric SmartThings value; send them back as a number so
+                # the SmartThings API (which validates argument types)
+                # accepts them. Only applies to an actual mapping match —
+                # values with no configured mapping (e.g. plain pass-through
+                # fan speed strings like "3") must be left untouched.
+                if isinstance(key, str) and key.lstrip("-").isdigit():
+                    key = int(key)
                 break;
-        # YAML mapping keys are often quoted (e.g. "14") to match a numeric
-        # SmartThings attribute value; send them back as a number so the
-        # SmartThings API (which validates argument types) accepts them.
-        if isinstance(key, str) and key.lstrip("-").isdigit():
-            key = int(key)
         return key
 
 class SettingManager(object):
